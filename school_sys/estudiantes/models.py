@@ -33,7 +33,9 @@ class Student(models.Model):
     name = models.CharField(max_length=255)
     paternal_surname = models.CharField(max_length=255)
     maternal_surname = models.CharField(max_length=255)
-    user = models.CharField(max_length=255)
+    username = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    password = models.CharField(max_length=36, null=False, default='password123')
+    key_digest = models.CharField(max_length=64, null=True, blank=True)  # SHA256 produces 64 character hex string
     created_at = models.DateTimeField(auto_now_add=True)
     address = models.TextField()
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
