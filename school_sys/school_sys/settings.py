@@ -85,10 +85,21 @@ WSGI_APPLICATION = 'school_sys.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+## To execute the project, you need to install the following dependencies:
+# sudo pacman -S python-mysqlclient python-mysql-connector (Arch Linux)
+
+# pip install mysqlclient
+# or 
+# pip install pymysql (you will need to add to your __init__.py:
+# - CREATE DATABASE school_sys CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'school_sys',
+        'USER': 'adan', # Your current db's user
+        'PASSWORD': 'kernelripper', # Your current db's password
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 

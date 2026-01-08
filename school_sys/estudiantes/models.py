@@ -55,7 +55,7 @@ class Tutor(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} {self.paternal_surname}"
+        return f"[+] {self.name} {self.paternal_surname}"
 
 
 class StudentTutor(models.Model):
@@ -67,7 +67,7 @@ class StudentTutor(models.Model):
     assignment_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.student} → {self.tutor} ({self.relationship})"
+        return f"[+] {self.student} -> {self.tutor} ({self.relationship})"
 
 
 #########################################################
@@ -89,7 +89,7 @@ class StudentStatusHistory(models.Model):
     justification = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.student} - {self.status}"
+        return f"[+] {self.student} - {self.status}"
 
 
 #########################################################
@@ -116,7 +116,7 @@ class SocioeconomicEvaluation(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Evaluation {self.student}"
+        return f"[+] - Evaluación {self.student}"
 
 
 class StratumHistory(models.Model):
@@ -126,4 +126,4 @@ class StratumHistory(models.Model):
     comments = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.student} → {self.stratum}"
+        return f"[+] {self.student} -> {self.stratum}"
