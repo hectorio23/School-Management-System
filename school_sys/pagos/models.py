@@ -22,7 +22,7 @@ class Debt(models.Model):
     paid = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"[+] - Debt {self.student} → {self.concept}"
+        return f"[+] - Adeudos {self.student} -> {self.concept}"
 
 
 class Payment(models.Model):
@@ -33,4 +33,4 @@ class Payment(models.Model):
     receipt = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"[+] - Payment {self.amount} - {self.date}"
+        return f"[+] - Pago {self.amount} - {self.date}"
