@@ -1,5 +1,5 @@
+from django.core.validators import MinLengthValidator
 from django.db import models
-
 
 #########################################################
 # GRADOS Y GRUPOS
@@ -34,14 +34,36 @@ class Student(models.Model):
     paternal_surname = models.CharField(max_length=255)
     maternal_surname = models.CharField(max_length=255)
     username = models.CharField(max_length=255, unique=True, null=True, blank=True)
-    password = models.CharField(max_length=36, null=False, default='password123')
-    key_digest = models.CharField(max_length=64, null=True, blank=True)  # SHA256 produces 64 character hex string
+    password = models.CharField(max_length=155, validators=[MinLengthValidator(10, message='Field must be at least 10 characters long')], null=False, blank=False)
+    key_digest = models.CharField(max_length=64, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     address = models.TextField()
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
 
+    # NEW:
+    current_status = models.ForeignKey(
+        "StudentStatus",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Estado actual"
+    )
+
+    current_stratum = models.ForeignKey(
+        "Stratum",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Estrato actual"
+    )
+
+    class Meta:
+        verbose_name = "Estudiante"
+        verbose_name_plural = "Estudiantes"
+
     def __str__(self):
         return f"{self.enrollment_number} - {self.name} {self.paternal_surname}"
+
 
 
 #########################################################
@@ -83,6 +105,10 @@ class StudentStatus(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Estatus"
+        verbose_name_plural = "Estatus"
+
 
 class StudentStatusHistory(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -92,6 +118,10 @@ class StudentStatusHistory(models.Model):
 
     def __str__(self):
         return f"[+] {self.student} - {self.status}"
+    
+    class Meta:
+        verbose_name = "Historial Estatus"
+        verbose_name_plural = "Historial Estatus"
 
 
 #########################################################
@@ -106,6 +136,10 @@ class Stratum(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = "Estrato"
+        verbose_name_plural = "Estratos"
 
 
 class SocioeconomicEvaluation(models.Model):
@@ -120,6 +154,10 @@ class SocioeconomicEvaluation(models.Model):
     def __str__(self):
         return f"[+] - Evaluación {self.student}"
 
+    class Meta:
+        verbose_name = "Evaluación Socioeconómica"
+        verbose_name_plural = "Evaluaciones Socioeconómicas"
+
 
 class StratumHistory(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -129,3 +167,7 @@ class StratumHistory(models.Model):
 
     def __str__(self):
         return f"[+] {self.student} -> {self.stratum}"
+
+    class Meta:
+        verbose_name = "Historial de Estratos"
+        verbose_name_plural = "Historiales de Estratos"
