@@ -1,20 +1,20 @@
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import viewsets, permissions, status
-from .serializer import SerializerStudents
+from .serializer import SerializerStudent
 from rest_framework.response import Response
 from django.shortcuts import render
 from datetime import timedelta
-from .models import Student
+from .models import Estudiante
 import hashlib
 # from rest_framework_simplejwt.views import RefreshToker
 
 
 # Create your views here.
 class StudentViewSet(viewsets.ModelViewSet):
-    queryset = Student.objects.all()
+    queryset = Estudiante.objects.all()
     permission_classes = [permissions.AllowAny] # Change it to permissions.IsAuthenticated for production
-    serializer_class = SerializerStudents
+    serializer_class = SerializerStudent
 
 
 def get_tokens_for_student(student, token_duration_minutes=None):
@@ -35,7 +35,7 @@ def get_tokens_for_student(student, token_duration_minutes=None):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.AllowAny])
+@permission_classes([permissions.AllowAny]) ## Cambias a permissions.isAuthenticated
 def login_student(request):
     """
     Endpoint de autenticación para estudiantes.
@@ -48,6 +48,7 @@ def login_student(request):
         password = request.data.get('password', '').strip()
         token_duration = request.data.get('token_duration', None)  # en minutos
         
+        # Esto tambiñén se validará en el Front-End
         if not username or not password:
             return Response(
                 {
@@ -63,12 +64,12 @@ def login_student(request):
         
         # Buscar estudiante por key_digest
         try:
-            student = Student.objects.get(key_digest=hash_generated)
+            student = Estudiante.objects.get(digest_llave=hash_generated)
             
             # Generar tokens JWT
             tokens = get_tokens_for_student(student, token_duration)
             
-            serializer = SerializerStudents(student)
+            serializer = SerializerStudent(student)
             
             response = Response(
                 {
@@ -94,7 +95,7 @@ def login_student(request):
             
             return response
             
-        except Student.DoesNotExist:
+        except Estudiante.DoesNotExist:
             return Response(
                 {
                     'success': False,
