@@ -10,3 +10,7 @@ class CafeteriaAttendance(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.date}"
+
+    class Meta:
+        verbose_name = "Asistencia de la Cafeteria"
+        verbose_name_plural = "Asistencias"

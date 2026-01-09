@@ -10,6 +10,10 @@ class PaymentConcept(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = "Concepto de Pago"
+        verbose_name_plural = "Conceptos de Pago"
 
 
 class Debt(models.Model):
@@ -24,6 +28,10 @@ class Debt(models.Model):
     def __str__(self):
         return f"[+] - Adeudos {self.student} -> {self.concept}"
 
+    class Meta:
+        verbose_name = "Adeudo"
+        verbose_name_plural = "Adeudos"
+
 
 class Payment(models.Model):
     debt = models.ForeignKey(Debt, on_delete=models.CASCADE)
@@ -34,3 +42,7 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"[+] - Pago {self.amount} - {self.date}"
+
+    class Meta:
+        verbose_name = "Pago"
+        verbose_name_plural = "Pagos"
