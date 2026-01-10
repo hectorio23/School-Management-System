@@ -1,180 +1,108 @@
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework import viewsets, permissions, status
-from .serializer import SerializerStudent
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.shortcuts import render
-from datetime import timedelta
+from django.utils import timezone
 from .models import Estudiante
-import hashlib
-# from rest_framework_simplejwt.views import RefreshToker
+from .serializer import SerializerStudent
+from authentication.permissions import IsAuthenticatedWithValidToken
 
-
-# Create your views here.
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Estudiante.objects.all()
-    permission_classes = [permissions.AllowAny] # Change it to permissions.IsAuthenticated for production
     serializer_class = SerializerStudent
-
-
-def get_tokens_for_student(student, token_duration_minutes=None):
-    """
-    Genera tokens JWT para un estudiante.
-    token_duration_minutes: duración personalizada del token en minutos
-    """
-    refresh = RefreshToken.for_user(student)
     
-    # Si se especifica duración personalizada, ajustar el access token
-    if token_duration_minutes:
-        refresh.access_token.set_exp(lifetime=timedelta(minutes=token_duration_minutes))
+    def get_permissions(self):
+        """
+        Permisos dinámicos según la acción
+        """
+        if self.action == 'create':
+            # Permitir registro sin autenticación
+            permission_classes = [permissions.AllowAny]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            # Requiere autenticación y ser dueño
+            permission_classes = [IsAuthenticatedWithValidToken, IsStudentOwner]
+        elif self.action == 'list':
+            # Solo admins pueden listar todos
+            permission_classes = [IsAuthenticatedWithValidToken, CanModifyRecords]
+        else:
+            permission_classes = [IsAuthenticatedWithValidToken]
+        
+        return [permission() for permission in permission_classes]
     
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
-
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny]) ## Cambias a permissions.isAuthenticated
-def login_student(request):
-    """
-    Endpoint de autenticación para estudiantes.
-    Recibe username y password, genera hash SHA256 de "username@password"
-    y lo compara con key_digest en la BD.
-    Retorna tokens JWT con duración configurable.
-    """
-    if request.method == 'POST':
-        username = request.data.get('username', '').strip()
-        password = request.data.get('password', '').strip()
-        token_duration = request.data.get('token_duration', None)  # en minutos
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def login(self, request):
+        """Endpoint de login con registro de token"""
+        email = request.data.get('email')
+        password = request.data.get('password')
         
-        # Esto tambiñén se validará en el Front-End
-        if not username or not password:
-            return Response(
-                {
-                    'success': False,
-                    'error': 'Username and password are required'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Generar hash SHA256 de "username@password"
-        credentials = f"{username}@{password}"
-        hash_generated = hashlib.sha256(credentials.encode()).hexdigest()
-        
-        # Buscar estudiante por key_digest
         try:
-            student = Estudiante.objects.get(digest_llave=hash_generated)
-            
-            # Generar tokens JWT
-            tokens = get_tokens_for_student(student, token_duration)
-            
-            serializer = SerializerStudent(student)
-            
-            response = Response(
-                {
-                    'success': True,
-                    'message': 'Authentication successful',
-                    'student': serializer.data,
-                    'access_token': tokens['access'],
-                    'refresh_token': tokens['refresh'],
-                },
-                status=status.HTTP_200_OK
-            )
-            
-            # Establecer cookie HttpOnly con el access token
-            max_age = token_duration * 60 if token_duration else 3600  # en segundos
-            response.set_cookie(
-                key='access_token',
-                value=tokens['access'],
-                max_age=max_age,
-                httponly=True,
-                secure=False,  # Cambiar a True en producción con HTTPS
-                samesite='Lax'
-            )
-            
-            return response
-            
+            student = Estudiante.objects.get(email=email)
+            if student.check_password(password):  # Asume método check_password
+                tokens = get_tokens_for_student(
+                    student, 
+                    token_duration_minutes=60,
+                    request=request
+                )
+                return Response({
+                    'tokens': tokens,
+                    'student': SerializerStudent(student).data
+                })
         except Estudiante.DoesNotExist:
-            return Response(
-                {
-                    'success': False,
-                    'error': 'Invalid credentials'
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-            
-        except Exception as e:
-            return Response(
-                {
-                    'success': False,
-                    'error': str(e)
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    return Response(
-        {'error': 'Method not allowed'},
-        status=status.HTTP_405_METHOD_NOT_ALLOWED
-    )
-
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def verify_token(request):
-    """
-    Verifica si un token JWT es válido.
-    """
-    from rest_framework_simplejwt.tokens import AccessToken
-    from rest_framework_simplejwt.exceptions import TokenError
-    
-    token = request.COOKIES.get('access_token') or request.data.get('token')
-    
-    if not token:
+            pass
+        
         return Response(
-            {'valid': False, 'error': 'No token provided'},
+            {'error': 'Credenciales inválidas'}, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticatedWithValidToken])
+    def logout(self, request):
+        """Logout que invalida el token actual"""
+        if hasattr(request, 'token_record'):
+            request.token_record.invalidate()
+            return Response({'message': 'Sesión cerrada correctamente'})
+        return Response(
+            {'error': 'Token no encontrado'}, 
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    try:
-        # Validar token
-        AccessToken(token)
-        # Obtener el user_id del token
-        token_obj = AccessToken(token)
-        user_id = token_obj['user_id']
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticatedWithValidToken])
+    def logout_all(self, request):
+        """Cierra todas las sesiones del usuario"""
+        invalidate_all_student_tokens(request.user.estudiante)
+        return Response({'message': 'Todas las sesiones cerradas'})
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticatedWithValidToken])
+    def active_sessions(self, request):
+        """Lista las sesiones activas del usuario"""
+        tokens = TokenRegistry.objects.filter(
+            student=request.user.estudiante,
+            is_active=True
+        ).order_by('-created_at')
         
-        # Obtener datos del estudiante
-        student = Student.objects.get(id=user_id)
-        serializer = SerializerStudents(student)
+        sessions = [{
+            'created_at': t.created_at,
+            'last_used': t.last_used_at,
+            'ip_address': t.ip_address,
+            'expires_at': t.expires_at,
+            'is_current': t.jti == request.token_record.jti if hasattr(request, 'token_record') else False
+        } for t in tokens]
         
-        return Response(
-            {
-                'valid': True,
-                'student': serializer.data
-            },
-            status=status.HTTP_200_OK
-        )
-    except TokenError:
-        return Response(
-            {'valid': False, 'error': 'Invalid or expired token'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    except Student.DoesNotExist:
-        return Response(
-            {'valid': False, 'error': 'Student not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({'sessions': sessions})
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def logout_student(request):
-    """
-    Cierra la sesión eliminando la cookie.
-    """
-    response = Response(
-        {'success': True, 'message': 'Logged out successfully'},
-        status=status.HTTP_200_OK
+# Task para limpiar tokens expirados (celery/cron)
+def cleanup_expired_tokens():
+    """Tarea periódica para limpiar tokens expirados"""
+    expired_count = TokenRegistry.objects.filter(
+        is_active=True,
+        expires_at__lt=timezone.now()
+    ).update(is_active=False)
+    
+    # Opcional: eliminar tokens antiguos
+    old_tokens = TokenRegistry.objects.filter(
+        created_at__lt=timezone.now() - timedelta(days=30)
     )
-    response.delete_cookie('access_token')
-    return response
+    deleted_count = old_tokens.count()
+    old_tokens.delete()
+    
+    return f"Expirados: {expired_count}, Eliminados: {deleted_count}"
