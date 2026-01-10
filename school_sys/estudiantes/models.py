@@ -1,4 +1,5 @@
 from django.core.validators import MinLengthValidator
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
@@ -49,16 +50,60 @@ class Grupo(models.Model):
 # ESTUDIANTES
 #########################################################
 
+class UserRole(models.TextChoices):
+    """ DEFINICION DE ROLES
+    - Estudiantes
+        El rol de estudiante únicamente puede actualizar su información socioeconomica y
+        datos del tutor, no se le permite actualizar datos de su registro con la excepcion
+        de email, contraseña, direccion y telefono de contacto.
+
+    - Staff
+        Son los encargados de llevar a cabo la administración de la cafetería, ellos 
+        llevan un registro de los usuarios que hicieron uso de esta y de lo que consumienron, 
+        pueden ver a alumnos que tienen beca, pagan por servicio de cafeteria, aquellos que deben
+        dinero, etc. Pueden cambiar precios del menu.
+
+        NOTA: Al cambiar precios, el cambio no se reflejará en los conceptos ya registrados relacionados
+        con los alumnos, el cambió se reflejará al agregar nuevos conceptos de pago. 
+
+    - Contador (experimental)
+        Es quien lleva la gestión de pagos, conceptos de pago, pagos (en cualquier medio, físico o electrónico),
+        adeudos, descuentos y becas.
+
+    - Administradores
+        Los administradores pueden hacer de todas las operaciones CRUD donde gusten, cualquier registro 
+        pueden modificar, borrar, agregar, incluso pueden eliminar registros historicos tales como 
+        historico de estrato, historico de estudio socioeconomico de estudiantes, etc, la única excepcion
+        que NO pueden hacer es MIRAR CONTRASEÑAS EN TEXTO PLANO y logearse como otros usuarios.
+    """
+    STUDENT = 'student', 'Estudiante'
+    STAFF = 'staff', 'Staff'
+    ACCOUNTANT = 'accountant', 'Contador'
+    ADMIN = 'admin', 'Administrador'
+
 class Estudiante(models.Model):
     """
     Datos principales de estudiantes.
     NO contiene estado ni estrato actual (ver tablas de historial)
     """
-    matricula = models.IntegerField(unique=True)
+
+    matricula = models.AutoField(
+        primary_key=True,
+        editable=False
+    )
+
     nombre = models.CharField(max_length=255)
     apellido_paterno = models.CharField(max_length=255)
     apellido_materno = models.CharField(max_length=255)
     direccion = models.TextField()
+    email = models.EmailField(unique=True, null=True)
+
+    role = models.CharField(
+        max_length=20, 
+        # choices=UserRole.choices, 
+        default=UserRole.STUDENT,
+        blank=True
+    )
     grupo = models.ForeignKey(
         Grupo, 
         on_delete=models.SET_NULL, 
@@ -91,6 +136,12 @@ class Estudiante(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
+
+    
+    @property
+    def is_admin(self):
+        return self.role == UserRole.ADMIN
+
     class Meta:
         verbose_name = "Estudiante"
         verbose_name_plural = "Estudiantes"
@@ -110,12 +161,12 @@ class Estudiante(models.Model):
 
     def get_estado_actual(self):
         """Obtiene el estado actual del estudiante desde el historial"""
-        ultimo_estado = self.historialestadosestudiante_set.order_by('-fecha_efectiva').first()
+        ultimo_estado = self.historialestadosestudiante_set.order_by('-fecha_creacion').first()
         return ultimo_estado.estado if ultimo_estado else None
 
     def get_estrato_actual(self):
         """Obtiene el estrato actual del estudiante desde el historial"""
-        ultimo_estrato = self.historialestratoestudiante_set.order_by('-fecha_efectiva').first()
+        ultimo_estrato = self.historialestratoestudiante_set.order_by('-fecha_creacion').first()
         return ultimo_estrato.estrato if ultimo_estrato else None
 
     def get_balance_total(self):
@@ -127,6 +178,21 @@ class Estudiante(models.Model):
             balance=Sum(F('monto_total') - F('monto_pagado'))
         )
         return resultado['balance'] or 0
+    
+    def check_password(self, raw_password):
+        """Verifica la contraseña"""
+        return raw_password == self.hash_contrasena
+        
+
+    def save(self, *args, **kwargs):
+        # Si es un nuevo estudiante, calcular la matrícula
+        if not self.matricula:
+            last_student = Estudiante.objects.order_by('-matricula').first()
+            if last_student:
+                self.matricula = last_student.matricula + 1
+            else:
+                self.matricula = 1000  # Primera matrícula
+        super().save(*args, **kwargs)
 
 
 #########################################################
@@ -138,20 +204,12 @@ class Tutor(models.Model):
     nombre = models.CharField(max_length=255)
     apellido_paterno = models.CharField(max_length=255)
     apellido_materno = models.CharField(max_length=255)
-    telefono = models.CharField(max_length=15)
-    correo = models.EmailField()
+    telefono = models.CharField(max_length=17) # <+52 449 458 93 45> Los telefonos se almacenarán de esta forma <17 caracteres>
+    correo = models.EmailField(null=False, editable=True, max_length=40) # correo obligatorio
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     # Campos para control de actualización por estudiantes
     ultima_actualizacion = models.DateTimeField(null=True, blank=True)
-    actualizado_por_estudiante = models.ForeignKey(
-        Estudiante,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='tutores_actualizados',
-        db_column='actualizado_por_estudiante_id'
-    )
 
     class Meta:
         verbose_name = "Tutor"
@@ -189,8 +247,6 @@ class EstudianteTutor(models.Model):
         max_length=100,
         help_text='Padre, Madre, Abuelo, Tutor Legal, etc.'
     )
-    responsable_pagos = models.BooleanField(default=False)
-    recibe_notificaciones = models.BooleanField(default=True)
     fecha_asignacion = models.DateTimeField(auto_now_add=True)
     activo = models.BooleanField(
         default=True,
@@ -205,7 +261,6 @@ class EstudianteTutor(models.Model):
         indexes = [
             models.Index(fields=['estudiante'], name='idx_estudiantetutor_estudiante'),
             models.Index(fields=['tutor'], name='idx_estudiantetutor_tutor'),
-            models.Index(fields=['responsable_pagos'], name='idx_responsable_pagos'),
         ]
 
     def __str__(self):
@@ -249,35 +304,21 @@ class HistorialEstadosEstudiante(models.Model):
         on_delete=models.CASCADE,
         db_column='estado_id'
     )
-    fecha_efectiva = models.DateTimeField(
-        help_text='Fecha en que entra en vigor el estado'
-    )
     justificacion = models.TextField(null=True, blank=True)
-    creado_por = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        help_text='Usuario que realizó el cambio'
-    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Historial de Estado"
         verbose_name_plural = "Historial de Estados"
         db_table = 'historial_estados_estudiante'
-        ordering = ['-fecha_efectiva']
+        ordering = ['-fecha_creacion']
         indexes = [
             models.Index(fields=['estudiante'], name='idx_historialestado_estudiante'),
             models.Index(fields=['estado'], name='idx_historialestado_estado'),
-            models.Index(fields=['fecha_efectiva'], name='idx_historialestado_fecha'),
-            models.Index(
-                fields=['estudiante', 'fecha_efectiva'],
-                name='idx_estudiante_estado_temporal'
-            ),
         ]
 
     def __str__(self):
-        return f"{self.estudiante} - {self.estado} ({self.fecha_efectiva.date()})"
+        return f"[+] - {self.estudiante} - {self.estado} ({self.fecha_creacion.date()})"
 
 
 #########################################################
@@ -326,30 +367,22 @@ class HistorialEstratoEstudiante(models.Model):
         on_delete=models.CASCADE,
         db_column='estrato_id'
     )
-    fecha_efectiva = models.DateTimeField(
-        help_text='Fecha en que entra en vigor el estrato'
-    )
-    comentarios = models.TextField(null=True, blank=True)
-    creado_por = models.CharField(max_length=255, null=True, blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    justificacion = models.TextField(null=True, blank=True, default="Se realizó el cambio de estrado de estudiante debido a su situación socioeconomica.")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=False)
 
     class Meta:
         verbose_name = "Historial de Estrato"
         verbose_name_plural = "Historial de Estratos"
         db_table = 'historial_estratos_estudiante'
-        ordering = ['-fecha_efectiva']
+        ordering = ['-fecha_creacion']
         indexes = [
             models.Index(fields=['estudiante'], name='idx_his_es'),
             models.Index(fields=['estrato'], name='idx_historialestrato_estrato'),
-            models.Index(fields=['fecha_efectiva'], name='idx_historialestrato_fecha'),
-            models.Index(
-                fields=['estudiante', 'fecha_efectiva'],
-                name='idx_est_es_temp'
-            ),
         ]
 
     def __str__(self):
-        return f"{self.estudiante} - {self.estrato} ({self.fecha_efectiva.date()})"
+        return f"{self.estudiante} - {self.estrato} ({self.fecha_creacion.date()})"
 
 
 class EvaluacionSocioeconomica(models.Model):
@@ -374,30 +407,16 @@ class EvaluacionSocioeconomica(models.Model):
         help_text='Número de personas en el hogar'
     )
 
-    # Resultado de la evaluación
-    estrato_sugerido = models.ForeignKey(
-        Estrato,
-        on_delete=models.CASCADE,
-        db_column='estrato_sugerido_id'
-    )
     documentos_json = models.TextField(
         help_text='JSON con URLs/paths de documentos probatorios'
     )
 
-    # Metadata
-    evaluado_por = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        help_text='Usuario que realizó la evaluación'
-    )
     aprobado = models.BooleanField(
         null=True,
         blank=True,
         help_text='null=pendiente, true=aprobado, false=rechazado'
     )
-    aprobado_por = models.CharField(max_length=255, null=True, blank=True)
-    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True, auto_now_add=True)
 
     class Meta:
         verbose_name = "Evaluación Socioeconómica"
@@ -405,7 +424,6 @@ class EvaluacionSocioeconomica(models.Model):
         db_table = 'evaluaciones_socioeconomicas'
         indexes = [
             models.Index(fields=['estudiante'], name='idx_evalsocio_estudiante'),
-            models.Index(fields=['estrato_sugerido'], name='idx_evalsocio_estrato'),
             models.Index(fields=['fecha_evaluacion'], name='idx_evalsocio_fecha'),
             models.Index(fields=['aprobado'], name='idx_evalsocio_aprobado'),
         ]

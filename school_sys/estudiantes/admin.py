@@ -71,7 +71,7 @@ class EstudianteTutorInline(admin.TabularInline):
     """Permite agregar/editar tutores directamente desde el estudiante"""
     model = EstudianteTutor
     extra = 1
-    fields = ('tutor', 'parentesco', 'responsable_pagos', 'recibe_notificaciones', 'activo')
+    fields = ('tutor', 'parentesco', 'activo')
     autocomplete_fields = ['tutor']
     verbose_name = "Tutor"
     verbose_name_plural = "Tutores del estudiante"
@@ -81,8 +81,7 @@ class HistorialEstadosInline(admin.TabularInline):
     """Muestra el historial de estados (solo lectura, excepto el más reciente)"""
     model = HistorialEstadosEstudiante
     extra = 1
-    fields = ('estado', 'fecha_efectiva', 'justificacion', 'creado_por')
-    ordering = ['-fecha_efectiva']
+    fields = ('estado', 'justificacion')
     verbose_name = "Cambio de estado"
     verbose_name_plural = "Historial de estados"
     
@@ -90,15 +89,14 @@ class HistorialEstadosInline(admin.TabularInline):
         # Solo el primero (más reciente) es editable
         if obj:
             return []
-        return ['estado', 'fecha_efectiva', 'justificacion', 'creado_por']
+        return ['estado', 'justificacion']
 
 
 class HistorialEstratoInline(admin.TabularInline):
     """Muestra el historial de estratos"""
     model = HistorialEstratoEstudiante
     extra = 1
-    fields = ('estrato', 'fecha_efectiva', 'comentarios', 'creado_por')
-    ordering = ['-fecha_efectiva']
+    fields = ('estrato', )
     verbose_name = "Cambio de estrato"
     verbose_name_plural = "Historial de estratos"
 
@@ -111,23 +109,12 @@ class EvaluacionSocioeconomicaInline(admin.StackedInline):
     fields = (
         ('ingreso_mensual', 'miembros_hogar'),
         'tipo_vivienda',
-        'estrato_sugerido',
         'documentos_json',
-        ('aprobado', 'aprobado_por'),
+        ('aprobado'),
     )
-    readonly_fields = ['estrato_sugerido', 'fecha_evaluacion']
     verbose_name = "Evaluación socioeconómica"
     verbose_name_plural = "Evaluación socioeconómica"
-    
-    def get_readonly_fields(self, request, obj=None):
-        readonly = ['fecha_evaluacion']
-        if obj and hasattr(obj, 'evaluacionsocioeconomica_set'):
-            eval = obj.evaluacionsocioeconomica_set.last()
-            if eval and eval.aprobado is not None:
-                # Si ya fue aprobada/rechazada, hacer todo readonly
-                readonly.extend(['ingreso_mensual', 'miembros_hogar', 'tipo_vivienda', 
-                               'estrato_sugerido', 'documentos_json', 'aprobado'])
-        return readonly
+
 
 
 class AdeudoInline(admin.TabularInline):
@@ -195,7 +182,7 @@ class EstudiantesEnGrupoInline(admin.TabularInline):
     """Permite asignar estudiantes al grupo directamente"""
     model = Estudiante
     extra = 0
-    fields = ('matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 'link_to_student')
+    fields = ( 'nombre', 'apellido_paterno', 'apellido_materno', 'link_to_student')
     readonly_fields = ['link_to_student']
     verbose_name = "Estudiante en este grupo"
     verbose_name_plural = "Estudiantes en este grupo"
@@ -257,12 +244,12 @@ class TutorAdmin(admin.ModelAdmin):
                       ('telefono', 'correo'))
         }),
         ('Control de actualización', {
-            'fields': ('ultima_actualizacion', 'actualizado_por_estudiante'),
+            'fields': ('ultima_actualizacion', ),
             'classes': ['collapse']
         }),
     )
     
-    readonly_fields = ['ultima_actualizacion', 'actualizado_por_estudiante', 'fecha_creacion']
+    readonly_fields = ['ultima_actualizacion', 'fecha_creacion']
     
     def nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}"
@@ -365,8 +352,7 @@ class AdeudoAdmin(admin.ModelAdmin):
     
     autocomplete_fields = ['estudiante', 'concepto']
     
-    readonly_fields = ['monto_final', 'monto_total', 'saldo_display', 'fecha_creacion', 
-                      'fecha_actualizacion']
+    readonly_fields = ['monto_final', 'monto_total', 'saldo_display', 'fecha_creacion', ]
     
     fieldsets = (
         ('Información básica', {
@@ -474,7 +460,7 @@ class PagoAdmin(admin.ModelAdmin):
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
     list_display = (
-        'matricula',
+        # 'matricula',
         'nombre_completo',
         'grupo',
         'estado_actual_display',
@@ -503,6 +489,7 @@ class EstudianteAdmin(admin.ModelAdmin):
     autocomplete_fields = ['grupo']
     
     readonly_fields = [
+        'matricula',
         'fecha_creacion',
         'fecha_actualizacion',
         'estado_actual_display',
@@ -521,7 +508,7 @@ class EstudianteAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Información Personal', {
             'fields': (
-                'matricula',
+                # 'matricula',
                 ('nombre', 'apellido_paterno', 'apellido_materno'),
                 'direccion',
             )
@@ -620,82 +607,6 @@ class EstudianteAdmin(admin.ModelAdmin):
                 obj.nombre_usuario = generar_username_unico(obj.nombre, obj.apellido_paterno)
         
         super().save_model(request, obj, form, change)
-    
-    def save_formset(self, request, form, formset, change):
-        """
-        Automatización de procesos al guardar inlines
-        """
-        instances = formset.save(commit=False)
-        
-        for instance in instances:
-            # EVALUACIÓN SOCIOECONÓMICA
-            if isinstance(instance, EvaluacionSocioeconomica):
-                # Calcular estrato sugerido automáticamente
-                if not instance.estrato_sugerido:
-                    estrato = calcular_estrato_sugerido(
-                        instance.ingreso_mensual,
-                        instance.miembros_hogar
-                    )
-                    if estrato:
-                        instance.estrato_sugerido = estrato
-                
-                # Asignar quién evaluó
-                if not instance.evaluado_por:
-                    instance.evaluado_por = request.user.username
-                
-                instance.save()
-                
-                # Si la evaluación fue aprobada, crear historial de estrato
-                if instance.aprobado and instance.estrato_sugerido:
-                    # Verificar que no exista ya un historial con esta fecha
-                    existe = HistorialEstratoEstudiante.objects.filter(
-                        estudiante=form.instance,
-                        estrato=instance.estrato_sugerido,
-                        fecha_efectiva=timezone.now()
-                    ).exists()
-                    
-                    if not existe:
-                        HistorialEstratoEstudiante.objects.create(
-                            estudiante=form.instance,
-                            estrato=instance.estrato_sugerido,
-                            fecha_efectiva=timezone.now(),
-                            comentarios=f'Asignado por evaluación socioeconómica aprobada',
-                            creado_por=request.user.username
-                        )
-            
-            # HISTORIAL DE ESTADOS
-            elif isinstance(instance, HistorialEstadosEstudiante):
-                if not instance.creado_por:
-                    instance.creado_por = request.user.username
-                if not instance.fecha_efectiva:
-                    instance.fecha_efectiva = timezone.now()
-                instance.save()
-            
-            # HISTORIAL DE ESTRATOS
-            elif isinstance(instance, HistorialEstratoEstudiante):
-                if not instance.creado_por:
-                    instance.creado_por = request.user.username
-                if not instance.fecha_efectiva:
-                    instance.fecha_efectiva = timezone.now()
-                instance.save()
-            
-            # ADEUDOS
-            elif isinstance(instance, Adeudo):
-                # Calcular descuento automáticamente
-                estrato = form.instance.get_estrato_actual()
-                if estrato:
-                    descuento = instance.monto_base * (estrato.porcentaje_descuento / 100)
-                    instance.descuento_aplicado = descuento
-                else:
-                    instance.descuento_aplicado = 0
-                
-                instance.monto_final = instance.monto_base - instance.descuento_aplicado
-                instance.monto_total = instance.monto_final + instance.recargo_aplicado
-                instance.save()
-            
-            else:
-                instance.save()
-        
         formset.save_m2m()
 
 
@@ -706,8 +617,8 @@ class EstudianteAdmin(admin.ModelAdmin):
 # Configurar búsqueda de autocomplete
 @admin.register(EstudianteTutor)
 class EstudianteTutorAdmin(admin.ModelAdmin):
-    list_display = ('estudiante', 'tutor', 'parentesco', 'responsable_pagos', 'activo')
-    list_filter = ('parentesco', 'responsable_pagos', 'activo')
+    list_display = ('estudiante', 'tutor', 'parentesco', 'activo')
+    list_filter = ('parentesco', 'activo')
     search_fields = ('estudiante__matricula', 'estudiante__nombre', 
                     'tutor__nombre', 'tutor__apellido_paterno')
 
