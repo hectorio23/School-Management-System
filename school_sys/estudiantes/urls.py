@@ -7,11 +7,12 @@ from rest_framework import routers
 
 # Use a router so POST to /students/ hits the StudentViewSet
 router = routers.DefaultRouter()
-router.register(r"", views.StudentViewSet, basename="students")
 
 urlpatterns = [
-    # Login debe ir ANTES del router para que no sea interceptado
-    # path("login/", views.login_student, name="login_student"),
+    # Endpoint para información personal del estudiante autenticado
+    path("info/", views.estudiante_info_view, name="estudiante_info"),
+    # Endpoint para actualizar tutores del estudiante
+    path("tutores/", views.tutores_update_view, name="tutores_update"),
     path("api-auth/", include("rest_framework.urls")),
     # Router al final para capturar las demás rutas
     path("", include(router.urls)),
