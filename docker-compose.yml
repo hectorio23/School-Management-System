@@ -1,0 +1,11 @@
+services:
+  school_sys:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Permite que el entorno de trabajo sea la ruta que en dode ejecutó
+      # el << docker-compose up --build >>
+      - .:/app
+
+      - PYTHONUNBUFFERED=1

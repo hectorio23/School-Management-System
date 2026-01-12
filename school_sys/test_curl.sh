@@ -8,9 +8,9 @@
 curl -X GET http://127.0.0.1:8000/ \
      -H "Content-Type: application/json"
 
-curl -X POST http://127.0.0.1:8000/api/token/ \
-     -H "Content-Type: application/json" \
-     -d '{"username": "adan", "password": "testpass123"}'
+# curl -X POST http://127.0.0.1:8000/api/token/ \
+#      -H "Content-Type: application/json" \
+#      -d '{"username": "adan", "password": "testpass123"}'
 
 
 curl -X POST http://127.0.0.1:8000/api/token/ \
@@ -19,4 +19,4 @@ curl -X POST http://127.0.0.1:8000/api/token/ \
 
 
 curl -X GET http://127.0.0.1:8000/students/info/ \
-     -H "Authorization: Bearer <ACCESS_TOKEN>"
+      -H "Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MjUyMzI3LCJpYXQiOjE3NjgyNDg3MjcsImp0aSI6IjgyNGRjYjY4ZWQ3YzQxMjhiMzYwYjJjMDBlOGE5NzA3IiwidXNlcl9pZCI6IjEifQ.jnD9hXZnmlIqoxxaED8xhGwcb_0cToLMnHr2SCfUtk8"

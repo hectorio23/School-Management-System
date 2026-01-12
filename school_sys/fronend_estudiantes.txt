@@ -1,0 +1,86 @@
+TRABAJO FRONTEND
+
+Crear un dasboard en el que el estudiante podrá consultar información como
+adeudos, informacion personal (nombre, matricula, etc), tutores, informacion socioeconomica.
+
+El estudiante podrá realizar cambios en los datos del tutor, en caso de que no sea permitido
+(opcion enable: False en la respuesta al principio), la informacion del tutor solo se mostrara
+en un formulatio inhabilitado, lo mismo con la informacion socioeconomica, los estratos no se podrán
+cambiar directamente por el estudiante, sino que serán el resultado de actualizar la informacion 
+socioeconomica.
+
+Antes de que la página esta cargada, envíen una peticion al endpoint donde el servidor le brindará atencion.
+una peticion como esta:
+
+
+const response = await fetch("http://127.0.0.1:8000/students/info", {
+    headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Barer <Aqui va el token access, lo encuentran en las cookies>'
+    },
+});
+
+const data = await response.json();
+
+Se debería de recibir algo como esto:
+
+{
+  "matricula": 220548,
+  "nombre": "MARIANA",
+  "apellido_paterno": "FLOWERS",
+  "apellido_materno": "KRAKOV",
+  "direccion": "CHUY MARRY",
+  "grupo": {
+    "nombre": "IRIC",
+    "generacion": "2022-2026",
+    "grado": {
+      "nombre": "10",
+      "nivel": "Universidad"
+    }
+  },
+  "estado_actual": {
+    "nombre": "Activo",
+    "descripcion": "Estudiante inscrito y activo",
+    "es_estado_activo": true
+  },
+  "evaluacion_socioeconomica": {
+    "ingreso_mensual": 40000.0,
+    "tipo_vivienda": "Adobe",
+    "miembros_hogar": 3,
+    "estrato_nombre": "A",
+    "porcentaje_descuento": 10.0,
+    "aprobado": null,
+    "fecha_evaluacion": "2026-01-11T08:59:30.985196Z"
+  },
+  "tutores": [
+    {
+      "tutor_id": 1,
+      "nombre": "Maria Actualizada",
+      "apellido_paterno": "Garcia",
+      "apellido_materno": "Lopez",
+      "telefono": "+52 449 888 8888",
+      "correo": "updated@ejemplo.com",
+      "parentesco": "Madre"
+    },
+    {
+      "tutor_id": 2,
+      "nombre": "PEPE EL PIYO",
+      "apellido_paterno": "Sanchez",
+      "apellido_materno": "Pedroza",
+      "telefono": "449 405 26 64",
+      "correo": "maracas@gmail.com",
+      "parentesco": "padre"
+    }
+  ],
+  "adeudos": [
+    {
+      "concepto_nombre": "Colegiatura Enero",
+      "monto_total": "4000.00",
+      "monto_pagado": "2000.00",
+      "saldo_pendiente": 2000.0,
+      "estatus": "parcial",
+      "fecha_vencimiento": "2026-01-15"
+    }
+  ],
+  "balance_total": 2000.0
+}
