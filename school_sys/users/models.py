@@ -34,16 +34,31 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("administrador", "Administrador"),
         ("contador", "Contador"),
         ("cafeteria", "Cafetería"),
+        ("bibliotecario", "Bibliotecario"),
     )
 
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
     nombre = models.CharField(max_length=200)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=20, default="estudiante", choices=ROLE_CHOICES, editable=False)
 
     activo = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)  # Para usar admin
-    is_superuser = models.BooleanField(default=False)  # Solo si lo necesitas
+
+    """Campos requerido para entrar al login propio de django, se eliminarán en produccion"""
+    is_staff = models.BooleanField(default=False)  
+    is_superuser = models.BooleanField(default=False)  
+
+    mfa_code = models.CharField(max_length=6, null=True, blank=True)
+    mfa_expires_at = models.DateTimeField(null=True, blank=True)
+
+    def clear_mfa(self):
+
+        if self.role.upper() == "ESTUDIANTE":
+            return None
+
+        self.mfa_code = None
+        self.mfa_expires_at = None
+        self.save(update_fields=["mfa_code", "mfa_expires_at"])
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "role"]
