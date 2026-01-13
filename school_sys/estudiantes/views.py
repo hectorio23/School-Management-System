@@ -10,6 +10,19 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Estudiante, Tutor, EstudianteTutor
 from .serializers import EstudianteInfoSerializer, TutorUpdateSerializer
 from .permissions import IsEstudiante
+from django.http import HttpResponse
+
+
+"""Aqui es donde va la direccón del dashboard en caso de que 
+   no se use un framework para el manejo de Front-End. 
+   los html irán en la carpeta llamada templates/
+   los recursos de css y javascript, van en la carpeta static
+   en sus respectivos lugares
+"""
+def dashboard(request):
+    
+    # return render(request, "./turuta del dashboars")
+    return HttpResponse("<h1><center>Hola XD, yo soy el dashboard</center></h1>")
 
 
 @api_view(['GET'])

@@ -23,6 +23,7 @@ AUTH_USER_MODEL = "users.User"
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# TODO: REMOVE THIS LINE IN PRODUCTION 
 SECRET_KEY = 'django-insecure-@(&#ga!ay5fszw8ulmkh7^1wk4m6(aw==*oqtx#kxb&t8yzu1_'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -70,7 +71,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework_simplejwt',
     'estudiantes',
-    'authentication',
     'rest_framework',
     'comedor',
     'pagos',
@@ -85,6 +85,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 ROOT_URLCONF = 'school_sys.urls'
 
