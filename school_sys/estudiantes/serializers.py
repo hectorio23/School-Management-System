@@ -106,6 +106,21 @@ class EvaluacionSocioeconomicaSerializer(serializers.Serializer):
     fecha_evaluacion = serializers.DateTimeField(read_only=True)
 
 
+class EstudioSocioeconomicoCreateSerializer(serializers.Serializer):
+    """
+    Serializer para crear una nueva evaluación socioeconómica.
+    Incluye campos para documentos opcionales.
+    """
+    ingreso_mensual = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    tipo_vivienda = serializers.CharField(max_length=255)
+    miembros_hogar = serializers.IntegerField(min_value=1)
+    
+    # Archivos opcionales que se procesarán en una función externa
+    acta_nacimiento = serializers.FileField(required=False)
+    curp = serializers.FileField(required=False)
+
+
+
 class AdeudoResumenSerializer(serializers.ModelSerializer):
     """
     Resumen de adeudos pendientes.
@@ -209,7 +224,7 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
         """Obtiene los adeudos pendientes o parciales (no pagados ni cancelados)"""
         adeudos = Adeudo.objects.filter(
             estudiante=obj,
-            estatus__in=["pendiente", "parcial"]
+            estatus__in=["pendiente"]
         ).select_related("concepto").order_by("fecha_vencimiento")
         
         return AdeudoResumenSerializer(adeudos, many=True).data

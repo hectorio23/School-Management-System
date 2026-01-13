@@ -86,6 +86,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+
+################### EMAIL ###################
+
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "<server_smtp>"          
+# EMAIL_PORT = 587 # TLS
+# EMAIL_HOST_USER = "<user_mail>"
+# EMAIL_HOST_PASSWORD = "<password_>"
+# EMAIL_USE_TLS = True  
+# # EMAIL_USE_SSL = True  
+
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 ROOT_URLCONF = 'school_sys.urls'
