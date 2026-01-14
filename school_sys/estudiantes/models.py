@@ -72,6 +72,8 @@ class Estudiante(models.Model):
     apellido_paterno = models.CharField(max_length=255)
     apellido_materno = models.CharField(max_length=255)
     direccion = models.TextField()
+
+    updateable = models.BooleanField(default=True)
     
     grupo = models.ForeignKey(
         Grupo,
@@ -143,10 +145,11 @@ class Estudiante(models.Model):
     def get_balance_total(self):
         """Calcula el balance total pendiente"""
         from django.db.models import Sum, F
+        
         resultado = self.adeudo_set.filter(
             estatus__in=['pendiente', 'parcial']
         ).aggregate(
-            balance=Sum(F('monto_total') - F('monto_pagado'))
+            balance=Sum(F('monto_total'))
         )
         return resultado['balance'] or 0
     

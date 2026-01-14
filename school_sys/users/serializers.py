@@ -85,5 +85,5 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             }
 
         # Flujo normal
-        data["mfa_required"] = False
+        # data["mfa_required"] = False
         return data

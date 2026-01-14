@@ -127,22 +127,18 @@ class AdeudoResumenSerializer(serializers.ModelSerializer):
     Solo información esencial, sin detalles de pagos.
     """
     concepto_nombre = serializers.CharField(source="concepto.nombre", read_only=True)
-    saldo_pendiente = serializers.SerializerMethodField()
+    # saldo_pendiente = serializers.SerializerMethodField()
     
     class Meta:
         model = Adeudo
         fields = [
             "concepto_nombre",
             "monto_total", 
-            "monto_pagado",
-            "saldo_pendiente",
             "estatus",
             "fecha_vencimiento"
         ]
         read_only_fields = fields
     
-    def get_saldo_pendiente(self, obj):
-        return obj.saldo_pendiente()
 
 
 # =============================================================================
@@ -224,8 +220,10 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
         """Obtiene los adeudos pendientes o parciales (no pagados ni cancelados)"""
         adeudos = Adeudo.objects.filter(
             estudiante=obj,
-            estatus__in=["pendiente"]
-        ).select_related("concepto").order_by("fecha_vencimiento")
+            estatus__in=["pendiente", "parcial"]
+        ).select_related("concepto").order_by("-fecha_vencimiento")
+
+        print(adeudos)
         
         return AdeudoResumenSerializer(adeudos, many=True).data
     
