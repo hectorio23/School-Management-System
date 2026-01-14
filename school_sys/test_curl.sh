@@ -19,4 +19,22 @@ curl -X POST http://127.0.0.1:8000/api/token/ \
 
 
 curl -X GET http://127.0.0.1:8000/students/info/ \
-      -H "Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MjUyMzI3LCJpYXQiOjE3NjgyNDg3MjcsImp0aSI6IjgyNGRjYjY4ZWQ3YzQxMjhiMzYwYjJjMDBlOGE5NzA3IiwidXNlcl9pZCI6IjEifQ.jnD9hXZnmlIqoxxaED8xhGwcb_0cToLMnHr2SCfUtk8"
+      -H "Authorization: Bearer <token>"
+
+
+# UPDATE TUTORES, PUEDE SER 1, 2, 3, ....
+curl -s -X PUT http://127.0.0.1:8000/students/tutores/ \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "tutores": [
+             {
+                 "tutor_id": <tutor_id>,
+                 "nombre": "Maria Actualizada",
+                 "apellido_paterno": "Garcia",
+                 "apellido_materno": "Lopez",
+                 "telefono": "+52 449 888 8888",
+                 "correo": "updated@ejemplo.com"
+             }
+         ]
+     }'

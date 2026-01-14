@@ -1,5 +1,7 @@
 from django.db import models
 from estudiantes.models import Estudiante
+from datetime import timedelta
+from django.utils import timezone
 
 #########################################################
 # PAGOS Y ADEUDOS
@@ -43,7 +45,7 @@ class Adeudo(models.Model):
     """
     ESTATUS_CHOICES = [
         ('pendiente', 'Pendiente'),
-        ('parcial', 'Pago Parcial'),
+        ('vencido', 'Vencido'),
         ('pagado', 'Pagado'),
         ('cancelado', 'Cancelado'),
     ]
@@ -65,23 +67,21 @@ class Adeudo(models.Model):
         decimal_places=2,
         help_text='Monto original del concepto'
     )
+
     descuento_aplicado = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
         help_text='Descuento aplicado por estrato'
     )
-    monto_final = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text='Monto final = monto_base - descuento_aplicado'
-    )
+
     recargo_aplicado = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
         help_text='Recargo por mora'
     )
+
     monto_total = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -90,10 +90,12 @@ class Adeudo(models.Model):
 
     # Fechas
     fecha_generacion = models.DateField(
-        help_text='Fecha en que se generó el adeudo'
+        help_text='Fecha en que se generó el adeudo',
+        auto_now=True
     )
     fecha_vencimiento = models.DateField(
-        help_text='Fecha límite de pago'
+        help_text='Fecha límite de pago',
+        default=timezone.now() + timedelta(days=31)
     )
 
     # Estado
@@ -102,15 +104,10 @@ class Adeudo(models.Model):
         choices=ESTATUS_CHOICES,
         default='pendiente'
     )
-    monto_pagado = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
 
     # Timestamps
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    # fecha_creacion = models.DateTimeField(auto_now_add=True)
+    # fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Adeudo"
@@ -128,29 +125,22 @@ class Adeudo(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.estudiante} - {self.concepto} (${self.saldo_pendiente()})"
-
-    def saldo_pendiente(self):
-        """Calcula el saldo pendiente de este adeudo"""
-        return self.monto_total - self.monto_pagado
+        return f"{self.estudiante} - {self.concepto} (${self.monto_total})"
 
     def esta_vencido(self):
         """Verifica si el adeudo está vencido"""
         from django.utils import timezone
         return (
             self.fecha_vencimiento < timezone.now().date() 
-            and self.estatus in ['pendiente', 'parcial']
+            and self.estatus in ['Vencido', 'vencido']
         )
 
-    def actualizar_estatus(self):
-        """Actualiza el estatus según el monto pagado"""
-        if self.monto_pagado >= self.monto_total:
-            self.estatus = 'pagado'
-        elif self.monto_pagado > 0:
-            self.estatus = 'parcial'
-        else:
-            self.estatus = 'pendiente'
-        self.save()
+    # def actualizar_estatus(self):
+    #     """Actualiza el estatus según el monto pagado"""
+    #     if self.monto_pagado >= self.monto_total:
+    #         self.estatus = 'pagado'
+
+    #     self.save()
 
 
 class Pago(models.Model):

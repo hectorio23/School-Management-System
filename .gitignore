@@ -2,3 +2,8 @@ school_sys/data_massive_insert.py
 test_login.http
 school_sys/users/fron*
 docs/*
+dudas.txt
+verify_admin_endpoints.py
+school_sys/test_tutors_update.sh
+school_sys/templates/dashboard.html
+test_admin_curl.sh

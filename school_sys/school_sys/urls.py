@@ -17,7 +17,9 @@ from users.serializers import VerifyMFATokenView
 urlpatterns = [
     path("", views.index),
     path('admin/', admin.site.urls),
+
     path("students/", include("estudiantes.urls")),
+    path("api/admin/", include("users.urls")),
     path("api/token/", EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name='token_refresh'),
 

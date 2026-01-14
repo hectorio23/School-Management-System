@@ -11,6 +11,7 @@ from .models import Estudiante, Tutor, EstudianteTutor, EvaluacionSocioeconomica
 from .serializers import EstudianteInfoSerializer, TutorUpdateSerializer, EstudioSocioeconomicoCreateSerializer
 from .permissions import IsEstudiante
 from django.http import HttpResponse
+from django.shortcuts import render
 
 
 """Aqui es donde va la direccón del dashboard en caso de que 
@@ -22,7 +23,7 @@ from django.http import HttpResponse
 def dashboard(request):
     
     # return render(request, "./turuta del dashboars")
-    return HttpResponse("<h1><center>Hola XD, yo soy el dashboard</center></h1>")
+    return render(request, "./dashboard.html")
 
 
 @api_view(['GET'])
@@ -34,6 +35,8 @@ def estudiante_info_view(request):
     Retorna la información del estudiante autenticado.
     Solo accesible para usuarios con rol 'estudiante'.
     """
+
+    print(request.user)
 
     try:
         # Obtener el perfil de estudiante del usuario autenticado
@@ -67,6 +70,13 @@ def tutores_update_view(request):
         )
     
     tutores_data = request.data.get('tutores', [])
+
+    for tutor in tutores_data:
+        if not all(tutor):
+            return Response(
+                { "error": "[X] - Campos incompletos." },
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     if not isinstance(tutores_data, list):
         return Response(
