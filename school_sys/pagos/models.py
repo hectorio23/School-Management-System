@@ -148,7 +148,9 @@ class Pago(models.Model):
     Pagos realizados contra adeudos.
     Un adeudo puede tener múltiples pagos (pagos parciales)
     """
-    adeudo = models.ForeignKey(
+    # 1 pago solo pude pertenecer a 1 solo adeudo, lo quese puede traducir en que
+    # cada estudiante puede realizar un solo pago a la vez.
+    adeudo = models.OneToOneField(
         Adeudo,
         on_delete=models.CASCADE,
         db_column='adeudo_id'
