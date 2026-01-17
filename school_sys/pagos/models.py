@@ -87,6 +87,13 @@ class Adeudo(models.Model):
         decimal_places=2,
         help_text='monto_final + recargo_aplicado'
     )
+    
+    monto_pagado = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Monto acumulado pagado'
+    )
 
     # Fechas
     fecha_generacion = models.DateField(
@@ -135,12 +142,12 @@ class Adeudo(models.Model):
             and self.estatus in ['Vencido', 'vencido']
         )
 
-    # def actualizar_estatus(self):
-    #     """Actualiza el estatus según el monto pagado"""
-    #     if self.monto_pagado >= self.monto_total:
-    #         self.estatus = 'pagado'
+    def actualizar_estatus(self):
+        """Actualiza el estatus según el monto pagado"""
+        if self.monto_pagado >= self.monto_total:
+            self.estatus = 'pagado'
 
-    #     self.save()
+        self.save()
 
 
 class Pago(models.Model):
@@ -150,7 +157,7 @@ class Pago(models.Model):
     """
     # 1 pago solo pude pertenecer a 1 solo adeudo, lo quese puede traducir en que
     # cada estudiante puede realizar un solo pago a la vez.
-    adeudo = models.OneToOneField(
+    adeudo = models.ForeignKey(
         Adeudo,
         on_delete=models.CASCADE,
         db_column='adeudo_id'
