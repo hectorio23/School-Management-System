@@ -1,8 +1,8 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 from rest_framework import serializers
 from datetime import timedelta
+from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
