@@ -4,6 +4,58 @@ from datetime import timedelta
 from django.utils import timezone
 
 #########################################################
+# CONFIGURACION DE PAGOS
+#########################################################
+
+class ConfiguracionPago(models.Model):
+    """configuracion global de pagos"""
+    dia_inicio_ordinario = models.IntegerField(
+        default=1,
+        help_text='Dia del mes donde inicia periodo ordinario'
+    )
+    dia_fin_ordinario = models.IntegerField(
+        default=10,
+        help_text='Dia del mes donde termina periodo ordinario'
+    )
+    porcentaje_recargo = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,
+        help_text='Porcentaje de recargo por mora (ej: 10.00)'
+    )
+    monto_fijo_recargo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=125.00,
+        help_text='Monto fijo adicional por recargo'
+    )
+    activo = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Configuracion de Pago"
+        verbose_name_plural = "Configuraciones de Pago"
+        db_table = 'configuracion_pago'
+    
+    def __str__(self):
+        return f"Config: dia {self.dia_inicio_ordinario}-{self.dia_fin_ordinario}, recargo {self.porcentaje_recargo}%"
+
+
+class DiaNoHabil(models.Model):
+    """dias festivos"""
+    fecha = models.DateField(unique=True)
+    descripcion = models.CharField(max_length=255)
+    
+    class Meta:
+        verbose_name = "Dia No Habil"
+        verbose_name_plural = "Dias No Habiles"
+        db_table = 'dias_no_habiles'
+        ordering = ['fecha']
+    
+    def __str__(self):
+        return f"{self.fecha} - {self.descripcion}"
+
+
+#########################################################
 # PAGOS Y ADEUDOS
 #########################################################
 
@@ -110,6 +162,35 @@ class Adeudo(models.Model):
         max_length=50,
         choices=ESTATUS_CHOICES,
         default='pendiente'
+    )
+    
+    # mes correspondiente
+    mes_correspondiente = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Primer dia del mes al que corresponde (ej: 2024-01-01)'
+    )
+    
+    # exencion de recargos
+    recargo_exento = models.BooleanField(
+        default=False,
+        help_text='True si el recargo fue exentado'
+    )
+    justificacion_exencion = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Justificacion de la exencion del recargo'
+    )
+    
+    # automatico o manual
+    generado_automaticamente = models.BooleanField(
+        default=True,
+        help_text='True si fue generado por el sistema'
+    )
+    justificacion_manual = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Justificacion si fue creado manualmente'
     )
 
     # Timestamps
