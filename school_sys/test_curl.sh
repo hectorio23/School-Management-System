@@ -139,4 +139,80 @@ curl -s -X GET http://127.0.0.1:8000/api/admin/students/220548/ -H "Content-type
 #         "role":"Estudiante",
 #         "activo_sistema":true
 #     }
-#}
+# }
+
+
+# ADMIN ESTRATOS -> CREAR
+# Crea un nuevo nivel socioeconomico
+curl -s -X POST http://127.0.0.1:8000/api/admin/estratos/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <access_token>" \
+     -d '{
+         "nombre": "A+",
+         "descripcion": "Nivel Alto Plus",
+         "porcentaje_descuento": 0,
+         "color": "#000000",
+         "ingreso_minimo": 100000,
+         "ingreso_maximo": 999999
+     }'
+
+# Aprobar desde el admin e
+# Aprueba o rechaza una evaluacion socioeconomica
+curl -s -X PUT http://127.0.0.1:8000/api/admin/evaluaciones/1/aprobar/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <access_token>" \
+     -d '{
+         "aprobado": true,
+         "comentarios_comision": "Aprobado por unanimidad",
+         "estrato_id": 2
+     }'
+
+# ADMIN BAJA ESTUDIANTE
+# Procesa la baja (temporal/definitiva), calcula adeudos y "desactiva" usuario
+curl -s -X POST http://127.0.0.1:8000/api/admin/students/220548/baja/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <access_token>" \
+     -d '{
+         "justificacion": "Cambio de residencia",
+         "es_temporal": false,
+         "fecha_baja": "2026-01-20"
+     }'
+
+
+# Genera los adeudos de colegiatura para el mes especificado para todos los alumnos activos
+curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/generar-mensual/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <access_token>" \
+     -d '{
+         "mes": "2026-02"
+     }'
+
+# 5. ADMIN APLICAR RECARGOS
+# Aplica recargos (10% + $125) a todos los adeudos vencidos que no tengan recargo aun
+curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/aplicar-recargos/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <access_token>" \
+     -d '{}'
+
+# 6. ADMIN CONFIGURACION PAGO
+# Actualiza las reglas globales de cobranza
+# JSON Body: dia_inicio_ordinario, dia_fin_ordinario, porcentaje_recargo, monto_fijo_recargo
+curl -s -X PUT http://127.0.0.1:8000/api/admin/configuracion-pago/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <access_token>" \
+     -d '{
+         "dia_inicio_ordinario": 1,
+         "dia_fin_ordinario": 10,
+         "porcentaje_recargo": 15.00,
+         "monto_fijo_recargo": 150.00
+     }'
+
+# 7. ADMIN REPORTE INGRESOS POR ESTRATO
+# Retorna el total recaudado agrupado por estrato socioeconomico
+curl -s -X GET http://127.0.0.1:8000/api/admin/reportes/ingresos-estrato/ \
+     -H "Authorization: Bearer <access_token>"
+
+# 8. ADMIN ALUMNOS CON ALERGIAS
+# Lista alumnos que tienen registradas alergias alimentarias (para comedor)
+curl -s -X GET http://127.0.0.1:8000/api/admin/comedor/alergias/ \
+     -H "Authorization: Bearer <access_token>"

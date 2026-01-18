@@ -18,7 +18,7 @@ def send_mfa_code(user):
     user.mfa_expires_at = timezone.now() + timedelta(minutes=2)
     user.save(update_fields=["mfa_code", "mfa_expires_at"])
 
-    # Enviar por email (puedes sustituir por SMS si usas Twilio)
+    # Enviar por email (Por el momento lo hace desde la terminal)
     send_mail(
         subject="Código MFA",
         message=f"Tu código MFA es: {code}",

@@ -75,6 +75,13 @@ class Estudiante(models.Model):
 
     updateable = models.BooleanField(default=True)
     
+    # alergias para comedor
+    alergias_alimentarias = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Alergias alimentarias del estudiante'
+    )
+    
     grupo = models.ForeignKey(
         Grupo,
         on_delete=models.SET_NULL,
@@ -265,6 +272,20 @@ class HistorialEstadosEstudiante(models.Model):
     )
     justificacion = models.TextField(null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    # fecha de baja
+    fecha_baja = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Fecha efectiva de la baja'
+    )
+    
+    # temporal o definitiva
+    es_baja_temporal = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text='True=temporal, False=definitiva, null=no es baja'
+    )
 
     class Meta:
         verbose_name = "Historial de Estado"
@@ -298,6 +319,29 @@ class Estrato(models.Model):
         help_text='Porcentaje de descuento: 0.00 a 100.00'
     )
     activo = models.BooleanField(default=True)
+    
+    # color para dashboards
+    color = models.CharField(
+        max_length=7,
+        default='#6B7280',
+        help_text='Color hex para dashboards ej: #FF5733'
+    )
+    
+    # rangos de ingreso para clasificar
+    ingreso_minimo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Ingreso mensual mínimo para este estrato'
+    )
+    ingreso_maximo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Ingreso mensual máximo para este estrato'
+    )
 
     class Meta:
         verbose_name = "Estrato"
@@ -352,6 +396,55 @@ class EvaluacionSocioeconomica(models.Model):
         help_text='null=pendiente, true=aprobado, false=rechazado'
     )
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    
+    # comentarios de la comision
+    comentarios_comision = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Comentarios de la comisión al aprobar/rechazar'
+    )
+    
+    # estrato sugerido automaticamente
+    estrato_sugerido = models.ForeignKey(
+        Estrato,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='evaluaciones_sugeridas',
+        help_text='Estrato calculado automáticamente por el sistema'
+    )
+    
+    # si es reconsideracion
+    es_reconsideracion = models.BooleanField(
+        default=False,
+        help_text='True si es solicitud de reconsideración con nueva documentación'
+    )
+    
+    # requiere aprobacion especial (cambios grandes de estrato)
+    requiere_aprobacion_especial = models.BooleanField(
+        default=False,
+        help_text='True si el cambio de estrato es mayor a 2 niveles'
+    )
+    
+    # para revalidacion anual
+    fecha_vencimiento = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Fecha límite para revalidación anual'
+    )
+    
+    # si se notifico
+    notificacion_enviada = models.BooleanField(
+        default=False,
+        help_text='True si ya se notificó al padre/tutor'
+    )
+    
+    # justificacion del estrato
+    justificacion_estrato = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Explicación de por qué se asignó este estrato'
+    )
 
 
 

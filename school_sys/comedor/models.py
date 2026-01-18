@@ -71,3 +71,33 @@ class AsistenciaCafeteria(models.Model):
     def __str__(self):
         return f"{self.estudiante} - {self.fecha_asistencia} ({self.tipo_comida})"
 
+
+class MenuSemanal(models.Model):
+    """menus semanales en PDF"""
+    semana_inicio = models.DateField(
+        help_text='Fecha de inicio de la semana'
+    )
+    semana_fin = models.DateField(
+        help_text='Fecha de fin de la semana'
+    )
+    archivo_pdf = models.FileField(
+        upload_to='menus/',
+        help_text='Archivo PDF del menu'
+    )
+    descripcion = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text='Descripcion breve del menu'
+    )
+    activo = models.BooleanField(default=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Menu Semanal"
+        verbose_name_plural = "Menus Semanales"
+        db_table = 'menus_semanales'
+        ordering = ['-semana_inicio']
+    
+    def __str__(self):
+        return f"Menu {self.semana_inicio} - {self.semana_fin}"

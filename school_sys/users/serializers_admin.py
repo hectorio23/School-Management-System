@@ -110,3 +110,74 @@ class AdeudoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Adeudo
         fields = '__all__'
+
+
+# estratos
+from estudiantes.models import Estrato, EvaluacionSocioeconomica, HistorialEstadosEstudiante, EstadoEstudiante
+
+class EstratoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estrato
+        fields = '__all__'
+
+
+class EvaluacionSocioeconomicaSerializer(serializers.ModelSerializer):
+    estrato_nombre = serializers.CharField(source='estrato.nombre', read_only=True)
+    estrato_sugerido_nombre = serializers.CharField(source='estrato_sugerido.nombre', read_only=True)
+    estudiante_nombre = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = EvaluacionSocioeconomica
+        fields = '__all__'
+    
+    def get_estudiante_nombre(self, obj):
+        return f"{obj.estudiante.nombre} {obj.estudiante.apellido_paterno}"
+
+
+class EvaluacionAprobacionSerializer(serializers.Serializer):
+    """aprobar/rechazar"""
+    aprobado = serializers.BooleanField()
+    comentarios_comision = serializers.CharField(required=False, allow_blank=True)
+    estrato_id = serializers.IntegerField(required=False, help_text='ID del estrato a asignar')
+
+
+class BajaEstudianteSerializer(serializers.Serializer):
+    """datos para baja"""
+    justificacion = serializers.CharField()
+    es_temporal = serializers.BooleanField(default=True)
+    fecha_baja = serializers.DateField(required=False)
+
+
+# configuracion pagos
+from pagos.models import ConfiguracionPago, DiaNoHabil
+
+class ConfiguracionPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfiguracionPago
+        fields = '__all__'
+
+
+class DiaNoHabilSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiaNoHabil
+        fields = '__all__'
+
+
+# comedor
+from comedor.models import MenuSemanal, AsistenciaCafeteria
+
+class MenuSemanalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuSemanal
+        fields = '__all__'
+
+
+class AsistenciaCafeteriaSerializer(serializers.ModelSerializer):
+    estudiante_nombre = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AsistenciaCafeteria
+        fields = '__all__'
+    
+    def get_estudiante_nombre(self, obj):
+        return f"{obj.estudiante.nombre} {obj.estudiante.apellido_paterno}"

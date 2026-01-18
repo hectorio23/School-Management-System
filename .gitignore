@@ -8,3 +8,4 @@ school_sys/test_tutors_update.sh
 school_sys/templates/dashboard.html
 test_admin_curl.sh
 verify_crud.py
+seed_data.py 
