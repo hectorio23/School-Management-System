@@ -142,77 +142,131 @@ curl -s -X GET http://127.0.0.1:8000/api/admin/students/220548/ -H "Content-type
 # }
 
 
-# ADMIN ESTRATOS -> CREAR
-# Crea un nuevo nivel socioeconomico
-curl -s -X POST http://127.0.0.1:8000/api/admin/estratos/ \
+#############################################################
+#####3############# NUEVOS ENDPOINTS #########################
+#############################################################
+
+# 1. ESTUDIANTES - CREAR
+curl -s -X POST http://127.0.0.1:8000/api/admin/students/ \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
+     -H "Authorization: Bearer <TOKEN>" \
      -d '{
-         "nombre": "A+",
-         "descripcion": "Nivel Alto Plus",
-         "porcentaje_descuento": 0,
-         "color": "#000000",
-         "ingreso_minimo": 100000,
-         "ingreso_maximo": 999999
+         "user_data": {
+             "username": "nuevo_ingreso",
+             "email": "nuevo@school.com",
+             "password": "Password123"
+         },
+         "nombre": "Ricardo",
+         "apellido_paterno": "Montaner",
+         "apellido_materno": "Lopez",
+         "direccion": "Calle Falsa 123",
+         "grupo_id": 1
      }'
 
-# Aprobar desde el admin e
-# Aprueba o rechaza una evaluacion socioeconomica
-curl -s -X PUT http://127.0.0.1:8000/api/admin/evaluaciones/1/aprobar/ \
+# 2. ESTUDIANTES - BAJA (Calcula adeudos)
+curl -s -X POST http://127.0.0.1:8000/api/admin/students/1001/baja/ \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
+     -H "Authorization: Bearer <TOKEN>" \
      -d '{
-         "aprobado": true,
-         "comentarios_comision": "Aprobado por unanimidad",
-         "estrato_id": 2
-     }'
-
-# ADMIN BAJA ESTUDIANTE
-# Procesa la baja (temporal/definitiva), calcula adeudos y "desactiva" usuario
-curl -s -X POST http://127.0.0.1:8000/api/admin/students/220548/baja/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "justificacion": "Cambio de residencia",
+         "justificacion": "Falta de pago",
          "es_temporal": false,
          "fecha_baja": "2026-01-20"
      }'
 
 
-# Genera los adeudos de colegiatura para el mes especificado para todos los alumnos activos
+# 3. TUTORES - CREAR Y VINCULAR
+curl -s -X POST http://127.0.0.1:8000/api/admin/students/tutores/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <TOKEN>" \
+     -d '{
+         "nombre": "Don Ramón",
+         "apellido_paterno": "Valdés",
+         "apellido_materno": "Castillo",
+         "telefono": "555-888-999",
+         "correo": "rondamon@vecindad.com",
+         "estudiantes_ids": [1001, 1002],
+         "parentesco": "Padre"
+     }'
+
+
+# 4. ESTRATOS - CREAR
+curl -s -X POST http://127.0.0.1:8000/api/admin/estratos/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <TOKEN>" \
+     -d '{
+         "nombre": "F",
+         "descripcion": "Beca Total",
+         "porcentaje_descuento": 100.00,
+         "color": "#888888",
+         "ingreso_minimo": 0,
+         "ingreso_maximo": 1000
+     }'
+
+
+# 5. EVALUACIONES - APROBAR
+curl -s -X PUT http://127.0.0.1:8000/api/admin/evaluaciones/1/aprobar/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <TOKEN>" \
+     -d '{
+         "aprobado": true,
+         "comentarios_comision": "Aprobado",
+         "estrato_id": 2
+     }'
+
+
+# 6. FINANZAS - GENERAR ADEUDOS MENSUALES
 curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/generar-mensual/ \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
+     -H "Authorization: Bearer <TOKEN>" \
      -d '{
-         "mes": "2026-02"
+         "mes": "2026-03"
      }'
 
-# 5. ADMIN APLICAR RECARGOS
-# Aplica recargos (10% + $125) a todos los adeudos vencidos que no tengan recargo aun
+# 7. FINANZAS - APLICAR RECARGOS
 curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/aplicar-recargos/ \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
+     -H "Authorization: Bearer <TOKEN>" \
      -d '{}'
 
-# 6. ADMIN CONFIGURACION PAGO
-# Actualiza las reglas globales de cobranza
-# JSON Body: dia_inicio_ordinario, dia_fin_ordinario, porcentaje_recargo, monto_fijo_recargo
-curl -s -X PUT http://127.0.0.1:8000/api/admin/configuracion-pago/ \
+# 8. FINANZAS - EXENTAR RECARGO
+curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/5/exentar/ \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
+     -H "Authorization: Bearer <TOKEN>" \
      -d '{
-         "dia_inicio_ordinario": 1,
-         "dia_fin_ordinario": 10,
-         "porcentaje_recargo": 15.00,
-         "monto_fijo_recargo": 150.00
+         "justificacion": "Error bancario"
      }'
 
-# 7. ADMIN REPORTE INGRESOS POR ESTRATO
-# Retorna el total recaudado agrupado por estrato socioeconomico
-curl -s -X GET http://127.0.0.1:8000/api/admin/reportes/ingresos-estrato/ \
-     -H "Authorization: Bearer <access_token>"
+# 9. FINANZAS - REGISTRAR PAGO MANUAL
+curl -s -X POST http://127.0.0.1:8000/api/admin/pagos/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <TOKEN>" \
+     -d '{
+         "adeudo": 10,
+         "monto": 2500.00,
+         "metodo_pago": "Efectivo",
+         "referencia": "Recibo 555",
+         "recibido_por": "Caja 1"
+     }'
 
-# 8. ADMIN ALUMNOS CON ALERGIAS
-# Lista alumnos que tienen registradas alergias alimentarias (para comedor)
-curl -s -X GET http://127.0.0.1:8000/api/admin/comedor/alergias/ \
-     -H "Authorization: Bearer <access_token>"
+# 10. CONFIGURACION - ACTUALIZAR
+curl -s -X PUT http://127.0.0.1:8000/api/admin/configuracion-pago/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <TOKEN>" \
+     -d '{
+         "dia_fin_ordinario": 15,
+         "porcentaje_recargo": 12.50
+     }'
+
+
+# 11. COMEDOR - SUBIR MENU PDF
+curl -s -X POST http://127.0.0.1:8000/api/admin/comedor/menus/ \
+     -H "Authorization: Bearer <TOKEN>" \
+     -F "semana_inicio=2026-02-01" \
+     -F "semana_fin=2026-02-05" \
+     -F "descripcion=Menu Feb 1" \
+     -F "archivo_pdf=@/path/to/menu.pdf"
+
+# 12. REPORTES
+curl -s -X GET http://127.0.0.1:8000/api/admin/reportes/ingresos-estrato/ -H "Authorization: Bearer <TOKEN>"
+curl -s -X GET http://127.0.0.1:8000/api/admin/reportes/recaudacion/ -H "Authorization: Bearer <TOKEN>"
+curl -s -X GET http://127.0.0.1:8000/api/admin/comedor/alergias/ -H "Authorization: Bearer <TOKEN>"
