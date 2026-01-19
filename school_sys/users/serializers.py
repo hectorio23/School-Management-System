@@ -70,7 +70,9 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             del attrs["email"]
 
         # Llamar a SimpleJWT (validación de password)
-        data = super().validate(attrs)
+        data = super().validate(attrs).update(
+            "expired_at",   timezone.now() + timedelta(minutes=2)
+        )
 
         # Evaluar rol después del password correcto
         print(user)
