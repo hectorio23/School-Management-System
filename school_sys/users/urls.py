@@ -71,47 +71,23 @@ POST students/estudio-socioeconomico/    -> crear estudio socioeconomico
 admin/   -> panel admin django
 
 """
-
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
+router = DefaultRouter()
+router.register(r'students/tutores', views.AdminTutorViewSet, basename='admin-tutores')
+router.register(r'pagos/adeudos', views.AdminAdeudoViewSet, basename='admin-adeudos')
+router.register(r'pagos', views.AdminPagoViewSet, basename='admin-pagos')
+router.register(r'students/evaluaciones', views.AdminEvaluacionViewSet, basename='admin-evaluaciones')
+
 urlpatterns = [
-    # estudiantes
+    # estudiantes 
     path('students/', views.admin_student_list, name='admin_student_list'),
-    path('students/<int:pk>/', views.admin_student_detail, name='admin_student_detail'),
-    path('students/<int:pk>/baja/', views.admin_estudiante_baja, name='admin_estudiante_baja'),
+    path('students/<int:matricula>/', views.admin_student_detail, name='admin_student_detail'),
+    path('students/create/', views.AdminStudentOpsView.as_view(), name='admin_student_create'), 
+    path('students/<int:matricula>/update/', views.AdminStudentDetailOpsView.as_view(), name='admin_student_update'), 
 
-    # tutores
-    path('students/tutores/', views.admin_tutor_list, name='admin_tutor_list'),
-    path('students/tutores/<int:pk>/', views.admin_tutor_detail, name='admin_tutor_detail'),
-
-    # estratos
-    path('estratos/', views.admin_estrato_list, name='admin_estrato_list'),
-    path('estratos/<int:pk>/', views.admin_estrato_detail, name='admin_estrato_detail'),
-
-    # evaluaciones
-    path('evaluaciones/', views.admin_evaluacion_list, name='admin_evaluacion_list'),
-    path('evaluaciones/<int:pk>/aprobar/', views.admin_evaluacion_aprobar, name='admin_evaluacion_aprobar'),
-
-    # adeudos
-    path('adeudos/generar-mensual/', views.admin_generar_adeudos_mensuales, name='admin_generar_adeudos'),
-    path('adeudos/aplicar-recargos/', views.admin_aplicar_recargos, name='admin_aplicar_recargos'),
-    path('adeudos/<int:pk>/exentar/', views.admin_exentar_recargo, name='admin_exentar_recargo'),
-    path('adeudos/vencidos/', views.admin_adeudos_vencidos, name='admin_adeudos_vencidos'),
-
-    # pagos
-    path('pagos/', views.admin_pago_list, name='admin_pago_list'),
-    path('pagos/<int:pk>/', views.admin_pago_detail, name='admin_pago_detail'),
-
-    # configuracion
-    path('configuracion-pago/', views.admin_configuracion_pago, name='admin_configuracion_pago'),
-
-    # comedor
-    path('comedor/menus/', views.admin_menu_semanal_list, name='admin_menu_semanal_list'),
-    path('comedor/asistencia/', views.admin_comedor_asistencia, name='admin_comedor_asistencia'),
-    path('comedor/alergias/', views.admin_alumnos_alergias, name='admin_alumnos_alergias'),
-
-    # reportes
-    path('reportes/ingresos-estrato/', views.admin_reporte_ingresos_estrato, name='admin_reporte_ingresos_estrato'),
-    path('reportes/recaudacion/', views.admin_reporte_recaudacion, name='admin_reporte_recaudacion'),
+    # -- Endpoints basados en ViewSets --
+    path('', include(router.urls)),
 ]

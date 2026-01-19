@@ -74,6 +74,12 @@ class Estudiante(models.Model):
     direccion = models.TextField()
 
     updateable = models.BooleanField(default=True)
+    porcentaje_beca = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Porcentaje de beca asignado (0.00 a 100.00)"
+    )
     
     # alergias para comedor
     alergias_alimentarias = models.TextField(
