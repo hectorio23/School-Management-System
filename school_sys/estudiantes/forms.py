@@ -11,8 +11,22 @@ class EstudianteCreationForm(forms.ModelForm):
     Permite crear el Usuario (User) y el Estudiante simultáneamente.
     """
     # Campos extra para la creación del Usuario
-    email_usuario = forms.EmailField(required=True, label="Email del Usuario")
-    password_usuario = forms.CharField(widget=forms.PasswordInput, required=True, label="Contraseña del Usuario")
+    email_usuario = forms.EmailField(
+        required=True, 
+        label="Email del Usuario",
+        help_text="Correo electrónico para el login del estudiante"
+    )
+    username_usuario = forms.CharField(
+        required=False, 
+        label="Username (opcional)",
+        help_text="Nombre de usuario opcional para el login"
+    )
+    password_usuario = forms.CharField(
+        widget=forms.PasswordInput, 
+        required=True, 
+        label="Contraseña del Usuario",
+        help_text="Contraseña para el acceso al sistema"
+    )
     
     class Meta:
         model = Estudiante
@@ -31,11 +45,10 @@ class EstudianteCreationForm(forms.ModelForm):
             # 1. Crear el Usuario asociado
             user = User.objects.create_user(
                 email=self.cleaned_data['email_usuario'],
+                username=self.cleaned_data.get('username_usuario') or None,
                 password=self.cleaned_data['password_usuario'],
                 nombre=self.cleaned_data.get('nombre', ''),
-                apellido_paterno=self.cleaned_data.get('apellido_paterno', ''),
-                apellido_materno=self.cleaned_data.get('apellido_materno', ''),
-                role='student' # Asignamos el rol de estudiante
+                role='estudiante'  # Rol correcto para estudiantes
             )
             
             # 2. Asignar el usuario a la instancia de Estudiante

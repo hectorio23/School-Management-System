@@ -138,6 +138,36 @@ class Estudiante(models.Model):
             'justificacion_estrato'
         )
 
+    def get_beca_activa(self):
+        """Obtiene la beca activa actual del estudiante, si no ha vencido"""
+        beca_estudiante = self.becaestudiante_set.filter(
+            activa=True,
+            beca__valida=True
+        ).select_related('beca').first()
+        
+        if beca_estudiante and beca_estudiante.beca.fecha_vencimiento < timezone.now().date():
+            return None
+            
+        return beca_estudiante.beca if beca_estudiante else None
+    
+    def get_porcentaje_descuento_total(self):
+        """Calcula el porcentaje de descuento total (beca + estrato)"""
+        from decimal import Decimal
+        porcentaje_beca = Decimal('0.00')
+        porcentaje_estrato = Decimal('0.00')
+        
+        # Obtener beca activa
+        beca = self.get_beca_activa()
+        if beca:
+            porcentaje_beca = beca.porcentaje
+        
+        # Obtener estrato actual
+        estrato = self.get_estrato_actual()
+        if estrato:
+            porcentaje_estrato = estrato.porcentaje_descuento
+        
+        return porcentaje_beca + porcentaje_estrato
+
     class Meta:
         verbose_name = "Estudiante"
         verbose_name_plural = "Estudiantes"
@@ -467,3 +497,111 @@ class EvaluacionSocioeconomica(models.Model):
     def __str__(self):
         estado = "Aprobada" if self.aprobado else "Pendiente" if self.aprobado is None else "Rechazada"
         return f"[+] Evaluación {self.estudiante} - {estado}"
+
+
+#########################################################
+# BECAS
+#########################################################
+
+class Beca(models.Model):
+    """Catálogo de becas disponibles"""
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    porcentaje = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text='Porcentaje de descuento de la beca (0.00 a 100.00)'
+    )
+    fecha_inicio = models.DateField(
+        help_text='Fecha de inicio de vigencia de la beca'
+    )
+    fecha_vencimiento = models.DateField(
+        help_text='Fecha de vencimiento de la beca'
+    )
+    valida = models.BooleanField(
+        default=True,
+        help_text='Indica si la beca está vigente. Se cambia a False cuando vence.'
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Beca"
+        verbose_name_plural = "Becas"
+        db_table = 'becas'
+        indexes = [
+            models.Index(fields=['valida'], name='idx_beca_valida'),
+            models.Index(fields=['fecha_vencimiento'], name='idx_beca_vencimiento'),
+        ]
+
+    def __str__(self):
+        estado = "Vigente" if self.valida else "Vencida"
+        return f"{self.nombre} ({self.porcentaje}%) - {estado}"
+    
+    def verificar_vigencia(self):
+        """Verifica y actualiza el estado de vigencia de la beca"""
+        from django.utils import timezone
+        if self.fecha_vencimiento < timezone.now().date():
+            self.valida = False
+            self.save(update_fields=['valida'])
+        return self.valida
+
+
+class BecaEstudiante(models.Model):
+    """
+    Relación M:M entre Beca y Estudiante con historial.
+    En lugar de modificar, se crea un nuevo registro cuando se retira la beca.
+    """
+    beca = models.ForeignKey(
+        Beca,
+        on_delete=models.CASCADE,
+        db_column='beca_id'
+    )
+    estudiante = models.ForeignKey(
+        Estudiante,
+        on_delete=models.CASCADE,
+        db_column='estudiante_matricula'
+    )
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+    fecha_retiro = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Fecha en que se retiró la beca. Null si sigue activa.'
+    )
+    activa = models.BooleanField(
+        default=True,
+        help_text='True si la beca sigue asignada al estudiante'
+    )
+    motivo_retiro = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Motivo por el cual se retiró la beca'
+    )
+    asignado_por = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text='Usuario que asignó la beca'
+    )
+
+    class Meta:
+        verbose_name = "Beca-Estudiante"
+        verbose_name_plural = "Becas-Estudiantes"
+        db_table = 'becas_estudiantes'
+        indexes = [
+            models.Index(fields=['beca'], name='idx_becaestudiante_beca'),
+            models.Index(fields=['estudiante'], name='idx_becaestudiante_estudiante'),
+            models.Index(fields=['activa'], name='idx_becaestudiante_activa'),
+        ]
+
+    def __str__(self):
+        estado = "Activa" if self.activa else "Retirada"
+        return f"{self.estudiante} - {self.beca.nombre} ({estado})"
+    
+    def retirar_beca(self, motivo=None):
+        """Retira la beca del estudiante, creando un registro histórico"""
+        from django.utils import timezone
+        self.activa = False
+        self.fecha_retiro = timezone.now()
+        self.motivo_retiro = motivo
+        self.save()

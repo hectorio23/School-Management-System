@@ -215,19 +215,99 @@ class Adeudo(models.Model):
     def __str__(self):
         return f"{self.estudiante} - {self.concepto} (${self.monto_total})"
 
+    def save(self, *args, **kwargs):
+        from decimal import Decimal
+        from django.utils import timezone
+        import datetime
+
+        # 1. Calcular Fecha de Vencimiento por defecto (día 10 del mes siguiente si no existe)
+        if not self.fecha_vencimiento:
+            hoy = timezone.localdate()
+            mes_siguiente = hoy.month + 1 if hoy.month < 12 else 1
+            anio_siguiente = hoy.year if hoy.month < 12 else hoy.year + 1
+            try:
+                self.fecha_vencimiento = datetime.date(anio_siguiente, mes_siguiente, 10)
+            except ValueError:
+                # Caso raro, fallback al 28
+                self.fecha_vencimiento = datetime.date(anio_siguiente, mes_siguiente, 28)
+
+        # 2. Asegurar Monto Base
+        if (self.monto_base is None or self.monto_base == 0) and self.concepto:
+             self.monto_base = self.concepto.monto_base
+        
+        if self.monto_base is None:
+             self.monto_base = Decimal('0.00')
+
+        # 3. Calcular Descuentos (solo si es nuevo o se solicita recalcular)
+        if self.pk is None and self.estudiante:
+            porcentaje_total = self.estudiante.get_porcentaje_descuento_total()
+            if porcentaje_total > 0:
+                self.descuento_aplicado = self.monto_base * (porcentaje_total / Decimal('100.00'))
+                print(self.descuento_aplicado)
+            else:
+                self.descuento_aplicado = Decimal('0.00')
+             
+        monto_con_descuento = self.monto_base - self.descuento_aplicado
+        if monto_con_descuento < 0:
+            monto_con_descuento = Decimal('0.00')
+
+        # 4. Verificar Recargos Automáticos
+        # Regla: Si la fecha actual > fecha_vencimiento, aplicar recargo
+        hoy = timezone.localdate()
+        
+        # Aseguramos que fecha_vencimiento sea date para comparar
+        vencimiento = self.fecha_vencimiento
+        if isinstance(vencimiento, datetime.datetime):
+            vencimiento = vencimiento.date()
+            
+        if vencimiento and hoy > vencimiento and self.estatus in ['pendiente', 'parcial']:
+            if not self.recargo_exento:
+                porcentaje_recargo = Decimal('0.10') # 10%
+                monto_fijo_recargo = Decimal('125.00')
+                
+                recargo_calculado = (monto_con_descuento * porcentaje_recargo) + monto_fijo_recargo
+                self.recargo_aplicado = recargo_calculado
+        
+        # Si no está vencido o se pagó, no necesariamente quitamos el recargo histórico, 
+        # pero si se desea dinámico:
+        # else:
+        #    self.recargo_aplicado = Decimal('0.00') 
+        # Mantenemos el recargo si ya se aplicó para historial, o lo recalculamos siempre?
+        # "al pasar esa fecha el sistema AUTOMATICAMENTE debe de aplicar recargo"
+        # Asumimos que si se paga tarde, el recargo se mantiene.
+
+        # 5. Calcular Monto Final
+        self.monto_total = monto_con_descuento + self.recargo_aplicado
+
+        # 6. Actualizar Estatus
+        if self.monto_pagado >= self.monto_total and self.monto_total > 0:
+            self.estatus = 'pagado'
+        elif self.monto_pagado > 0:
+            self.estatus = 'parcial'
+        elif self.esta_vencido():
+             self.estatus = 'vencido'
+        
+        super().save(*args, **kwargs)
+
     def esta_vencido(self):
         """Verifica si el adeudo está vencido"""
         from django.utils import timezone
+        import datetime
+        
+        if not self.fecha_vencimiento:
+            return False
+            
+        vencimiento = self.fecha_vencimiento
+        if isinstance(vencimiento, datetime.datetime):
+            vencimiento = vencimiento.date()
+            
         return (
-            self.fecha_vencimiento < timezone.now().date() 
-            and self.estatus in ['Vencido', 'vencido']
+            vencimiento < timezone.now().date() 
+            and self.estatus not in ['pagado', 'cancelado']
         )
 
     def actualizar_estatus(self):
-        """Actualiza el estatus según el monto pagado"""
-        if self.monto_pagado >= self.monto_total:
-            self.estatus = 'pagado'
-
+        """Actualiza el estatus y recalcula montos al recibir un pago"""
         self.save()
 
 
