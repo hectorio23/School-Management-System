@@ -403,8 +403,8 @@ const Auth = {
                 UI.showLoading('Autenticación exitosa. Redirigiendo...');
 
                 setTimeout(() => {
-                    // Admin siempre va a /admin/dashboard
-                    window.location.href = '/admin/dashboard';
+                    // Admin siempre va a /api/admin/dashboard
+                    window.location.href = '/api/admin/dashboard';
                 }, 1000);
             } else {
                 throw new Error('Respuesta inválida del servidor');

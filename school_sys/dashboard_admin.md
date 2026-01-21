@@ -1,257 +1,266 @@
 # Documentación de Endpoints - Dashboard Admin
 
-Este documento detalla los endpoints disponibles para el panel administrativo. Se excluyen los endpoints de reportes.
+Este documento detalla los endpoints disponibles para el panel administrativo remoto del School Management System (SMS).
 
-**Nota Genera:** Todos los endpoints requieren autenticación. Se debe incluir el header:
-`Authorization: Bearer <access_token>` (Token de un usuario administrador/superuser).
+**Base URL:** `http://127.0.0.1:8000/api/admin/`
+
+## Autenticación y Tokens
+
+Todos los endpoints requieren el encabezado `Authorization`.
+
+**Headers:**
+```http
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Nota:** Actualmente los permisos están en `AllowAny` para facilitar las pruebas iniciales, pero el flujo está diseñado para requerir un token JWT de un usuario con privilegios de administrador (`is_staff` o `is_superuser`).
 
 ---
 
-## 1. Estudiantes (Admin)
+## 1. Estudiantes (api/admin/students/)
 
-Gestión completa de estudiantes.
-
-### Listar Estudiantes
-**URL:** `/api/admin/students/`
-**Método:** `GET`
-
-```bash
-curl -s -X GET http://127.0.0.1:8000/api/admin/students/ \
-     -H "Content-type: application/json" \
-     -H "Authorization: Bearer <access_token>"
+### 1.1 Listar Estudiantes
+Retorna una lista paginada (60 por página).
+- **Método:** `GET`
+- **URL:** `/api/admin/students/`
+- **Respuesta (200 OK):**
+```json
+{
+    "count": 120,
+    "next": "http://.../api/admin/students/?page=2",
+    "previous": null,
+    "results": [
+        {
+            "matricula": 220548,
+            "nombre_completo": "JUAN PÉREZ GARCÍA",
+            "grupo_nombre": "A",
+            "grado_nombre": "1°",
+            "nivel_educativo": "PRIMARIA",
+            "estatus": "ACTIVO"
+        }
+    ]
+}
 ```
 
-### Crear Estudiante
-Crea un usuario y su perfil de estudiante simultáneamente.
+### 1.2 Crear Estudiante
+Crea un usuario de Django y su perfil de estudiante asociado.
+- **Método:** `POST`
+- **URL:** `/api/admin/students/create/`
+- **Cuerpo (JSON):**
+```json
+{
+    "user_data": {
+        "username": "ALUMNO2026",
+        "email": "alumno@school.com",
+        "password": "Password123"
+    },
+    "nombre": "JUAN",
+    "apellido_paterno": "PÉREZ",
+    "apellido_materno": "GARCÍA",
+    "direccion": "CALLE FALSA 123",
+    "telefono": "555-1234",
+    "curp": "CURP1234567890",
+    "grupo_id": 1
+}
+```
+- **Respuesta (201 Created):** Datos del estudiante creado.
 
-**URL:** `/api/admin/students/`
-**Método:** `POST`
+### 1.3 Detalle Estudiante
+- **Método:** `GET`
+- **URL:** `/api/admin/students/<matricula>/`
+- **Respuesta (200 OK):** Detalle completo incluyendo información del usuario, grupo y estatus.
 
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/students/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "user_data": {
-             "username": "nuevo_ingreso",
-             "email": "nuevo@school.com",
-             "password": "Password123"
-         },
-         "nombre": "Ricardo",
-         "apellido_paterno": "Montaner",
-         "apellido_materno": "Lopez",
-         "direccion": "Calle Falsa 123",
-         "grupo_id": 1
-     }'
+### 1.4 Actualizar Estudiante
+- **Método:** `PUT`
+- **URL:** `/api/admin/students/<matricula>/update/`
+- **Cuerpo (JSON):** Campos a actualizar (parcial o total).
+- **Respuesta (200 OK):** Objeto actualizado.
+
+### 1.5 Baja de Estudiante (Soft Delete)
+Cambia el estado del estudiante a "BAJA" e inactiva su usuario.
+- **Método:** `DELETE`
+- **URL:** `/api/admin/students/<matricula>/update/`
+- **Respuesta (204 No Content):** Sin cuerpo.
+
+---
+
+## 2. Tutores (api/admin/students/tutores/)
+
+### 2.1 Listar Tutores
+- **Método:** `GET`
+- **URL:** `/api/admin/students/tutores/`
+- **Respuesta (200 OK):** Lista paginada (150 por página).
+
+### 2.2 Crear/Editar Tutor
+- **Método:** `POST` (Crear) / `PUT` (Editar)
+- **URL:** `/api/admin/students/tutores/` o `/api/admin/students/tutores/<id>/`
+- **Cuerpo (JSON):**
+```json
+{
+    "nombre": "MARÍA",
+    "apellido_paterno": "LÓPEZ",
+    "apellido_materno": "SÁNCHEZ",
+    "telefono": "555-9876",
+    "correo": "maria@email.com",
+    "parentesco": "MADRE",
+    "estudiantes_ids": [220548]
+}
 ```
 
-### Detalle Estudiante
-Obtiene información completa de un estudiante específico.
+### 2.3 Eliminar Tutor
+- **Método:** `DELETE`
+- **URL:** `/api/admin/students/tutores/<id>/`
 
-**URL:** `/api/admin/students/<matricula>/`
-**Método:** `GET`
+---
 
-```bash
-curl -s -X GET http://127.0.0.1:8000/api/admin/students/220548/ \
-     -H "Content-type: application/json" \
-     -H "Authorization: Bearer <access_token>"
+## 3. Conceptos de Pago (api/admin/conceptos/)
+
+### 3.1 CRUD Básico
+- **Métodos:** `GET`, `POST`, `PUT`, `DELETE`
+- **URLs:** `/api/admin/conceptos/` o `/api/admin/conceptos/<id>/`
+- **Cuerpo (POST/PUT):**
+```json
+{
+    "nombre": "COLEGIATURA ENERO",
+    "descripcion": "MENSUALIDAD",
+    "monto_base": 1500.00,
+    "activo": true,
+    "nivel_educativo": "PRIMARIA"
+}
 ```
 
-### Baja de Estudiante
-Procesa la baja de un estudiante y calcula sus adeudos pendientes.
+### 3.2 Generar Adeudos Masivos
+Lanza el proceso de creación de adeudos para estudiantes según filtros.
+- **Método:** `POST`
+- **URL:** `/api/admin/conceptos/<id>/generar-adeudos/`
+- **Cuerpo (JSON):**
+```json
+{
+    "aplicar_a_nivel": "PRIMARIA",
+    "aplicar_a_grado": 1,
+    "aplicar_a_grupo": null,
+    "aplicar_a_estrato": null,
+    "aplicar_a_matricula": ""
+}
+```
+- **Respuesta (200 OK):** `{"message": "Generando adeudos para X estudiantes..."}`
 
-**URL:** `/api/admin/students/<matricula>/baja/`
-**Método:** `POST`
+---
 
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/students/220548/baja/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "justificacion": "Falta de pago",
-         "es_temporal": false,
-         "fecha_baja": "2026-01-20"
-     }'
+## 4. Grados (api/admin/grados/)
+- **CRUD:** `GET`, `POST`, `PUT`, `DELETE`
+- **Cuerpo:** `{"nombre": "1°", "nivel": "PRIMARIA"}`
+
+---
+
+## 5. Grupos (api/admin/grupos/)
+- **CRUD:** `GET`, `POST`, `PUT`, `DELETE`
+- **Cuerpo:** `{"nombre": "A", "grado": 1, "generacion": "2025-2026"}`
+
+---
+
+## 6. Estratos Socioeconómicos (api/admin/estratos/)
+- **CRUD:** `GET`, `POST`, `PUT`, `DELETE` (Delete desactiva).
+- **Cuerpo:** 
+```json
+{
+    "nombre": "ESTRATO A",
+    "porcentaje_descuento": 10.00,
+    "color": "#FF5733"
+}
 ```
 
 ---
 
-## 2. Tutores (Admin)
+## 7. Estados de Estudiante (api/admin/estados/)
+- **CRUD:** `GET`, `POST`, `PUT`, `DELETE`
+- **Cuerpo:** `{"nombre": "ACTIVO", "es_estado_activo": true}`
 
-### Crear y Vincular Tutor
-Crea un registro de tutor y lo asigna a estudiantes existentes.
+---
 
-**URL:** `/api/admin/students/tutores/`
-**Método:** `POST`
+## 8. Becas (api/admin/becas/)
 
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/students/tutores/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "nombre": "Don Ramón",
-         "apellido_paterno": "Valdés",
-         "apellido_materno": "Castillo",
-         "telefono": "555-888-999",
-         "correo": "rondamon@vecindad.com",
-         "estudiantes_ids": [220548, 220330],
-         "parentesco": "Padre"
-     }'
+### 8.1 CRUD Básico
+- **Métodos:** `GET`, `POST`, `PUT`, `DELETE`
+- **Cuerpo:**
+```json
+{
+    "nombre": "BECA EXCELENCIA",
+    "porcentaje": 50.00,
+    "fecha_vencimiento": "2026-12-31"
+}
 ```
 
-### Listar Tutores
-**URL:** `/api/admin/students/tutores/`
-**Método:** `GET`
+### 8.2 Verificar Vigencia
+Actualiza el estatus `valida` de todas las becas según la fecha actual.
+- **Método:** `POST`
+- **URL:** `/api/admin/becas/verificar-vigencia/`
+- **Respuesta (200 OK):** Mensaje de éxito.
 
+---
 
+## 9. Becas-Estudiantes (api/admin/becas-estudiantes/)
 
-<!-- ## 3. Estratos Socioeconómicos
+### 9.1 CRUD Básico (Asignación Individual)
+- **Métodos:** `GET`, `POST`, `PUT`, `DELETE`
+- **Cuerpo (POST):** `{"beca": 1, "estudiante": 220548, "activa": true}`
 
-Configuración de los niveles socioeconómicos y becas. -->
+### 9.2 Retirar Masivo
+- **Método:** `POST`
+- **URL:** `/api/admin/becas-estudiantes/retirar-masivo/`
+- **Cuerpo:** `{"ids": [1, 2, 3], "motivo": "MAL COMPORTAMIENTO"}`
 
-### Crear Estrato
-**URL:** `/api/admin/estratos/`
-**Método:** `POST`
+### 9.3 Activar Masivo
+- **Método:** `POST`
+- **URL:** `/api/admin/becas-estudiantes/activar-masivo/`
+- **Cuerpo:** `{"ids": [1, 2, 3]}`
 
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/estratos/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "nombre": "F",
-         "descripcion": "Beca Total",
-         "porcentaje_descuento": 100.00,
-         "color": "#888888",
-         "ingreso_minimo": 0,
-         "ingreso_maximo": 1000
-     }'
+---
+
+## 10. Adeudos (api/admin/pagos/adeudos/)
+
+### 10.1 CRUD Básico
+- **URLs:** `/api/admin/pagos/adeudos/` o `/api/admin/pagos/adeudos/<id>/`
+- **Cuerpo (POST):** `{"estudiante_matricula": 220548, "concepto_id": 1}`
+
+### 10.2 Listar Vencidos
+- **Método:** `GET`
+- **URL:** `/api/admin/pagos/adeudos/vencidos/`
+
+### 10.3 Recalcular Recargos
+- **Método:** `POST`
+- **URL:** `/api/admin/pagos/adeudos/recalcular/`
+- **Cuerpo (Opcional):** `{"ids": [1, 2, 3]}`. Si se envía vacío, se recalcula todo.
+
+### 10.4 Exentar Recargo
+- **Método:** `POST`
+- **URL:** `/api/admin/pagos/adeudos/<id>/exentar/`
+- **Cuerpo:** `{"justificacion": "PAGO PENDIENTE POR FALLA TÉCNICA"}`
+
+---
+
+## 11. Pagos (api/admin/pagos/)
+
+### 11.1 Listar/Crear/Detalle/Update
+- **URLs:** `/api/admin/pagos/` o `/api/admin/pagos/<id>/`
+- **Cuerpo (POST):**
+```json
+{
+    "adeudo": 1,
+    "monto": 1500.00,
+    "metodo_pago": "TRANSFERENCIA",
+    "numero_referencia": "REF12345"
+}
 ```
+- **DELETE:** **BLOQUEADO (403 Forbidden)**. No se permite eliminar pagos por integridad contable.
 
+---
 
+## 12. Evaluaciones (api/admin/students/evaluaciones/)
 
-<!-- NOTA, los siguientees endpoints siguen en desarrollo -->
+### 12.1 Listar/Detalle
+- **Métodos:** `GET` solamente.
+- **URLs:** `/api/admin/students/evaluaciones/` o `/api/admin/students/evaluaciones/<id>/`
+- **Respuesta:** Detalle de estudios socioeconómicos realizados por los estudiantes.
 
-<!-- ## 4. Evaluaciones Socioeconómicas -->
-
-<!-- ### Aprobar/Rechazar Evaluación
-Permite a la comisión validar la evaluación socioeconómica de un alumno.
-
-**URL:** `/api/admin/evaluaciones/<id>/aprobar/`
-**Método:** `PUT`
-
-```bash
-curl -s -X PUT http://127.0.0.1:8000/api/admin/evaluaciones/1/aprobar/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "aprobado": true,
-         "comentarios_comision": "Documentación validada correcta.",
-         "estrato_id": 2
-     }'
-``` -->
-
-
-
-<!-- ## 5. Finanzas (Adeudos y Pagos)
-
-### Generar Adeudos Mensuales
-Genera los cargos de colegiatura para todos los alumnos activos del mes especificado.
-
-**URL:** `/api/admin/adeudos/generar-mensual/`
-**Método:** `POST`
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/generar-mensual/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "mes": "2026-03"
-     }'
-``` -->
-
-<!-- ### Aplicar Recargos
-Aplica recargos y penalizaciones a los adeudos vencidos según la configuración.
-
-**URL:** `/api/admin/adeudos/aplicar-recargos/`
-**Método:** `POST`
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/aplicar-recargos/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{}'
-``` -->
-
-<!-- ### Exentar Recargo
-Elimina un cargo extra (multa/recargo) específico de un adeudo.
-
-**URL:** `/api/admin/adeudos/<id_adeudo>/exentar/`
-**Método:** `POST`
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/adeudos/5/exentar/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "justificacion": "Error bancario comprobado"
-     }'
-``` -->
-
-### Registrar Pago Manual
-Registra un pago realizado en caja o ventanilla.
-
-**URL:** `/api/admin/pagos/`
-**Método:** `POST`
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/pagos/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "adeudo": 10,
-         "monto": 2500.00,
-         "metodo_pago": "Efectivo",
-         "referencia": "Recibo 555",
-         "recibido_por": "Caja 1"
-     }'
-```
-
-
-<!-- 
-## 6. Configuración del Sistema
-
-### Actualizar Configuración de Pagos
-Define los días de corte y porcentajes de recargo.
-
-**URL:** `/api/admin/configuracion-pago/`
-**Método:** `PUT`
-
-```bash
-curl -s -X PUT http://127.0.0.1:8000/api/admin/configuracion-pago/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <access_token>" \
-     -d '{
-         "dia_fin_ordinario": 15,
-         "porcentaje_recargo": 12.50
-     }'
-``` -->
-
-
-
-<!-- ## 7. Comedor
-
-### Subir Menú Semanal (PDF)
-Sube el archivo PDF del menú para la semana especificada.
-
-**URL:** `/api/admin/comedor/menus/`
-**Método:** `POST`
-**Header:** `Content-Type: multipart/form-data` (manejado auto por curl con -F)
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/admin/comedor/menus/ \
-     -H "Authorization: Bearer <access_token>" \
-     -F "semana_inicio=2026-02-01" \
-     -F "semana_fin=2026-02-05" \
-     -F "descripcion=Menu Feb 1" \
-     -F "archivo_pdf=@/path/to/menu.pdf"
-``` -->

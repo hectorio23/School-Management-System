@@ -22,7 +22,7 @@ from django.shortcuts import render
 """
 def dashboard(request):
     
-    # return render(request, "./turuta del dashboars")
+    # return render(request, "dashboars de estudiante")
     return render(request, "./dashboard.html")
 
 
