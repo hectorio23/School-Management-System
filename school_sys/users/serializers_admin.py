@@ -2,7 +2,11 @@
 from rest_framework import serializers
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from estudiantes.models import Estudiante, Tutor, EstudianteTutor, Grupo, Grado, EvaluacionSocioeconomica
+from estudiantes.models import (
+    Estudiante, Tutor, EstudianteTutor, Grupo, Grado, 
+    EvaluacionSocioeconomica, Estrato, EstadoEstudiante,
+    Beca, BecaEstudiante
+)
 from pagos.models import Pago, Adeudo, ConceptoPago
 from django.utils import timezone
 from datetime import timedelta
@@ -17,11 +21,14 @@ class TutorSerializer(serializers.ModelSerializer):
         write_only=True,
         help_text="Lista de matrículas de estudiantes a vincular"
     )
-    parentesco = serializers.CharField(
-        required=False, 
+    parentesco = serializers.SerializerMethodField()
+    
+    # Campo para escritura (solo al crear/actualizar)
+    parentesco_input = serializers.CharField(
         write_only=True, 
+        required=False,
         default="Tutor",
-        help_text="Parentesco para la vinculación (solo al crear)"
+        help_text="Parentesco para la vinculación (solo al crear/actualizar)"
     )
     
     # Campos de solo lectura
@@ -29,7 +36,7 @@ class TutorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tutor
-        fields = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'telefono', 'correo', 'estudiantes_ids', 'parentesco', 'estudiantes']
+        fields = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'telefono', 'correo', 'estudiantes_ids', 'parentesco', 'parentesco_input', 'estudiantes']
 
     def get_estudiantes(self, obj):
         # Retorna una simple tupla -> (matricula, nombre)
@@ -44,9 +51,14 @@ class TutorSerializer(serializers.ModelSerializer):
             })
         return data
 
+    def get_parentesco(self, obj):
+        # Retorna el primer parentesco encontrado en sus relaciones
+        rel = obj.estudiantetutor_set.first()
+        return rel.parentesco if rel else ""
+
     def create(self, validated_data):
         estudiantes_ids = validated_data.pop('estudiantes_ids', [])
-        parentesco = validated_data.pop('parentesco', 'Tutor')
+        parentesco = validated_data.pop('parentesco_input', 'Tutor')
         
         tutor = Tutor.objects.create(**validated_data)
         
@@ -173,3 +185,93 @@ class EvaluacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = EvaluacionSocioeconomica
         fields = '__all__'
+
+
+# =============================================================================
+# SERIALIZERS PARA CATALOGOS (CRUD)
+# =============================================================================
+
+class ConceptoPagoSerializer(serializers.ModelSerializer):
+    """Serializer para ConceptoPago con campos para generación masiva"""
+    # Campos para generación masiva (write_only)
+    aplicar_a_nivel = serializers.CharField(required=False, write_only=True, allow_blank=True)
+    aplicar_a_grado = serializers.IntegerField(required=False, write_only=True, allow_null=True)
+    aplicar_a_grupo = serializers.IntegerField(required=False, write_only=True, allow_null=True)
+    aplicar_a_estrato = serializers.IntegerField(required=False, write_only=True, allow_null=True)
+    aplicar_a_matricula = serializers.CharField(required=False, write_only=True, allow_blank=True)
+
+    class Meta:
+        model = ConceptoPago
+        fields = [
+            'id', 'nombre', 'descripcion', 'monto_base', 'activo', 'nivel_educativo',
+            'aplicar_a_nivel', 'aplicar_a_grado', 'aplicar_a_grupo', 
+            'aplicar_a_estrato', 'aplicar_a_matricula'
+        ]
+
+
+class GradoSerializer(serializers.ModelSerializer):
+    """Serializer para Grado"""
+    class Meta:
+        model = Grado
+        fields = ['id', 'nombre', 'nivel']
+
+
+class GrupoSerializer(serializers.ModelSerializer):
+    """Serializer para Grupo con grado anidado"""
+    grado_nombre = serializers.CharField(source='grado.nombre', read_only=True)
+    grado_nivel = serializers.CharField(source='grado.nivel', read_only=True)
+    
+    class Meta:
+        model = Grupo
+        fields = ['id', 'nombre', 'generacion', 'descripcion', 'grado', 'grado_nombre', 'grado_nivel']
+
+
+class EstratoSerializer(serializers.ModelSerializer):
+    """Serializer para Estrato socioeconómico"""
+    class Meta:
+        model = Estrato
+        fields = [
+            'id', 'nombre', 'descripcion', 'porcentaje_descuento', 
+            'activo', 'color', 'ingreso_minimo', 'ingreso_maximo'
+        ]
+
+
+class EstadoEstudianteSerializer(serializers.ModelSerializer):
+    """Serializer para EstadoEstudiante"""
+    class Meta:
+        model = EstadoEstudiante
+        fields = ['id', 'nombre', 'descripcion', 'es_estado_activo']
+
+
+class BecaSerializer(serializers.ModelSerializer):
+    """Serializer para Beca"""
+    estudiantes_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Beca
+        fields = [
+            'id', 'nombre', 'descripcion', 'porcentaje', 
+            'fecha_inicio', 'fecha_vencimiento', 'valida', 'estudiantes_count'
+        ]
+    
+    def get_estudiantes_count(self, obj):
+        return obj.becaestudiante_set.filter(activa=True).count()
+
+
+class BecaEstudianteSerializer(serializers.ModelSerializer):
+    """Serializer para asignación de becas a estudiantes"""
+    estudiante_matricula = serializers.IntegerField(source='estudiante.matricula', read_only=True)
+    estudiante_nombre = serializers.CharField(source='estudiante.nombre', read_only=True)
+    estudiante_apellido = serializers.CharField(source='estudiante.apellido_paterno', read_only=True)
+    beca_nombre = serializers.CharField(source='beca.nombre', read_only=True)
+    beca_porcentaje = serializers.DecimalField(source='beca.porcentaje', max_digits=5, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = BecaEstudiante
+        fields = [
+            'id', 'beca', 'estudiante', 'activa', 
+            'fecha_asignacion', 'fecha_retiro', 'motivo_retiro', 'asignado_por',
+            'estudiante_matricula', 'estudiante_nombre', 'estudiante_apellido',
+            'beca_nombre', 'beca_porcentaje'
+        ]
+        read_only_fields = ['fecha_asignacion']
