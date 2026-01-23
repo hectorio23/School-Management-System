@@ -10,6 +10,8 @@ class VerificationCode(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_verified = models.BooleanField(default=False)
+    # Almacenar datos temporales mientras se verifica
+    data_json = models.TextField(null=True, blank=True) 
 
     def is_valid(self):
         return not self.is_verified and self.expires_at > timezone.now()
@@ -78,21 +80,25 @@ class AdmissionTutor(models.Model):
 
 class Aspirante(models.Model):
     """Informacion COMPLETA del aspirante para las 4 fases"""
-    ESTADOS_CIVILES = [('soltero', 'Soltero'), ('casado', 'Casado')]
-    GENEROS = [('M', 'Masculino'), ('F', 'Femenino')]
+    SEXOS = [('M', 'Masculino'), ('F', 'Femenino')]
+    STATUS_CHOICES = [
+        ('ASPIRANTE', 'Aspirante'),
+        ('ACEPTADO', 'Aceptado'),
+        ('NO_ACEPTADO', 'No Aceptado'),
+    ]
     
     # CONTROL DE PROCESO
     user = models.OneToOneField(AdmissionUser, on_delete=models.CASCADE)
     fase_actual = models.IntegerField(default=1, help_text='1:Datos, 2:Socio, 3:Docs, 4:Pago, 5:Fin')
-    status = models.CharField(max_length=20, default='pendiente', help_text='pendiente, aprobado, rechazado')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ASPIRANTE')
 
     # FASE 1: DATOS PERSONALES
     nombre = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100, null=True)
     apellido_materno = models.CharField(max_length=100, null=True)
-    curp = models.CharField(max_length=18, unique=True, null=True) # Null true al crear, required fase 1
+    curp = models.CharField(max_length=18, unique=True, null=False, blank=False) # Forzado
     fecha_nacimiento = models.DateField(null=True)
-    genero = models.CharField(max_length=1, choices=GENEROS, null=True)
+    sexo = models.CharField(max_length=1, choices=SEXOS, null=True) # Renombrado
     direccion = models.TextField(null=True)
     telefono = models.CharField(max_length=20, null=True)
     escuela_procedencia = models.CharField(max_length=255, null=True)
@@ -108,11 +114,17 @@ class Aspirante(models.Model):
     internet_encasa = models.BooleanField(default=False)
     
     # FASE 3: DOCUMENTACIÓN Y LEGAL
-    # Archivos
-    comprobante_domicilio = models.FileField(upload_to='aspirantes/docs/', null=True, blank=True)
+    # Archivos del Aspirante
+    comprobante_domicilio = models.FileField(upload_to='admissions/documents/domicilio/', null=True, blank=True)
+    curp_pdf = models.FileField(upload_to='admissions/documents/curp/', null=True, blank=True)
+    acta_nacimiento_estudiante = models.FileField(upload_to='admissions/documents/actas/', null=True, blank=True)
+    # Archivos de Tutores (se podrían separar, pero el usuario pidió tabla única de aspirantes con campos extra)
+    acta_nacimiento_tutor = models.FileField(upload_to='admissions/documents/actas_tutores/', null=True, blank=True)
+    curp_tutor_pdf = models.FileField(upload_to='admissions/documents/curp_tutores/', null=True, blank=True)
+    
     # Checks obligatorios
-    acta_nacimiento_check = models.BooleanField(default=False, help_text='¿Entregó/Subió Acta?')
-    curp_check = models.BooleanField(default=False, help_text='¿Entregó/Subió CURP?')
+    acta_nacimiento_check = models.BooleanField(default=False)
+    curp_check = models.BooleanField(default=False)
     aceptacion_reglamento = models.BooleanField(default=False)
     autorizacion_imagen = models.BooleanField(default=False)
 

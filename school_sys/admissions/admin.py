@@ -1,128 +1,149 @@
 from django.contrib import admin
 from django import forms
-
-ADMISSION_MODULE = True
-
+from django.utils.safestring import mark_safe
 from .models import (
     AdmissionUser, AdmissionTutor, Aspirante, 
-    AdmissionTutorAspirante
+    AdmissionTutorAspirante, VerificationCode
 )
 
-if ADMISSION_MODULE:
+# --- FORMS ---
+
+class AdmissionUserForm(forms.ModelForm):
+    class Meta:
+        model = AdmissionUser
+        fields = ('email', 'password')
     
-    # Formulario personalizado para AdmissionUser
-    class AdmissionUserForm(forms.ModelForm):
-        class Meta:
-            model = AdmissionUser
-            fields = ('email', 'password')
-        
-        def save(self, commit=True):
-            instance = super().save(commit=False)
-            
-            # Generar el folio automáticamente si es un nuevo usuario
-            if not instance.pk:
-                ultimo_folio = AdmissionUser.objects.all().order_by('-folio').first()
-                if ultimo_folio:
-                    instance.folio = ultimo_folio.folio + 1
-                else:
-                    instance.folio = 2000
-            
-            if commit:
-                instance.save()
-            return instance
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Note: Primary key 'folio' is handled in model.save()
+        if commit:
+            instance.save()
+        return instance
+
+class AspiranteForm(forms.ModelForm):
+    class Meta:
+        model = Aspirante
+        fields = '__all__'
+
+# --- INLINES ---
+
+class TutorAspiranteInline(admin.TabularInline):
+    model = AdmissionTutorAspirante
+    verbose_name = "Tutor"
+    verbose_name_plural = "Vinculación de Tutores"
+    fields = ('tutor', 'parentesco')
+    extra = 1
+    autocomplete_fields = ['tutor']
+
+# --- ADMIN CLASSES ---
+
+@admin.register(Aspirante)
+class AdmisionAspiranteAdmin(admin.ModelAdmin):
+    form = AspiranteForm
+    list_display = ("get_folio", "nombre", "apellido_paterno", "curp", "status", "fase_actual", "pagado_status")
+    list_filter = ("status", "fase_actual", "pagado_status", "sexo")
+    search_fields = ('nombre', 'apellido_paterno', 'apellido_materno', 'curp', 'user__folio', 'user__email')
     
-    # Formulario personalizado para Aspirante
-    class AspiranteForm(forms.ModelForm):
-        class Meta:
-            model = Aspirante
-            fields = '__all__'
-        
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            # Filtrar solo usuarios que NO tienen aspirante asignado
-            usuarios_ocupados = Aspirante.objects.values_list('user_id', flat=True)
-            
-            # Si estamos editando, incluir el usuario actual
-            if self.instance.pk and self.instance.user:
-                self.fields['user'].queryset = AdmissionUser.objects.exclude(
-                    folio__in=usuarios_ocupados
-                ).union(
-                    AdmissionUser.objects.filter(folio=self.instance.user.folio)
-                )
-            else:
-                # Si es nuevo, solo mostrar usuarios disponibles
-                self.fields['user'].queryset = AdmissionUser.objects.exclude(
-                    folio__in=usuarios_ocupados
-                )
+    inlines = [TutorAspiranteInline]
     
-    # Inline para agregar/crear tutores directamente
-    class TutorAspiranteInline(admin.TabularInline):
-        model = AdmissionTutorAspirante
-        verbose_name = "Tutor"
-        verbose_name_plural = "Tutores del Aspirante"
-        fields = ('tutor', 'parentesco')
-        extra = 1
-        autocomplete_fields = ['tutor']
+    fieldsets = (
+        ('Control de Admisión', {
+            'fields': ('user', 'status', 'fase_actual', 'pagado_status')
+        }),
+        ('Fase 1: Información Personal', {
+            'fields': (
+                ('nombre', 'apellido_paterno', 'apellido_materno'),
+                'curp', 'fecha_nacimiento', 'sexo',
+                'direccion', 'telefono', 'escuela_procedencia', 'promedio_anterior'
+            )
+        }),
+        ('Fase 2: Estudio Socioeconómico', {
+            'fields': (
+                'ingreso_mensual_familiar', ('ocupacion_padre', 'ocupacion_madre'),
+                'tipo_vivienda', 'miembros_hogar', 'vehiculos', 'internet_encasa'
+            )
+        }),
+        ('Fase 3: Documentación y Legal', {
+            'fields': (
+                'display_comprobante', 'comprobante_domicilio',
+                'display_curp_pdf', 'curp_pdf',
+                'display_acta_estudiante', 'acta_nacimiento_estudiante',
+                'display_acta_tutor', 'acta_nacimiento_tutor',
+                'display_curp_tutor', 'curp_tutor_pdf',
+                ('acta_nacimiento_check', 'curp_check'),
+                ('aceptacion_reglamento', 'autorizacion_imagen')
+            )
+        }),
+        ('Fase 4: Información de Pago', {
+            'fields': (
+                'fecha_pago', 'monto', 'metodo_pago',
+                'numero_referencia', 'ruta_recibo', 'recibido_por', 'notas'
+            )
+        }),
+    )
     
-    # Admin principal del Aspirante
-    class AdmisionAspirante(admin.ModelAdmin):
-        form = AspiranteForm
-        list_display = ("get_folio", "nombre", "apellido_paterno", "apellido_materno", "get_email")
-        search_fields = ('nombre', 'apellido_paterno', 'apellido_materno', 'user__folio', 'user__email')
-        list_filter = ('user__is_active', 'user__is_verified')
-        
-        inlines = [TutorAspiranteInline]
-        
-        fieldsets = (
-            ('Usuario de Autenticación', {
-                'fields': ('user',)
-            }),
-            ('Información Personal', {
-                'fields': ('nombre', 'apellido_paterno', 'apellido_materno')
-            }),
-        )
-        
-        def get_folio(self, obj):
-            return obj.user.folio if obj.user else None
-        get_folio.short_description = 'Folio'
-        get_folio.admin_order_field = 'user__folio'
-        
-        def get_email(self, obj):
-            return obj.user.email if obj.user else None
-        get_email.short_description = 'Email'
-        get_email.admin_order_field = 'user__email'
+    readonly_fields = (
+        'display_comprobante', 'display_curp_pdf', 'display_acta_estudiante',
+        'display_acta_tutor', 'display_curp_tutor'
+    )
+
+    def get_folio(self, obj):
+        return obj.user.folio if obj.user else "-"
+    get_folio.short_description = 'Folio'
+
+    # --- FILE VIEW METHODS ---
+    def _display_file(self, file_field):
+        if file_field:
+            return mark_safe(f'<a href="{file_field.url}" target="_blank">📄 Ver Documento</a>')
+        return "No cargado"
+
+    def display_comprobante(self, obj): return self._display_file(obj.comprobante_domicilio)
+    display_comprobante.short_description = "Comprobante Domicilio Actual"
     
-    # Admin para AdmissionUser
-    class AdmissionUserAdmin(admin.ModelAdmin):
-        form = AdmissionUserForm
-        list_display = ('folio', 'email', 'is_active', 'is_verified', 'date_joined')
-        list_filter = ('is_active', 'is_verified')
-        search_fields = ('folio', 'email')
-        readonly_fields = ('folio', 'date_joined')
-        
-        fieldsets = (
-            ('Credenciales', {
-                'fields': ('folio', 'email', 'password')
-            }),
-            ('Estado', {
-                'fields': ('is_active', 'is_verified', 'date_joined')
-            }),
-        )
-        
-        # Solo mostrar folio, email y password en el formulario de creación
-        def get_fields(self, request, obj=None):
-            if obj:  # Editando
-                return ('folio', 'email', 'password', 'is_active', 'is_verified', 'date_joined')
-            else:  # Creando
-                return ('email', 'password')
+    def display_curp_pdf(self, obj): return self._display_file(obj.curp_pdf)
+    display_curp_pdf.short_description = "CURP Aspirante (PDF)"
     
-    # Admin para Tutores
-    class AdmissionTutorAdmin(admin.ModelAdmin):
-        list_display = ('nombre', 'apellido_paterno', 'apellido_materno', 'email', 'numero_telefono')
-        search_fields = ('nombre', 'apellido_paterno', 'apellido_materno', 'email')
+    def display_acta_estudiante(self, obj): return self._display_file(obj.acta_nacimiento_estudiante)
+    display_acta_estudiante.short_description = "Acta Nacimiento Aspirante"
     
-    # Registros
-    admin.site.register(Aspirante, AdmisionAspirante)
-    admin.site.register(AdmissionUser, AdmissionUserAdmin)
-    admin.site.register(AdmissionTutor, AdmissionTutorAdmin)
-    admin.site.register(AdmissionTutorAspirante)
+    def display_acta_tutor(self, obj): return self._display_file(obj.acta_nacimiento_tutor)
+    display_acta_tutor.short_description = "Acta Nacimiento Tutor"
+    
+    def display_curp_tutor(self, obj): return self._display_file(obj.curp_tutor_pdf)
+    display_curp_tutor.short_description = "CURP Tutor (PDF)"
+
+@admin.register(AdmissionUser)
+class AdmissionUserAdmin(admin.ModelAdmin):
+    form = AdmissionUserForm
+    list_display = ('folio', 'email', 'is_active', 'is_verified', 'date_joined')
+    list_filter = ('is_active', 'is_verified')
+    search_fields = ('folio', 'email')
+    readonly_fields = ('folio', 'date_joined', 'password_mask')
+    
+    fieldsets = (
+        ('Credenciales', {
+            'fields': ('folio', 'email', 'password_mask')
+        }),
+        ('Estado de la Cuenta', {
+            'fields': ('is_active', 'is_verified', 'date_joined')
+        }),
+    )
+
+    def password_mask(self, obj):
+        return "********"
+    password_mask.short_description = "Contraseña (Segura)"
+
+    def has_add_permission(self, request):
+        return True # Permitir admin crear usuarios manualmente si lo desea
+
+@admin.register(AdmissionTutor)
+class AdmissionTutorAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'apellido_paterno', 'apellido_materno', 'email', 'numero_telefono', 'curp')
+    search_fields = ('nombre', 'apellido_paterno', 'apellido_materno', 'email', 'curp')
+
+@admin.register(VerificationCode)
+class VerificationCodeAdmin(admin.ModelAdmin):
+    list_display = ('email', 'code', 'created_at', 'expires_at', 'is_verified')
+    readonly_fields = ('code', 'data_json', 'created_at', 'expires_at')
+
+admin.site.register(AdmissionTutorAspirante)

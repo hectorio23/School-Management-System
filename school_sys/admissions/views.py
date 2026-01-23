@@ -8,99 +8,93 @@ from .models import VerificationCode, AdmissionUser, Aspirante
 from .serializers import (
     VerificationCodeSerializer, 
     VerifyCodeSerializer, 
-    RegisterAspiranteSerializer,
-    AdmissionUserSerializer,
-    AspirantePhase1Serializer
+    AspiranteRegistrationSerializer,
+    AspirantePhase1Serializer,
+    AspirantePhase3Serializer
 )
+import json
 
 # --- AUTH ENDPOINTS ---
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def auth_send_code(request):
+def register_initiate(request):
     """
-    Envia código de verificación al correo.
-    Simulado: Retorna el código en la respuesta para pruebas.
+    Paso 1: Recibe datos y envía código al correo.
     """
-    serializer = VerificationCodeSerializer(data=request.data)
+    serializer = AspiranteRegistrationSerializer(data=request.data)
     if serializer.is_valid():
-        verification = serializer.save()
-        # TODO: Integrar envío de email real aquí
-        return Response({
-            "message": "Código enviado (Simulado)",
-            "email": verification.email,
-            "code_debug": verification.code # Solo para desarrollo
-        }, status=status.HTTP_201_CREATED)
+        email = serializer.validated_data['email']
+        
+        # Check if email exists
+        if AdmissionUser.objects.filter(email=email).exists():
+            return Response({"error": "El correo ya está registrado"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Almacenar datos en JSON
+        data_json = json.dumps(serializer.validated_data)
+        
+        v_serializer = VerificationCodeSerializer(data={"email": email})
+        if v_serializer.is_valid():
+            verification = v_serializer.save(data_json=data_json)
+            return Response({
+                "message": "Código enviado. Tiene 1 minuto para confirmar.",
+                "email": email,
+                "code_debug": verification.code # Solo para desarrollo
+            }, status=status.HTTP_201_CREATED)
+            
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def auth_verify_code(request):
+def register_confirm(request):
     """
-    Verifica el código recibido.
+    Paso 2: Verifica código y crea la cuenta + aspirante.
     """
-    serializer = VerifyCodeSerializer(data=request.data)
-    if serializer.is_valid():
-        email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
+    email = request.data.get('email')
+    code = request.data.get('code')
+    
+    if not email or not code:
+        return Response({"error": "Faltan email o código"}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            verification = VerificationCode.objects.get(
-                email=email, 
-                code=code, 
-                is_verified=False
+    try:
+        verification = VerificationCode.objects.get(email=email, code=code, is_verified=False)
+        
+        if not verification.is_valid():
+             return Response({"error": "Código expirado o inválido"}, status=status.HTTP_400_BAD_REQUEST)
+             
+        # Crear cuenta
+        data = json.loads(verification.data_json)
+        
+        from django.contrib.auth.hashers import make_password
+        
+        from django.db import transaction
+        with transaction.atomic():
+            user = AdmissionUser.objects.create(
+                email=data['email'],
+                password=make_password(data['password']),
+                is_verified=True
             )
-            
-            if not verification.is_valid():
-                return Response({"error": "Código expirado"}, status=status.HTTP_400_BAD_REQUEST)
+            aspirante = Aspirante.objects.create(
+                user=user,
+                nombre=data['nombre'],
+                apellido_paterno=data['apellido_paterno'],
+                apellido_materno=data['apellido_materno'],
+                curp=data['curp']
+            )
             
             verification.is_verified = True
             verification.save()
-            return Response({"message": "Correo verificado exitosamente"}, status=status.HTTP_200_OK)
             
-        except VerificationCode.DoesNotExist:
-            return Response({"error": "Código inválido o correo no encontrado"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "message": "Registro completado exitosamente",
+                "folio": user.folio,
+                "email": user.email
+            }, status=status.HTTP_201_CREATED)
             
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def register_aspirante(request):
-    """
-    Registra un nuevos usuario y aspirante.
-    Requiere que el correo haya sido verificado previamente.
-    """
-    # 1. Validar correo verificado
-    if 'user_data' not in request.data or 'email' not in request.data['user_data']:
-         return Response({"error": "Faltan datos de usuario (user_data)"}, status=status.HTTP_400_BAD_REQUEST)
-         
-    email = request.data['user_data']['email']
-    
-    # Check si tiene verificacion valida reciente (ej. ultimos 30 min)
-    is_verified = VerificationCode.objects.filter(
-        email=email, 
-        is_verified=True, 
-        created_at__gte=timezone.now() - timezone.timedelta(minutes=30)
-    ).exists()
-    
-    if not is_verified:
-        return Response({"error": "El correo no ha sido verificado o la verificación expiró"}, status=status.HTTP_403_FORBIDDEN)
-        
-    # 2. Registrar
-    serializer = RegisterAspiranteSerializer(data=request.data)
-    if serializer.is_valid():
-        aspirante = serializer.save()
-        
-        # Invalidar código usado
-        VerificationCode.objects.filter(email=email).delete()
-        
-        return Response({
-            "message": "Cuenta creada exitosamente. Pase a Fase 1.",
-            "folio": aspirante.user.folio,
-            "email": aspirante.user.email
-        }, status=status.HTTP_201_CREATED)
-        
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except VerificationCode.DoesNotExist:
+        return Response({"error": "Código o correo inválido"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # --- PHASES ENDPOINTS ---
 
@@ -153,24 +147,27 @@ def aspirante_phase3(request, folio):
     if aspirante.fase_actual < 3:
          return Response({"error": "Complete Fase 2"}, status=status.HTTP_400_BAD_REQUEST)
          
-    # Archivos
-    if 'comprobante_domicilio' in request.FILES:
-        aspirante.comprobante_domicilio = request.FILES['comprobante_domicilio']
+    serializer = AspirantePhase3Serializer(aspirante, data=request.data, partial=True)
+    if serializer.is_valid():
+        # Manejo de archivos si vienen en FILES
+        for field in ['comprobante_domicilio', 'curp_pdf', 'acta_nacimiento_estudiante', 'acta_nacimiento_tutor', 'curp_tutor_pdf']:
+            if field in request.FILES:
+                setattr(aspirante, field, request.FILES[field])
+        
+        serializer.save()
+        
+        # Marcar checks como verdaderos si se enviaron (el serializer valida aceptacion)
+        # Suponemos que si sube el archivo, el check se marca (o se marca manual)
+        if aspirante.acta_nacimiento_estudiante: aspirante.acta_nacimiento_check = True
+        if aspirante.curp_pdf: aspirante.curp_check = True
+        
+        if aspirante.fase_actual == 3: 
+            aspirante.fase_actual = 4
+        
+        aspirante.save()
+        return Response({"message": "Fase 3 OK. Pendiente de Pago.", "fase_actual": aspirante.fase_actual})
     
-    # Checks
-    aspirante.aceptacion_reglamento = request.data.get('aceptacion_reglamento', str(aspirante.aceptacion_reglamento)).lower() == 'true'
-    aspirante.autorizacion_imagen = request.data.get('autorizacion_imagen', str(aspirante.autorizacion_imagen)).lower() == 'true'
-    
-    if not (aspirante.aceptacion_reglamento and aspirante.autorizacion_imagen):
-        return Response({"error": "Debe aceptar el reglamento y la autorización de imagen"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Marcar otros checks como entregados (en este flujo simplificado)
-    aspirante.acta_nacimiento_check = True
-    aspirante.curp_check = True
-    
-    if aspirante.fase_actual == 3: aspirante.fase_actual = 4
-    aspirante.save()
-    return Response({"message": "Fase 3 OK. Pendiente de Pago.", "fase_actual": aspirante.fase_actual})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # --- ADMIN ENDPOINTS ---
 
@@ -180,7 +177,7 @@ def admin_mark_paid(request, folio):
     """Fase 4: Registrar Pago (Solo Admin)"""
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
     aspirante.pagado_status = True
-    aspirante.status = 'aprobado'
+    aspirante.status = 'ACEPTADO'
     aspirante.fase_actual = 5
     aspirante.fecha_pago = timezone.now()
     aspirante.recibido_por = request.data.get('admin_name', 'Admin')
