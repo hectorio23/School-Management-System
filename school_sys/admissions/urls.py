@@ -2,10 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Auth
-    path('auth/send-code/', views.auth_send_code, name='auth_send_code'),
-    path('auth/verify-code/', views.auth_verify_code, name='auth_verify_code'),
-    path('register/', views.register_aspirante, name='register_aspirante'),
+    # Auth / Registration
+    path('register/initiate/', views.register_initiate, name='register_initiate'),
+    path('register/confirm/', views.register_confirm, name='register_confirm'),
     # Phases
     path('me/<int:folio>/', views.aspirante_me, name='aspirante_me'),
     path('me/<int:folio>/phase1/', views.aspirante_phase1, name='aspirante_phase1'),

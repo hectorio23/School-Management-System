@@ -5,6 +5,7 @@ from django.db import transaction
 from datetime import timedelta
 import random
 import re
+import json
 
 class VerificationCodeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,7 +19,8 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
         email = validated_data['email']
         # Generar código de 6 dígitos
         code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-        expires_at = timezone.now() + timedelta(minutes=10)
+        # El usuario pidió 1 minuto de expiración
+        expires_at = timezone.now() + timedelta(minutes=1)
         
         # Eliminar códigos previos no verificados
         VerificationCode.objects.filter(email=email, is_verified=False).delete()
@@ -26,7 +28,8 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
         return VerificationCode.objects.create(
             email=email,
             code=code,
-            expires_at=expires_at
+            expires_at=expires_at,
+            data_json=validated_data.get('data_json')
         )
 
 class VerifyCodeSerializer(serializers.Serializer):
@@ -47,24 +50,19 @@ class AdmissionUserSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
 
-class RegisterAspiranteSerializer(serializers.ModelSerializer):
-    user_data = AdmissionUserSerializer(source='user')
-    
-    class Meta:
-        model = Aspirante
-        fields = ['user_data', 'nombre', 'apellido_paterno', 'apellido_materno']
-    
-    def create(self, validated_data):
-        user_data = validated_data.pop('user')
-        # Crear usuario
-        user = AdmissionUser.objects.create(
-            email=user_data['email'],
-            password=user_data['password'],
-            is_verified=True # Ya verificado previamente
-        )
-        # Crear aspirante vacio inicial
-        aspirante = Aspirante.objects.create(user=user, **validated_data)
-        return aspirante
+class AspiranteRegistrationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    nombre = serializers.CharField(max_length=100)
+    apellido_paterno = serializers.CharField(max_length=100)
+    apellido_materno = serializers.CharField(max_length=100)
+    curp = serializers.CharField(max_length=18)
+
+    def validate_curp(self, value):
+        curp_regex = r'^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z]{2}$'
+        if not re.match(curp_regex, value.upper()):
+            raise serializers.ValidationError("Formato de CURP inválido")
+        return value.upper()
 
 # --- PHASE SERIALIZERS ---
 
@@ -82,7 +80,7 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
         model = Aspirante
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno', 'curp', 
-            'fecha_nacimiento', 'genero', 'direccion', 'telefono', 
+            'fecha_nacimiento', 'sexo', 'direccion', 'telefono', 
             'escuela_procedencia', 'promedio_anterior', 'tutores'
         ]
 
@@ -123,3 +121,22 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
                     )
             
         return instance
+
+class AspirantePhase3Serializer(serializers.ModelSerializer):
+    """Serializer para Phase 3: Documentación"""
+    class Meta:
+        model = Aspirante
+        fields = [
+            'comprobante_domicilio', 'curp_pdf', 'acta_nacimiento_estudiante',
+            'acta_nacimiento_tutor', 'curp_tutor_pdf',
+            'aceptacion_reglamento', 'autorizacion_imagen'
+        ]
+
+    def validate(self, data):
+        # Valida que los checks obligatorios vengan en True si se intenta finalizar
+        if self.instance.fase_actual == 3:
+            if not data.get('aceptacion_reglamento', self.instance.aceptacion_reglamento):
+                raise serializers.ValidationError("Debe aceptar el reglamento")
+            if not data.get('autorizacion_imagen', self.instance.autorizacion_imagen):
+                raise serializers.ValidationError("Debe autorizar el uso de imagen")
+        return data
