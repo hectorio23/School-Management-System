@@ -9,8 +9,11 @@ school_sys/templates/dashboard.html
 test_admin_curl.sh
 verify_crud.py
 seed_data.py 
-verify_admin_endpoints_v2.py
+verify_ad*
 school_sys/verify_api.sh
 school_sys/server.test_login 
 school_sys/templates/dashboard_admin.html
 school_sys/server.log
+school_sys/admissions/documents
+school_sys/admissions/check.sh
+.env
