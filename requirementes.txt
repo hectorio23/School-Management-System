@@ -5,3 +5,4 @@ faker
 pymysql
 mysqlclient
 python-dotenv
+cryptography

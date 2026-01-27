@@ -1,4 +1,5 @@
 import json
+import mimetypes
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -8,6 +9,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth.hashers import make_password
 
 from users.permissions import IsAdministrador
 from .permissions import IsAspirante
@@ -76,7 +78,7 @@ def register_confirm(request):
              
         # Cargar credenciales del Paso 1
         credentials = json.loads(verification.data_json)
-        from django.contrib.auth.hashers import make_password
+        
         
         with transaction.atomic():
             user = AdmissionUser.objects.create(
@@ -179,29 +181,45 @@ def aspirante_phase3(request, folio):
     if serializer.is_valid():
         try:
             with transaction.atomic():
-                # 1. Documentos del aspirante
-                for field in ['comprobante_domicilio', 'curp_pdf', 'acta_nacimiento_estudiante']:
+                # 1. Documentos del aspirante (Aspirante model)
+                student_docs = [
+                    'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
+                    'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+                ]
+                for field in student_docs:
                     if field in request.FILES:
                         setattr(aspirante, field, request.FILES[field])
                 
-                # 2. Documentos del tutor (asociados al primer registro de relación)
+                # 2. Documentos del tutor (AdmissionTutor model)
                 tutor_rel = AdmissionTutorAspirante.objects.filter(aspirante=aspirante).first()
                 if tutor_rel:
                     tutor = tutor_rel.tutor
                     tutor_updated = False
-                    if 'acta_nacimiento_tutor' in request.FILES:
-                        tutor.acta_nacimiento = request.FILES['acta_nacimiento_tutor']
-                        tutor_updated = True
-                    if 'curp_tutor_pdf' in request.FILES:
-                        tutor.curp_pdf = request.FILES['curp_tutor_pdf']
-                        tutor_updated = True
+                    
+                    # Mapa de campos del request -> campos del modelo Tutor
+                    tutor_file_map = {
+                        'acta_nacimiento_tutor': 'acta_nacimiento',
+                        'comprobante_domicilio_tutor': 'comprobante_domicilio',
+                        'foto_fachada_domicilio': 'foto_fachada_domicilio',
+                        'comprobante_ingresos': 'comprobante_ingresos',
+                        'carta_ingresos': 'carta_ingresos',
+                        'ine_tutor': 'ine_tutor',
+                        'contrato_arrendamiento_predial': 'contrato_arrendamiento_predial',
+                        'carta_bajo_protesta': 'carta_bajo_protesta'
+                    }
+                    
+                    for req_field, model_field in tutor_file_map.items():
+                        if req_field in request.FILES:
+                            setattr(tutor, model_field, request.FILES[req_field])
+                            tutor_updated = True
+                    
                     if tutor_updated:
                         tutor.save()
 
                 serializer.save()
                 
-                # Actualización de validaciones internas
-                if aspirante.acta_nacimiento_estudiante: aspirante.acta_nacimiento_check = True
+                # Actualización de validaciones internas (aspirante)
+                if aspirante.acta_nacimiento: aspirante.acta_nacimiento_check = True
                 if aspirante.curp_pdf: aspirante.curp_check = True
                 
                 if aspirante.fase_actual == 3: 
@@ -236,19 +254,31 @@ def admin_view_document(request, folio, field_name):
     """Visor seguro para administradores. Desencripta documentos del estudiante o tutor."""
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
     
-    # Referencias de campos por entidad
-    student_fields = ['comprobante_domicilio', 'curp_pdf', 'acta_nacimiento_estudiante']
-    tutor_fields = ['acta_nacimiento_tutor', 'curp_tutor_pdf']
+    # Referencias de campos por entidad (Request keys)
+    student_fields = [
+        'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
+        'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+    ]
+    tutor_fields_map = {
+        'acta_nacimiento_tutor': 'acta_nacimiento',
+        'comprobante_domicilio_tutor': 'comprobante_domicilio',
+        'foto_fachada_domicilio': 'foto_fachada_domicilio',
+        'comprobante_ingresos': 'comprobante_ingresos',
+        'carta_ingresos': 'carta_ingresos',
+        'ine_tutor': 'ine_tutor',
+        'contrato_arrendamiento_predial': 'contrato_arrendamiento_predial',
+        'carta_bajo_protesta': 'carta_bajo_protesta'
+    }
     
     target_obj, target_field = None, None
     
     if field_name in student_fields:
         target_obj, target_field = aspirante, field_name
-    elif field_name in tutor_fields:
+    elif field_name in tutor_fields_map:
         tutor_rel = AdmissionTutorAspirante.objects.filter(aspirante=aspirante).first()
         if tutor_rel:
             target_obj = tutor_rel.tutor
-            target_field = 'acta_nacimiento' if field_name == 'acta_nacimiento_tutor' else 'curp_pdf'
+            target_field = tutor_fields_map[field_name]
     
     if not target_obj or not target_field or not hasattr(target_obj, target_field):
         return Response({"error": "Campo no válido o tutor no asociado"}, status=status.HTTP_400_BAD_REQUEST)
@@ -258,8 +288,14 @@ def admin_view_document(request, folio, field_name):
         return Response({"error": "No hay archivo cargado"}, status=status.HTTP_404_NOT_FOUND)
     
     try:
+        
         decrypted_content = decrypt_data(file_field.read())
-        content_type = "application/pdf" if file_field.name.endswith(".pdf") else "application/octet-stream"
+        
+        # Intentamos determinar el tipo MIME real basado en el nombre del archivo
+        content_type, _ = mimetypes.guess_type(file_field.name)
+        if not content_type:
+            content_type = "application/octet-stream"
+            
         return HttpResponse(decrypted_content, content_type=content_type)
     except Exception as e:
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
