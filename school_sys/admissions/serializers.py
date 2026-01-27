@@ -152,10 +152,25 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
     class Meta:
         model = Aspirante
         fields = [
-            'comprobante_domicilio', 'curp_pdf', 'acta_nacimiento_estudiante',
-            'acta_nacimiento_tutor', 'curp_tutor_pdf',
-            'aceptacion_reglamento', 'autorizacion_imagen'
+            'curp_pdf', 'acta_nacimiento', 'foto_credencial',
+            'boleta_ciclo_anterior', 'boleta_ciclo_actual',
+            'aceptacion_reglamento', 'autorizacion_imagen',
+            # Campos virtuales (se procesan en la vista pero el serializer los permite)
+            'acta_nacimiento_tutor', 'comprobante_domicilio_tutor', 
+            'foto_fachada_domicilio', 'comprobante_ingresos', 
+            'carta_ingresos', 'ine_tutor', 'contrato_arrendamiento_predial',
+            'carta_bajo_protesta'
         ]
+
+    # Declaramos los campos del tutor como FileFields opcionales no ligados al modelo Aspirante
+    acta_nacimiento_tutor = serializers.FileField(required=False)
+    comprobante_domicilio_tutor = serializers.FileField(required=False)
+    foto_fachada_domicilio = serializers.FileField(required=False)
+    comprobante_ingresos = serializers.FileField(required=False)
+    carta_ingresos = serializers.FileField(required=False)
+    ine_tutor = serializers.FileField(required=False)
+    contrato_arrendamiento_predial = serializers.FileField(required=False)
+    carta_bajo_protesta = serializers.FileField(required=False)
 
     def validate(self, data):
         """Valida que los acuerdos legales estén aceptados al finalizar fase."""

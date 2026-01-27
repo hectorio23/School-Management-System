@@ -110,10 +110,24 @@ class AdmissionTutor(models.Model):
     # Documentos con almacenamiento seguro (Hashed & Encrypted)
     acta_nacimiento = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
     curp_pdf = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    
+    # Nuevos documentos del tutor
+    comprobante_domicilio = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    foto_fachada_domicilio = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    comprobante_ingresos = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    carta_ingresos = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    ine_tutor = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    contrato_arrendamiento_predial = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
+    carta_bajo_protesta = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         """Encripta archivos del tutor antes de persistirlos en disco."""
-        for field_name in ['acta_nacimiento', 'curp_pdf']:
+        tutor_files = [
+            'acta_nacimiento', 'curp_pdf', 'comprobante_domicilio', 'foto_fachada_domicilio',
+            'comprobante_ingresos', 'carta_ingresos', 'ine_tutor', 
+            'contrato_arrendamiento_predial', 'carta_bajo_protesta'
+        ]
+        for field_name in tutor_files:
             try:
                 file_field = getattr(self, field_name)
                 if file_field and hasattr(file_field, 'file') and not getattr(file_field, '_is_already_encrypted', False):
@@ -179,8 +193,14 @@ class Aspirante(models.Model):
     internet_encasa = models.BooleanField(default=False)
     
     # FASE 3: Documentación y Legal (Hashed & Encrypted)
-    comprobante_domicilio = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     curp_pdf = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
+    acta_nacimiento = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
+    foto_credencial = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
+    boleta_ciclo_anterior = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
+    boleta_ciclo_actual = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
+    
+    # Campos que ya no se usan directamente tras la refactorización pero se mantienen para compatibilidad temporal si es necesario
+    comprobante_domicilio = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     acta_nacimiento_estudiante = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     acta_nacimiento_tutor = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     curp_tutor_pdf = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
@@ -203,7 +223,9 @@ class Aspirante(models.Model):
     def save(self, *args, **kwargs):
         """Encripta archivos del aspirante antes de persistirlos en disco."""
         files_to_encrypt = [
-            'comprobante_domicilio', 'curp_pdf', 'acta_nacimiento_estudiante', 
+            'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
+            'boleta_ciclo_anterior', 'boleta_ciclo_actual',
+            'comprobante_domicilio', 'acta_nacimiento_estudiante', 
             'acta_nacimiento_tutor', 'curp_tutor_pdf'
         ]
         for field_name in files_to_encrypt:
