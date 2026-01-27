@@ -1,28 +1,31 @@
-from rest_framework import serializers
-from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
-from django.utils import timezone
-from django.db import transaction
-from datetime import timedelta
 import random
 import re
 import json
+from datetime import timedelta
+from django.utils import timezone
+from django.db import transaction
+from django.contrib.auth.hashers import make_password
+from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
+
+# --- SERIALIZADORES DE AUTENTICACIÓN ---
 
 class VerificationCodeSerializer(serializers.ModelSerializer):
+    """Maneja la generación y validación de códigos MFA."""
     class Meta:
         model = VerificationCode
         fields = ['email', 'code']
-        extra_kwargs = {
-            'code': {'read_only': True}
-        }
+        extra_kwargs = {'code': {'read_only': True}}
 
     def create(self, validated_data):
         email = validated_data['email']
-        # Generar código de 6 dígitos
+        # Generamos un código de 6 dígitos aleatorios
         code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-        # El usuario pidió 1 minuto de expiración
-        expires_at = timezone.now() + timedelta(minutes=1)
+        expires_at = timezone.now() + timedelta(minutes=10)
         
-        # Eliminar códigos previos no verificados
+        # Limpieza de códigos antiguos no verificados
         VerificationCode.objects.filter(email=email, is_verified=False).delete()
         
         return VerificationCode.objects.create(
@@ -33,40 +36,68 @@ class VerificationCodeSerializer(serializers.ModelSerializer):
         )
 
 class VerifyCodeSerializer(serializers.Serializer):
+    """Estructura simple para validar el código recibido."""
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
 
-class AdmissionUserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    
-    class Meta:
-        model = AdmissionUser
-        fields = ['folio', 'email', 'password']
-        read_only_fields = ['folio']
-
-    def create(self, validated_data):
-        from django.contrib.auth.hashers import make_password
-        # Usamos make_password para ser consistentes con seguridad estándar
-        validated_data['password'] = make_password(validated_data['password'])
-        return super().create(validated_data)
+def validate_curp_logic(value):
+    """Lógica compartida de validación de formato CURP."""
+    curp_regex = r'^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z]{2}$'
+    if not re.match(curp_regex, value.upper()):
+        raise serializers.ValidationError("Formato de CURP inválido")
+    return value.upper()
 
 class AspiranteRegistrationSerializer(serializers.Serializer):
+    """Paso 1: Captura de credenciales básicas."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+class AspiranteConfirmationSerializer(serializers.Serializer):
+    """Paso 2: Confirmación de registro con datos personales."""
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
     nombre = serializers.CharField(max_length=100)
     apellido_paterno = serializers.CharField(max_length=100)
     apellido_materno = serializers.CharField(max_length=100)
     curp = serializers.CharField(max_length=18)
 
     def validate_curp(self, value):
-        curp_regex = r'^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z]{2}$'
-        if not re.match(curp_regex, value.upper()):
-            raise serializers.ValidationError("Formato de CURP inválido")
-        return value.upper()
+        return validate_curp_logic(value)
 
-# --- PHASE SERIALIZERS ---
+class AspiranteLoginSerializer(serializers.Serializer):
+    """Maneja el inicio de sesión y la emisión de tokens JWT."""
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            user = AdmissionUser.objects.filter(email=email).first()
+            if user and user.check_password(password):
+                if not user.is_active:
+                    raise serializers.ValidationError("Usuario inactivo")
+                
+                # Generación manual de tokens para asegurar mapeo con 'folio'
+                refresh = RefreshToken()
+                refresh['user_id'] = user.folio
+                
+                return {
+                    'email': user.email,
+                    'folio': user.folio,
+                    'tokens': {
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                    }
+                }
+            raise serializers.ValidationError("Credenciales inválidas")
+        raise serializers.ValidationError("Debe ingresar email y contraseña")
+
+# --- SERIALIZADORES DE FASES (PROCESO) ---
 
 class AdmissionTutorSerializer(serializers.ModelSerializer):
+    """Serializa la información de los tutores asociados."""
     parentesco = serializers.CharField(write_only=True, required=False, default="Tutor")
     
     class Meta:
@@ -74,6 +105,7 @@ class AdmissionTutorSerializer(serializers.ModelSerializer):
         fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'email', 'numero_telefono', 'curp', 'parentesco']
 
 class AspirantePhase1Serializer(serializers.ModelSerializer):
+    """Fase 1: Datos personales extendidos y tutores."""
     tutores = AdmissionTutorSerializer(many=True, required=False)
     
     class Meta:
@@ -85,28 +117,22 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
         ]
 
     def validate_curp(self, value):
-        if value:
-            # Regex básica de CURP mexicano (18 caracteres)
-            curp_regex = r'^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z]{2}$'
-            if not re.match(curp_regex, value.upper()):
-                raise serializers.ValidationError("Formato de CURP inválido")
-        return value.upper()
+        return validate_curp_logic(value) if value else value
 
     def update(self, instance, validated_data):
         tutores_data = validated_data.pop('tutores', [])
-        
         with transaction.atomic():
-            # Actualizar datos del aspirante
+            # Actualización de datos base
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             
-            # Avanzar fase si es necesario
+            # Avance automático de fase
             if instance.fase_actual == 1:
                 instance.fase_actual = 2
             
             instance.save()
             
-            # Manejar tutores
+            # Sincronización de tutores
             if tutores_data:
                 for t_data in tutores_data:
                     parentesco = t_data.pop('parentesco', 'Tutor')
@@ -119,11 +145,10 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
                         tutor=tutor,
                         defaults={'parentesco': parentesco}
                     )
-            
         return instance
 
 class AspirantePhase3Serializer(serializers.ModelSerializer):
-    """Serializer para Phase 3: Documentación"""
+    """Fase 3: Carga de documentos y validación legal."""
     class Meta:
         model = Aspirante
         fields = [
@@ -133,7 +158,7 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # Valida que los checks obligatorios vengan en True si se intenta finalizar
+        """Valida que los acuerdos legales estén aceptados al finalizar fase."""
         if self.instance.fase_actual == 3:
             if not data.get('aceptacion_reglamento', self.instance.aceptacion_reglamento):
                 raise serializers.ValidationError("Debe aceptar el reglamento")
