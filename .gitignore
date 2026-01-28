@@ -17,3 +17,4 @@ school_sys/server.log
 school_sys/admissions/documents
 school_sys/admissions/check.sh
 .env
+verify_full_system.py

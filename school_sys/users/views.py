@@ -1,21 +1,14 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import EmailTokenObtainPairSerializer
-from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.db import transaction
+from django.shortcuts import render, get_object_or_404
+from django.db import transaction, models
 from django.utils import timezone
 
-from estudiantes.models import (
-    Estudiante, Tutor, EvaluacionSocioeconomica, 
-    Grado, Grupo, Estrato, EstadoEstudiante, Beca, BecaEstudiante,
-    HistorialEstadosEstudiante
-)
-from pagos.models import Pago, Adeudo, ConceptoPago
-
+from .serializers import EmailTokenObtainPairSerializer
 from .serializers_admin import (
     TutorSerializer, 
     EstudianteAdminSerializer, 
@@ -32,7 +25,12 @@ from .serializers_admin import (
     BecaSerializer,
     BecaEstudianteSerializer
 )
-
+from estudiantes.models import (
+    Estudiante, Tutor, EvaluacionSocioeconomica, 
+    Grado, Grupo, Estrato, EstadoEstudiante, Beca, BecaEstudiante,
+    HistorialEstadosEstudiante, Inscripcion, CicloEscolar
+)
+from pagos.models import Pago, Adeudo, ConceptoPago
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -66,9 +64,17 @@ def admin_student_list(request):
     """
     GET /api/admin/students/
     Retorna lista de estudiantes paginada (60 por página).
+    Busca la inscripción activa para mostrar grado/grupo.
     """
     paginator = StudentPagination()
-    students = Estudiante.objects.select_related('grupo', 'grupo__grado').order_by('matricula')
+    # Usamos prefetch_related para las inscripciones y select_related para optimizar
+    students = Estudiante.objects.prefetch_related(
+        models.Prefetch(
+            'inscripciones',
+            queryset=Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'ciclo_escolar'),
+            to_attr='active_enrollment'
+        )
+    ).order_by('matricula')
     
     result_page = paginator.paginate_queryset(students, request)
     
@@ -77,10 +83,15 @@ def admin_student_list(request):
         nombre_grado = "S/A"
         nombre_grupo = "S/A"
         
-        if s.grupo:
-            nombre_grupo = s.grupo.nombre
-            if s.grupo.grado:
-                nombre_grado = f"{s.grupo.grado.nombre} {s.grupo.grado.nivel}"
+        # Obtener la inscripción activa del atributo prefetched
+        active_enroll = s.active_enrollment[0] if s.active_enrollment else None
+        
+        if active_enroll and active_enroll.grupo:
+            nombre_grupo = active_enroll.grupo.nombre
+            if active_enroll.grupo.grado:
+                grado = active_enroll.grupo.grado
+                nivel_nombre = grado.nivel_educativo.nombre if grado.nivel_educativo else grado.nivel
+                nombre_grado = f"{grado.nombre} {nivel_nombre}"
 
         estrato = s.get_estrato_actual()
         estrato_nombre = estrato.nombre if estrato else "Sin Asignar"
@@ -110,9 +121,31 @@ def admin_student_detail(request, matricula):
     Retorna TODO sobre un alumno: info personal, tutores, historial, deudas, etc.
     """
     try:
-        student = Estudiante.objects.select_related('grupo', 'grupo__grado', 'usuario').get(matricula=matricula)
+        student = Estudiante.objects.select_related('usuario').prefetch_related(
+            models.Prefetch(
+                'inscripciones',
+                queryset=Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'ciclo_escolar'),
+                to_attr='active_enrollment'
+            )
+        ).get(matricula=matricula)
     except Estudiante.DoesNotExist:
         return Response({"error": "Estudiante no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+    active_enroll = student.active_enrollment[0] if student.active_enrollment else None
+    
+    # Resolver academic info
+    grupo_str = "Sin Grupo"
+    grado_str = "Sin Grado"
+    ciclo_str = "N/A"
+    
+    if active_enroll:
+        ciclo_str = active_enroll.ciclo_escolar.nombre
+        if active_enroll.grupo:
+            grupo_str = active_enroll.grupo.nombre
+            if active_enroll.grupo.grado:
+                grado = active_enroll.grupo.grado
+                nivel_nombre = grado.nivel_educativo.nombre if grado.nivel_educativo else grado.nivel
+                grado_str = f"{grado.nombre} {nivel_nombre}"
 
     info_basica = {
         "matricula": student.matricula,
@@ -123,8 +156,9 @@ def admin_student_detail(request, matricula):
         "curp": student.usuario.username, 
         "email": student.usuario.email,
         "direccion": student.direccion,
-        "grupo": str(student.grupo) if student.grupo else "Sin Grupo",
-        "grado": str(student.grupo.grado) if (student.grupo and student.grupo.grado) else "Sin Grado",
+        "grupo": grupo_str,
+        "grado": grado_str,
+        "ciclo": ciclo_str,
         "porcentaje_beca": student.porcentaje_beca
     }
 
@@ -162,13 +196,17 @@ def admin_student_detail(request, matricula):
 
     estrato_actual = student.get_estrato_actual()
     estado_actual = student.get_estado_actual()
+    beca_activa = student.get_beca_activa()
     balance = student.get_balance_total()
 
     data = {
         "informacion_personal": info_basica,
         "resumen_academico": {
+            "ciclo_escolar": ciclo_str,
             "estrato_actual": estrato_actual.nombre if estrato_actual else "N/A",
             "estado_escolar": estado_actual.nombre if estado_actual else "N/A",
+            "beca_nombre": beca_activa.nombre if beca_activa else "Ninguna",
+            "beca_porcentaje": beca_activa.porcentaje if beca_activa else 0,
             "balance_adeudo": balance
         },
         "tutores": tutores_data,
@@ -254,6 +292,7 @@ def admin_student_update(request, matricula):
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def admin_tutores_list(request):
+
     """
     GET /api/admin/students/tutores/ - Lista tutores
     POST /api/admin/students/tutores/ - Crear tutor
@@ -381,16 +420,24 @@ def _generar_adeudos_masivos(data, concepto):
     if matricula:
         estudiantes = estudiantes.filter(matricula=str(matricula).strip())
     else:
+        # Filtrar por inscripciones activas
+        inscripciones_path = 'inscripciones'
+        filtros_inscripcion = {'inscripciones__ciclo_escolar__activo': True}
+        
         if nivel:
-            estudiantes = estudiantes.filter(grupo__grado__nivel=nivel)
+            filtros_inscripcion['inscripciones__grupo__grado__nivel_educativo__nombre__icontains'] = nivel
         if grado_id:
-            estudiantes = estudiantes.filter(grupo__grado_id=grado_id)
+            filtros_inscripcion['inscripciones__grupo__grado_id'] = grado_id
         if grupo_id:
-            estudiantes = estudiantes.filter(grupo_id=grupo_id)
+            filtros_inscripcion['inscripciones__grupo_id'] = grupo_id
+            
+        estudiantes = estudiantes.filter(**filtros_inscripcion)
 
     count = 0
     with transaction.atomic():
         for estudiante in estudiantes:
+            # El filtro anterior ya asegura que tengan inscripción activa en el ciclo actual.
+            # Aun así, verificamos estado.
             estado = estudiante.get_estado_actual()
             if not estado or not estado.es_estado_activo:
                 continue
@@ -400,7 +447,8 @@ def _generar_adeudos_masivos(data, concepto):
                 if not estrato_actual or estrato_actual.id != int(estrato_id):
                     continue
 
-            if not Adeudo.objects.filter(estudiante=estudiante, concepto=concepto).exists():
+            # Evitar duplicados para el mismo concepto
+            if not Adeudo.objects.filter(estudiante=estudiante, concepto=concepto, estatus__in=['pendiente', 'pagado']).exists():
                 adeudo = Adeudo(
                     estudiante=estudiante,
                     concepto=concepto,

@@ -43,6 +43,7 @@ SIMPLE_JWT = {
 # Application definition
 INSTALLED_APPS = [
     'users',
+    "jazzmin",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +57,24 @@ INSTALLED_APPS = [
     'pagos',
     'admissions',
 ]
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Admin TI",
+    "site_header": "Panel TI",
+    "site_brand": "Plataforma Interna",
+    "welcome_sign": "Administración del sistema",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "icons": {
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+    },
+    "theme": "cyborg",  # darkly, flatly, lumen, cyborg, etc
+}
+
+JAZZMIN_SETTINGS["hide_apps"] = []
+JAZZMIN_SETTINGS["hide_models"] = []
+JAZZMIN_SETTINGS["show_ui_builder"] = False
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

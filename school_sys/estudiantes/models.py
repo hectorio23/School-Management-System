@@ -1,7 +1,63 @@
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.db.models import Sum, F
 from django.utils import timezone
+from decimal import Decimal
 from users.models import User
+
+#########################################################
+# NIVELES Y CICLOS
+#########################################################
+
+class NivelEducativo(models.Model):
+    """
+    Niveles educativos: Preescolar, Primaria, Secundaria.
+    Define la estructura macro del colegio.
+    """
+    nombre = models.CharField(max_length=50, unique=True)
+    orden = models.IntegerField(help_text="1=Preescolar, 2=Primaria, 3=Secundaria")
+    grados_totales = models.IntegerField(help_text="Cuántos grados tiene este nivel (ej: 3, 6)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Nivel Educativo"
+        verbose_name_plural = "Niveles Educativos"
+        ordering = ['orden']
+        db_table = 'niveles_educativos'
+
+    def __str__(self):
+        return self.nombre
+
+
+class CicloEscolar(models.Model):
+    """
+    Ciclo escolar (ej: 2024-2025).
+    Determina qué inscripciones y grupos están activos.
+    """
+    nombre = models.CharField(max_length=50, unique=True, help_text="Ej: 2024-2025")
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    activo = models.BooleanField(default=False, help_text="Solo un ciclo debe estar activo a la vez")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Ciclo Escolar"
+        verbose_name_plural = "Ciclos Escolares"
+        ordering = ['-fecha_inicio']
+        db_table = 'ciclos_escolares'
+
+    def __str__(self):
+        estado = "[ACTIVO]" if self.activo else ""
+        return f"{self.nombre} {estado}"
+
+    def save(self, *args, **kwargs):
+        # Asegurar que solo hay un ciclo activo
+        if self.activo:
+            CicloEscolar.objects.filter(activo=True).exclude(pk=self.pk).update(activo=False)
+        super().save(*args, **kwargs)
+
 
 #########################################################
 # GRADOS Y GRUPOS
@@ -10,40 +66,84 @@ from users.models import User
 class Grado(models.Model):
     """Grados académicos del sistema"""
     nombre = models.CharField(max_length=50)  # "1°", "2°", "3°"
-    nivel = models.CharField(max_length=100)  # Primaria, Secundaria, Preparatoria
+    
+    # Nuevo campo FK (opcional por ahora para migración)
+    nivel_educativo = models.ForeignKey(
+        NivelEducativo, 
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True,
+        related_name='grados'
+    )
+    
+    numero_grado = models.IntegerField(
+        default=1,
+        help_text="Grado relativo al nivel (1, 2, 3...)"
+    )
+    
+    orden_global = models.IntegerField(
+        default=0,
+        help_text="Orden secuencial absoluto (1=1°Prees, ..., 12=3°Sec)"
+    )
+
+    # Deprecated: Se mantendrá mientras se migra a nivel_educativo
+    nivel = models.CharField(max_length=100, help_text="DEPRECATED: Usar nivel_educativo")  
 
     class Meta:
         verbose_name = "Grado"
         verbose_name_plural = "Grados"
-        unique_together = [['nombre', 'nivel']]
+        unique_together = [['nombre', 'nivel']] # Considerar cambiar esto post-migración
         db_table = 'grados'
+        ordering = ['orden_global']
         indexes = [
             models.Index(fields=['nombre', 'nivel'], name='idx_grado_nombre_nivel'),
+            models.Index(fields=['orden_global'], name='idx_grado_orden_global'),
         ]
 
     def __str__(self):
+        if self.nivel_educativo:
+            return f"{self.nombre} {self.nivel_educativo.nombre}"
         return f"{self.nombre} - {self.nivel}"
 
 
 class Grupo(models.Model):
     """Grupos escolares por ciclo"""
-    nombre = models.CharField(max_length=100)
-    generacion = models.CharField(max_length=50)  # Ciclo escolar: 2024-2025
-    descripcion = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=100, help_text="A, B, C")
+    
+    # Nuevo campo FK (opcional por ahora)
+    ciclo_escolar = models.ForeignKey(
+        CicloEscolar,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='grupos'
+    )
+    
+    # TODO: Generacion a la que pertenece el estudiante <ciclo escolar de ingreso>
+    generacion = models.CharField(
+        max_length=50, 
+        help_text="DEPRECATED: Usar ciclo_escolar. Ejemplo: 2024-2025"
+    )  
+    
+    descripcion = models.CharField(max_length=255, null=True, blank=True)
+    capacidad_maxima = models.IntegerField(default=30)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     grado = models.ForeignKey(Grado, on_delete=models.CASCADE, db_column='grado_id')
 
     class Meta:
         verbose_name = "Grupo"
         verbose_name_plural = "Grupos"
-        unique_together = [['nombre', 'generacion', 'grado']]
+        # unique_together = [['nombre', 'ciclo_escolar', 'grado']] # Habilitar post-migración
         db_table = 'grupos'
         indexes = [
             models.Index(fields=['grado'], name='idx_grupo_grado'),
+            models.Index(fields=['ciclo_escolar'], name='idx_grupo_ciclo'),
         ]
 
     def __str__(self):
-        return f"{self.nombre} - {self.generacion}"
+        nivel = self.grado.nivel_educativo.nombre if self.grado.nivel_educativo else self.grado.nivel
+        return f"{self.grado.nombre}{self.nombre} - {nivel}"
+
 
 
 #########################################################
@@ -151,22 +251,44 @@ class Estudiante(models.Model):
         return beca_estudiante.beca if beca_estudiante else None
     
     def get_porcentaje_descuento_total(self):
-        """Calcula el porcentaje de descuento total (beca + estrato)"""
-        from decimal import Decimal
-        porcentaje_beca = Decimal('0.00')
-        porcentaje_estrato = Decimal('0.00')
-        
-        # Obtener beca activa
+        """
+        [DEPRECATED] Retorna la suma simple de porcentajes.
+        Use get_monto_descuento para cálculos precisos.
+        """
         beca = self.get_beca_activa()
-        if beca:
-            porcentaje_beca = beca.porcentaje
+        pct_beca = beca.porcentaje if beca else Decimal('0.00')
         
-        # Obtener estrato actual
         estrato = self.get_estrato_actual()
-        if estrato:
-            porcentaje_estrato = estrato.porcentaje_descuento
+        pct_estrato = estrato.porcentaje_descuento if estrato else Decimal('0.00')
         
-        return porcentaje_beca + porcentaje_estrato
+        return pct_beca + pct_estrato
+
+    def get_monto_descuento(self, monto_base):
+        """
+        Calcula el monto de descuento secuencial:
+        1. Se aplica el % del Estrato al monto_base.
+        2. Se aplica el % de la Beca sobre el remanente.
+        Retorna el MONTO TOTAL de descuento redondeado a 2 decimales.
+        """
+        if not monto_base:
+            return Decimal('0.00')
+            
+        monto_base = Decimal(str(monto_base))
+        
+        # 1. Aplicar Estrato primero
+        estrato = self.get_estrato_actual()
+        pct_estrato = estrato.porcentaje_descuento if estrato else Decimal('0.00')
+        
+        descuento_estrato = monto_base * (pct_estrato / Decimal('100.00'))
+        monto_estratificado = monto_base - descuento_estrato
+        
+        # 2. Aplicar Beca sobre lo estratificado
+        beca = self.get_beca_activa()
+        pct_beca = beca.porcentaje if beca else Decimal('0.00')
+        
+        descuento_beca = monto_estratificado * (pct_beca / Decimal('100.00'))
+        
+        return (descuento_estrato + descuento_beca).quantize(Decimal('0.01'))
 
     class Meta:
         verbose_name = "Estudiante"
@@ -184,17 +306,16 @@ class Estudiante(models.Model):
     def __str__(self):
         return f"{self.matricula} - {self.nombre} {self.apellido_paterno}"
 
-
     def get_balance_total(self):
-        """Calcula el balance total pendiente"""
-        from django.db.models import Sum, F
-        
+
+        """Calcula el balance total de adeudos pendientes o parciales"""
         resultado = self.adeudo_set.filter(
             estatus__in=['pendiente', 'parcial']
         ).aggregate(
             balance=Sum(F('monto_total'))
         )
         return resultado['balance'] or 0
+
     
     def check_password(self, raw_password):
         """Verifica la contraseña"""
@@ -540,7 +661,7 @@ class Beca(models.Model):
     
     def verificar_vigencia(self):
         """Verifica y actualiza el estado de vigencia de la beca"""
-        from django.utils import timezone
+
         if self.fecha_vencimiento < timezone.now().date():
             self.valida = False
             self.save(update_fields=['valida'])
@@ -600,8 +721,65 @@ class BecaEstudiante(models.Model):
     
     def retirar_beca(self, motivo=None):
         """Retira la beca del estudiante, creando un registro histórico"""
-        from django.utils import timezone
         self.activa = False
         self.fecha_retiro = timezone.now()
-        self.motivo_retiro = motivo
-        self.save()
+    # ... (métodos existentes)
+    
+class Inscripcion(models.Model):
+    """
+    Registro histórico de la inscripción de un alumno en un grado/grupo/ciclo específico.
+    Permite tener historial académico completo.
+    """
+    ESTATUS_INSCRIPCION = [
+        ('activo', 'Activo'),
+        ('completado', 'Completado (Aprobado)'),
+        ('reprobado', 'Reprobado'),
+        ('baja_temporal', 'Baja Temporal'),
+        ('baja_definitiva', 'Baja Definitiva'),
+        ('egresado', 'Egresado de Nivel'),
+        ('pendiente_pago', 'Pendiente de Pago/Reinscripción'),
+        ('pendiente_asignacion', 'Pagado - Pendiente Asignación Grupo'),
+    ]
+
+    estudiante = models.ForeignKey(
+        Estudiante, 
+        on_delete=models.CASCADE, 
+        related_name='inscripciones'
+    )
+    grupo = models.ForeignKey(
+        Grupo, 
+        on_delete=models.PROTECT,
+        related_name='inscripciones'
+    )
+    ciclo_escolar = models.ForeignKey(
+        CicloEscolar, 
+        on_delete=models.PROTECT,
+        related_name='inscripciones'
+    )
+    
+    estatus = models.CharField(
+        max_length=50, 
+        choices=ESTATUS_INSCRIPCION, 
+        default='activo'
+    )
+    
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Calificación final o promedio del grado (opcional)
+    promedio_final = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Inscripción"
+        verbose_name_plural = "Inscripciones"
+        db_table = 'inscripciones'
+        unique_together = [['estudiante', 'ciclo_escolar']] # Un estudiante solo puede estar en un grupo por ciclo
+        indexes = [
+            models.Index(fields=['estudiante'], name='idx_inscripcion_estudiante'),
+            models.Index(fields=['ciclo_escolar'], name='idx_inscripcion_ciclo'),
+            models.Index(fields=['estatus'], name='idx_inscripcion_estatus'),
+        ]
+
+    def __str__(self):
+        return f"{self.estudiante} - {self.grupo} ({self.estatus})"

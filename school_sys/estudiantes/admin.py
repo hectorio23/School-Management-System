@@ -1,34 +1,38 @@
 from django.contrib import admin
 from django.utils.timezone import now
 from django.utils.html import format_html
-from django import forms
+from django.db import models
 from .models import (
-    Estudiante, Tutor, EstudianteTutor, 
-    Grado, Grupo, Estrato, EvaluacionSocioeconomica, 
+    Estudiante, Tutor, EstudianteTutor,
+    NivelEducativo, Grado, Grupo, CicloEscolar,
     EstadoEstudiante, HistorialEstadosEstudiante,
-    Beca, BecaEstudiante
+    Estrato, EvaluacionSocioeconomica,
+    Beca, BecaEstudiante, Inscripcion
 )
 from .forms import EstudianteCreationForm
+from .services import generar_adeudos_reinscripcion, asegurar_grupos_ciclo
+from django.utils import timezone
 
 # --- Inlines ---
 
+class InscripcionInline(admin.TabularInline):
+    model = Inscripcion
+    extra = 0
+    autocomplete_fields = ['grupo', 'ciclo_escolar']
+    readonly_fields = ('fecha_inscripcion',)
+    verbose_name = "Historial de Inscripción"
+    verbose_name_plural = "Historial de Inscripciones"
+
+
 class EstudianteTutorInline(admin.TabularInline):
-    """
-    Permite gestionar la relación M2M entre Estudiante y Tutor
-    directamente desde la vista del estudiante.
-    Incluye los campos extra de la tabla intermedia (parentesco, activo).
-    """
     model = EstudianteTutor
     extra = 1
-    autocomplete_fields = ['tutor'] # Requiere search_fields en TutorAdmin
+    autocomplete_fields = ['tutor']
     verbose_name = "Tutor Asignado"
     verbose_name_plural = "Tutores Asignados"
 
 
 class EstudianteTutorInlineForTutor(admin.TabularInline):
-    """
-    Muestra los estudiantes asociados a un tutor desde la vista del tutor.
-    """
     model = EstudianteTutor
     extra = 0
     autocomplete_fields = ['estudiante']
@@ -44,27 +48,22 @@ class EstudianteTutorInlineForTutor(admin.TabularInline):
     get_matricula.short_description = "Matrícula"
     
     def get_grado_grupo(self, obj):
-        if obj.estudiante and obj.estudiante.grupo:
-            return f"{obj.estudiante.grupo.grado} - {obj.estudiante.grupo.nombre}"
+        if obj.estudiante:
+            inscripcion = obj.estudiante.inscripciones.filter(ciclo_escolar__activo=True).first()
+            if inscripcion and inscripcion.grupo:
+                return f"{inscripcion.grupo.grado} - {inscripcion.grupo.nombre}"
         return "-"
     get_grado_grupo.short_description = "Grado y Grupo"
 
 
 class EvaluacionSocioeconomicaInline(admin.TabularInline):
-    """
-    Muestra el historial de evaluaciones socioeconómicas.
-    Se recomienda usar 'can_delete = False' para preservar historial,
-    o manejarlo con cuidado.
-    """
     model = EvaluacionSocioeconomica
     extra = 0
     ordering = ('-fecha_evaluacion',)
-    readonly_fields = ('fecha_evaluacion',) # Fecha inmutable una vez creada
+    readonly_fields = ('fecha_evaluacion',)
     can_delete = False
     
     def has_change_permission(self, request, obj=None):
-        # Evitar edición directa en inline para forzar creación de nuevo registro
-        # o permitirlo si se desea corregir errores menores.
         return False
         
     def has_add_permission(self, request, obj=None):
@@ -72,9 +71,6 @@ class EvaluacionSocioeconomicaInline(admin.TabularInline):
 
 
 class BecaEstudianteInline(admin.TabularInline):
-    """
-    Muestra las becas asignadas a un estudiante.
-    """
     model = BecaEstudiante
     extra = 0
     autocomplete_fields = ['beca']
@@ -84,9 +80,6 @@ class BecaEstudianteInline(admin.TabularInline):
 
 
 class BecaEstudianteInlineForBeca(admin.TabularInline):
-    """
-    Muestra los estudiantes asignados a una beca desde la vista de la beca.
-    """
     model = BecaEstudiante
     extra = 1
     autocomplete_fields = ['estudiante']
@@ -102,8 +95,10 @@ class BecaEstudianteInlineForBeca(admin.TabularInline):
     get_matricula.short_description = "Matrícula"
     
     def get_grado_grupo(self, obj):
-        if obj.estudiante and obj.estudiante.grupo:
-            return f"{obj.estudiante.grupo.grado} - {obj.estudiante.grupo.nombre}"
+        if obj.estudiante:
+            inscripcion = obj.estudiante.inscripciones.filter(ciclo_escolar__activo=True).first()
+            if inscripcion and inscripcion.grupo:
+                return f"{inscripcion.grupo.grado} - {inscripcion.grupo.nombre}"
         return "-"
     get_grado_grupo.short_description = "Grado y Grupo"
 
@@ -112,61 +107,83 @@ class BecaEstudianteInlineForBeca(admin.TabularInline):
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    # Formulario personalizado para creación (User + Estudiante)
     add_form = EstudianteCreationForm
     
-    list_display = ('matricula', 'get_nombre_completo', 'get_grado_grupo', 'get_estado_actual', 'get_beca_display')
-    # Removed 'estado_actual__nombre' because it's not a direct field
-    list_filter = ('grupo__grado', 'grupo')
+    list_display = ('matricula', 'get_nombre_completo', 'get_grado_grupo', 'get_estado_actual', 'get_estrato_display', 'get_beca_display')
+    list_filter = ('inscripciones__ciclo_escolar', 'inscripciones__grupo__grado')
     search_fields = ('matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 'usuario__email')
     ordering = ('apellido_paterno', 'apellido_materno')
     
-    inlines = [EstudianteTutorInline, EvaluacionSocioeconomicaInline, BecaEstudianteInline]
-    
-    # Campos a mostrar en detalle
+    inlines = [InscripcionInline, EstudianteTutorInline, EvaluacionSocioeconomicaInline, BecaEstudianteInline]
+    exclude = ('grupo',)
+
     fieldsets = (
         ('Información Personal', {
-            'fields': ('nombre', 'apellido_paterno', 'apellido_materno', 'direccion',) # Check models for 'fecha_nacimiento' availability, assuming removed if error
+            'fields': ('nombre', 'apellido_paterno', 'apellido_materno', 'direccion',)
         }),
-        ('Información Académica', {
-            'fields': ('grupo',) 
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('nombre', 'apellido_paterno', 'apellido_materno', 'direccion'),
         }),
-        # Matricula y Usuario se excluyen o son readonly
+        ('Credenciales de Acceso', {
+            'fields': ('email_usuario', 'username_usuario', 'password_usuario'),
+        }),
+        ('Inscripción Inicial', {
+            'fields': ('ciclo_escolar', 'grupo'),
+        }),
     )
     
+    def get_fieldsets(self, request, obj=None):
+        if not obj:
+            return self.add_fieldsets
+        return super().get_fieldsets(request, obj)
+
     def get_form(self, request, obj=None, **kwargs):
-        """
-        Usa el formulario personalizado solo al crear (add_view).
-        Al editar, usa el formulario por defecto del ModelAdmin.
-        """
         defaults = {}
         if obj is None:
             defaults['form'] = self.add_form
         defaults.update(kwargs)
         return super().get_form(request, obj, **defaults)
 
-    # Helpers para list_display
     def get_nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}"
     get_nombre_completo.short_description = "Nombre Completo"
     
     def get_grado_grupo(self, obj):
-        if obj.grupo:
-            return f"{obj.grupo.grado} - {obj.grupo.nombre}"
+        inscripcion = obj.inscripciones.filter(ciclo_escolar__activo=True).first()
+        if inscripcion and inscripcion.grupo:
+            return str(inscripcion.grupo)
         return "-"
-    get_grado_grupo.short_description = "Grado y Grupo"
+    get_grado_grupo.short_description = "Ciclo Activo"
 
     def get_estado_actual(self, obj):
-        return obj.get_estado_actual()
+        inscripcion = obj.inscripciones.filter(ciclo_escolar__activo=True).first()
+        if inscripcion:
+            return inscripcion.get_estatus_display()
+        return "NO INSCRITO"
     get_estado_actual.short_description = "Estado"
+
+    def get_estrato_display(self, obj):
+        estrato = obj.get_estrato_actual()
+        if estrato:
+            return format_html(
+                '<span style="padding: 2px 8px; border-radius: 12px; background-color: {color}; color: white; font-weight: bold;">{nombre} ({desc}%)</span>',
+                color=estrato.color or "#6B7280",
+                nombre=estrato.nombre,
+                desc=estrato.porcentaje_descuento
+            )
+        return "-"
+    get_estrato_display.short_description = "Estrato"
 
     def get_beca_display(self, obj):
         beca = obj.get_beca_activa()
         if beca:
-            return format_html('<span style="color: green;">{} ({}%)</span>', beca.nombre, beca.porcentaje)
+            return format_html('<span style="color: green; font-weight: bold;">{} ({}%)</span>', beca.nombre, beca.porcentaje)
         return "-"
     get_beca_display.short_description = "Beca Activa"
-
 
 @admin.register(Tutor)
 class TutorAdmin(admin.ModelAdmin):
@@ -192,34 +209,68 @@ class EvaluacionSocioeconomicaAdmin(admin.ModelAdmin):
     get_matricula.short_description = "Matrícula"
     
     def save_model(self, request, obj, form, change):
-        """
-        Lógica para Historial:
-        Si se actualiza un registro existente (change=True),
-        creamos uno NUEVO en lugar de sobrescribir el anterior.
-        """
         if change:
-            # Forzamos creación de nuevo registro
             obj.pk = None
-            obj.fecha_evaluacion = now() # Actualizamos fecha al momento actual
-        
+            obj.fecha_evaluacion = now()
         super().save_model(request, obj, form, change)
 
 
 @admin.register(Grado)
 class GradoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'nivel')
-    list_filter = ('nivel',)
+    list_display = ('nombre', 'nivel_educativo', 'numero_grado', 'orden_global')
+    list_filter = ('nivel_educativo',)
+    ordering = ('orden_global',)
+    exclude = ('nivel',)
 
 
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'grado', 'generacion')
-    list_filter = ('grado', 'generacion')
+    list_display = ('nombre', 'grado', 'ciclo_escolar', 'capacidad_maxima')
+    list_filter = ('grado', 'ciclo_escolar')
+    search_fields = ('nombre', 'grado__nombre')
+    exclude = ('generacion',)
+
+
+@admin.register(NivelEducativo)
+class NivelEducativoAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'orden', 'grados_totales')
+    search_fields = ('nombre',)
+    ordering = ('orden',)
+
+
+@admin.register(CicloEscolar)
+class CicloEscolarAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'activo')
+    list_editable = ('activo',)
+    search_fields = ('nombre',)
+
+    def save_model(self, request, obj, form, change):
+        
+        se_activo = obj.activo and (not change or not CicloEscolar.objects.get(pk=obj.pk).activo)
+        super().save_model(request, obj, form, change)
+
+        if se_activo:
+            grupos_creados = asegurar_grupos_ciclo(obj)
+            ciclo_anterior = CicloEscolar.objects.filter(activo=False).exclude(pk=obj.pk).order_by('-fecha_fin').first()
+            
+            adeudos_msg = ""
+            if ciclo_anterior:
+                resultados = generar_adeudos_reinscripcion(ciclo_anterior)
+                adeudos_msg = f" y se generaron {resultados['adeudos_creados']} adeudos"
+
+            self.message_user(request, f"Ciclo {obj.nombre} activado. Se crearon {grupos_creados} grupos{adeudos_msg}.")
+
+
+@admin.register(Inscripcion)
+class InscripcionAdmin(admin.ModelAdmin):
+    list_display = ('estudiante', 'grupo', 'ciclo_escolar', 'estatus', 'fecha_inscripcion')
+    list_filter = ('ciclo_escolar', 'estatus', 'grupo__grado')
+    search_fields = ('estudiante__nombre', 'estudiante__matricula')
+    autocomplete_fields = ['estudiante', 'grupo', 'ciclo_escolar']
 
 
 @admin.register(Estrato)
 class EstratoAdmin(admin.ModelAdmin):
-    # Removed 'nivel' from list_display as per error fix
     list_display = ('nombre', 'porcentaje_descuento', 'descripcion')
 
 
@@ -236,7 +287,6 @@ class BecaAdmin(admin.ModelAdmin):
     list_filter = ('valida', 'fecha_inicio', 'fecha_vencimiento')
     search_fields = ('nombre', 'descripcion')
     ordering = ('-valida', '-fecha_inicio')
-    # date_hierarchy = 'fecha_inicio' # Comentado por error de zona horaria
     inlines = [BecaEstudianteInlineForBeca]
     
     fieldsets = (
@@ -273,7 +323,6 @@ class BecaEstudianteAdmin(admin.ModelAdmin):
     search_fields = ('estudiante__nombre', 'estudiante__matricula', 'beca__nombre')
     autocomplete_fields = ['estudiante', 'beca']
     ordering = ('-fecha_asignacion',)
-    # date_hierarchy = 'fecha_asignacion' # Comentado por error de zona horaria
     
     readonly_fields = ('fecha_asignacion',)
     
@@ -302,7 +351,6 @@ class BecaEstudianteAdmin(admin.ModelAdmin):
     
     @admin.action(description="Retirar becas seleccionadas")
     def retirar_becas(self, request, queryset):
-        from django.utils import timezone
         queryset.update(activa=False, fecha_retiro=timezone.now(), motivo_retiro="Retiro masivo desde admin")
         self.message_user(request, f"Se retiraron {queryset.count()} asignaciones de beca.")
     

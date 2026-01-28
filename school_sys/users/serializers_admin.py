@@ -1,15 +1,17 @@
-
 from rest_framework import serializers
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
+from decimal import Decimal
+
 from estudiantes.models import (
     Estudiante, Tutor, EstudianteTutor, Grupo, Grado, 
     EvaluacionSocioeconomica, Estrato, EstadoEstudiante,
-    Beca, BecaEstudiante
+    Beca, BecaEstudiante, Inscripcion, CicloEscolar,
+    HistorialEstadosEstudiante
 )
 from pagos.models import Pago, Adeudo, ConceptoPago
-from django.utils import timezone
-from datetime import timedelta
 
 User = get_user_model()
 
@@ -88,17 +90,22 @@ class EstudianteAdminSerializer(serializers.ModelSerializer):
     user_data = UserSerializer(write_only=True)
     grado_id = serializers.IntegerField(write_only=True, required=False)
     grupo_id = serializers.IntegerField(write_only=True, required=False)
+    estado_id = serializers.IntegerField(write_only=True, required=False)
+    beca_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Estudiante
         fields = [
             'matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 
-            'direccion', 'porcentaje_beca', 'user_data', 'grado_id', 'grupo_id'
+            'direccion', 'porcentaje_beca', 'user_data', 'grado_id', 'grupo_id',
+            'estado_id', 'beca_id'
         ]
 
     def create(self, validated_data):
         user_data = validated_data.pop('user_data')
         grupo_id = validated_data.pop('grupo_id', None)
+        estado_id = validated_data.pop('estado_id', None)
+        beca_id = validated_data.pop('beca_id', None)
 
         with transaction.atomic():
             user_data['role'] = 'estudiante'
@@ -107,15 +114,93 @@ class EstudianteAdminSerializer(serializers.ModelSerializer):
             estudiante = Estudiante.objects.create(usuario=user, **validated_data)
 
             if grupo_id:
-                estudiante.grupo_id = grupo_id
-                estudiante.save()
+                ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
+                if not ciclo_activo:
+                    raise serializers.ValidationError({"error": "No hay un ciclo escolar activo para realizar la inscripción."})
+                
+                Inscripcion.objects.create(
+                    estudiante=estudiante,
+                    grupo_id=grupo_id,
+                    ciclo_escolar=ciclo_activo,
+                    estatus='activo'
+                )
+            
+            # Registro de estado
+            if estado_id:
+                HistorialEstadosEstudiante.objects.create(
+                    estudiante=estudiante,
+                    estado_id=estado_id,
+                    justificacion="Estado inicial asignado mediante API Admin."
+                )
+            else:
+                estado_activo = EstadoEstudiante.objects.filter(nombre__iexact='ACTIVO').first()
+                if estado_activo:
+                    HistorialEstadosEstudiante.objects.create(
+                        estudiante=estudiante,
+                        estado=estado_activo,
+                        justificacion="Asignación automática de estado activo."
+                    )
+
+            if beca_id:
+                BecaEstudiante.objects.create(
+                    estudiante=estudiante,
+                    beca_id=beca_id,
+                    activa=True,
+                    asignado_por="API Admin"
+                )
             
             return estudiante
 
 class EstudianteUpdateSerializer(serializers.ModelSerializer):
+    grupo_id = serializers.IntegerField(write_only=True, required=False)
+    estado_id = serializers.IntegerField(write_only=True, required=False)
+    beca_id = serializers.IntegerField(write_only=True, required=False)
+
     class Meta:
         model = Estudiante
-        fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'direccion', 'grupo', 'porcentaje_beca']
+        fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'direccion', 'grupo_id', 'porcentaje_beca', 'estado_id', 'beca_id']
+
+    def update(self, instance, validated_data):
+        grupo_id = validated_data.pop('grupo_id', None)
+        estado_id = validated_data.pop('estado_id', None)
+        beca_id = validated_data.pop('beca_id', None)
+        
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            
+            if grupo_id:
+                ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
+                if not ciclo_activo:
+                    raise serializers.ValidationError({"error": "No hay ciclo activo para actualizar inscripción."})
+                
+                Inscripcion.objects.update_or_create(
+                    estudiante=instance,
+                    ciclo_escolar=ciclo_activo,
+                    defaults={'grupo_id': grupo_id, 'estatus': 'activo'}
+                )
+
+            if estado_id:
+                HistorialEstadosEstudiante.objects.create(
+                    estudiante=instance,
+                    estado_id=estado_id,
+                    justificacion="Estado actualizado mediante API Admin."
+                )
+
+            if beca_id:
+                BecaEstudiante.objects.filter(estudiante=instance, activa=True).update(
+                    activa=False, 
+                    fecha_retiro=timezone.now(),
+                    motivo_retiro="Actualización de beca mediante API Admin"
+                )
+                
+                BecaEstudiante.objects.create(
+                    estudiante=instance,
+                    beca_id=beca_id,
+                    activa=True,
+                    asignado_por="API Admin"
+                )
+        
+        return instance
 
 # estratos
 class AdeudoCreateSerializer(serializers.Serializer):
@@ -123,27 +208,16 @@ class AdeudoCreateSerializer(serializers.Serializer):
     concepto_id = serializers.IntegerField()
     
     def create(self, validated_data):
-        print("Creating Adeudo with logic...")
         matricula = validated_data['estudiante_matricula']
         concepto_id = validated_data['concepto_id']
         
         estudiante = Estudiante.objects.get(matricula=matricula)
         concepto = ConceptoPago.objects.get(id=concepto_id)
         
-        # Cacular el descuento
-        estrato = estudiante.get_estrato_actual()
-        porcentaje_estrato = estrato.porcentaje_descuento if estrato else 0
-        porcentaje_beca = estudiante.porcentaje_beca # Decimal
-        
-        total_descuento_pct = porcentaje_estrato + porcentaje_beca
-        if total_descuento_pct > 100:
-            total_descuento_pct = 100
-        
         monto_base = concepto.monto_base
-        descuento_monto = (monto_base * total_descuento_pct) / 100
+        descuento_monto = estudiante.get_monto_descuento(monto_base)
         monto_total = monto_base - descuento_monto
         
-        # Comprobar que el campo sea de tipo date y no datetime (da error si es datetime)
         fecha_vencimiento = (timezone.now() + timedelta(days=30)).date()
 
         adeudo = Adeudo.objects.create(
@@ -219,11 +293,12 @@ class GradoSerializer(serializers.ModelSerializer):
 class GrupoSerializer(serializers.ModelSerializer):
     """Serializer para Grupo con grado anidado"""
     grado_nombre = serializers.CharField(source='grado.nombre', read_only=True)
-    grado_nivel = serializers.CharField(source='grado.nivel', read_only=True)
+    grado_nivel = serializers.CharField(source='grado.nivel_educativo.nombre', read_only=True)
+    ciclo_nombre = serializers.CharField(source='ciclo_escolar.nombre', read_only=True)
     
     class Meta:
         model = Grupo
-        fields = ['id', 'nombre', 'generacion', 'descripcion', 'grado', 'grado_nombre', 'grado_nivel']
+        fields = ['id', 'nombre', 'ciclo_escolar', 'ciclo_nombre', 'descripcion', 'grado', 'grado_nombre', 'grado_nivel', 'capacidad_maxima']
 
 
 class EstratoSerializer(serializers.ModelSerializer):
@@ -275,3 +350,5 @@ class BecaEstudianteSerializer(serializers.ModelSerializer):
             'beca_nombre', 'beca_porcentaje'
         ]
         read_only_fields = ['fecha_asignacion']
+
+

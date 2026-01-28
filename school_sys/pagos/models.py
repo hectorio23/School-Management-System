@@ -1,7 +1,9 @@
 from django.db import models
-from estudiantes.models import Estudiante
-from datetime import timedelta
 from django.utils import timezone
+from django.db.models import Sum
+from datetime import timedelta, date, datetime
+from decimal import Decimal
+from estudiantes.models import Estudiante
 
 #########################################################
 # CONFIGURACION DE PAGOS
@@ -74,6 +76,20 @@ class ConceptoPago(models.Model):
         max_length=100,
         help_text='Primaria, Secundaria, Preparatoria, Todos'
     )
+    
+    TIPO_CONCEPTO_CHOICES = [
+        ('colegiatura', 'Colegiatura Mensual'),
+        ('reinscripcion', 'Reinscripción Anual'),
+        ('inscripcion', 'Inscripción Nuevo Ingreso'),
+        ('otro', 'Otro'),
+    ]
+    tipo_concepto = models.CharField(
+        max_length=50,
+        choices=TIPO_CONCEPTO_CHOICES,
+        default='otro',
+        help_text='Tipo de concepto para automatización'
+    )
+    
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -92,8 +108,6 @@ class ConceptoPago(models.Model):
 class Adeudo(models.Model):
     """
     Adeudos generados por concepto.
-    Los recargos se calculan automáticamente.
-    UN ADEUDO POR CONCEPTO POR ESTUDIANTE.
     """
     ESTATUS_CHOICES = [
         ('pendiente', 'Pendiente'),
@@ -127,7 +141,7 @@ class Adeudo(models.Model):
         help_text='Descuento aplicado por estrato'
     )
 
-    recargo_aplicado = models.DecimalField(
+    recargo_applied = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
@@ -150,11 +164,11 @@ class Adeudo(models.Model):
     # Fechas
     fecha_generacion = models.DateField(
         help_text='Fecha en que se generó el adeudo',
-        auto_now=True
+        auto_now_add=True
     )
     fecha_vencimiento = models.DateField(
         help_text='Fecha límite de pago',
-        default=timezone.now() + timedelta(days=31)
+        default=timezone.now().date() + timedelta(days=31)
     )
 
     # Estado
@@ -193,10 +207,6 @@ class Adeudo(models.Model):
         help_text='Justificacion si fue creado manualmente'
     )
 
-    # Timestamps
-    # fecha_creacion = models.DateTimeField(auto_now_add=True)
-    # fecha_actualizacion = models.DateTimeField(auto_now=True)
-
     class Meta:
         verbose_name = "Adeudo"
         verbose_name_plural = "Adeudos"
@@ -205,79 +215,49 @@ class Adeudo(models.Model):
             models.Index(fields=['estudiante'], name='idx_adeudo_estudiante'),
             models.Index(fields=['concepto'], name='idx_adeudo_concepto'),
             models.Index(fields=['fecha_vencimiento'], name='idx_adeudo_vencimiento'),
-            models.Index(fields=['estatus'], name='idx_adeudo_estatus'),
-            models.Index(
-                fields=['estudiante', 'concepto', 'fecha_generacion'],
-                name='idx_adeudo_seguimiento'
-            ),
+            models.Index(fields=['estatus'], name='idx_adeudo_eststatus'),
         ]
 
     def __str__(self):
         return f"{self.estudiante} - {self.concepto} (${self.monto_total})"
 
     def save(self, *args, **kwargs):
-        from decimal import Decimal
-        from django.utils import timezone
-        import datetime
-
-        # 1. Calcular Fecha de Vencimiento por defecto (día 10 del mes siguiente si no existe)
+        # 1. Calcular Fecha de Vencimiento
         if not self.fecha_vencimiento:
             hoy = timezone.localdate()
             mes_siguiente = hoy.month + 1 if hoy.month < 12 else 1
             anio_siguiente = hoy.year if hoy.month < 12 else hoy.year + 1
             try:
-                self.fecha_vencimiento = datetime.date(anio_siguiente, mes_siguiente, 10)
+                self.fecha_vencimiento = date(anio_siguiente, mes_siguiente, 10)
             except ValueError:
-                # Caso raro, fallback al 28
-                self.fecha_vencimiento = datetime.date(anio_siguiente, mes_siguiente, 28)
+                self.fecha_vencimiento = date(anio_siguiente, mes_siguiente, 28)
 
         # 2. Asegurar Monto Base
         if (self.monto_base is None or self.monto_base == 0) and self.concepto:
              self.monto_base = self.concepto.monto_base
         
-        if self.monto_base is None:
-             self.monto_base = Decimal('0.00')
+        self.monto_base = Decimal(str(self.monto_base or '0.00'))
 
-        # 3. Calcular Descuentos (solo si es nuevo o se solicita recalcular)
+        # 3. Calcular Descuentos Secuenciales
         if self.pk is None and self.estudiante:
-            porcentaje_total = self.estudiante.get_porcentaje_descuento_total()
-            if porcentaje_total > 0:
-                self.descuento_aplicado = self.monto_base * (porcentaje_total / Decimal('100.00'))
-                print(self.descuento_aplicado)
-            else:
-                self.descuento_aplicado = Decimal('0.00')
+            self.descuento_aplicado = self.estudiante.get_monto_descuento(self.monto_base)
              
-        monto_con_descuento = self.monto_base - self.descuento_aplicado
-        if monto_con_descuento < 0:
-            monto_con_descuento = Decimal('0.00')
+        monto_con_descuento = max(Decimal('0.00'), self.monto_base - self.descuento_aplicado)
 
         # 4. Verificar Recargos Automáticos
-        # Regla: Si la fecha actual > fecha_vencimiento, aplicar recargo
         hoy = timezone.localdate()
-        
-        # Aseguramos que fecha_vencimiento sea date para comparar
         vencimiento = self.fecha_vencimiento
-        if isinstance(vencimiento, datetime.datetime):
+        if isinstance(vencimiento, datetime):
             vencimiento = vencimiento.date()
             
         if vencimiento and hoy > vencimiento and self.estatus in ['pendiente', 'parcial']:
             if not self.recargo_exento:
-                porcentaje_recargo = Decimal('0.10') # 10%
-                monto_fijo_recargo = Decimal('125.00')
-                
-                recargo_calculado = (monto_con_descuento * porcentaje_recargo) + monto_fijo_recargo
-                self.recargo_aplicado = recargo_calculado
+                pct_recargo = Decimal('0.10') # 10%
+                fijo_recargo = Decimal('125.00')
+                self.recargo_applied = (monto_con_descuento * pct_recargo) + fijo_recargo
         
-        # Si no está vencido o se pagó, no necesariamente quitamos el recargo histórico, 
-        # pero si se desea dinámico:
-        # else:
-        #    self.recargo_aplicado = Decimal('0.00') 
-        # Mantenemos el recargo si ya se aplicó para historial, o lo recalculamos siempre?
-        # "al pasar esa fecha el sistema AUTOMATICAMENTE debe de aplicar recargo"
-        # Asumimos que si se paga tarde, el recargo se mantiene.
-
         # 5. Calcular Monto Final
-        self.monto_total = monto_con_descuento + self.recargo_aplicado
+        self.monto_total = monto_con_descuento + self.recargo_applied
 
         # 6. Actualizar Estatus
         if self.monto_pagado >= self.monto_total and self.monto_total > 0:
@@ -291,14 +271,11 @@ class Adeudo(models.Model):
 
     def esta_vencido(self):
         """Verifica si el adeudo está vencido"""
-        from django.utils import timezone
-        import datetime
-        
         if not self.fecha_vencimiento:
             return False
             
         vencimiento = self.fecha_vencimiento
-        if isinstance(vencimiento, datetime.datetime):
+        if isinstance(vencimiento, datetime):
             vencimiento = vencimiento.date()
             
         return (
@@ -307,17 +284,13 @@ class Adeudo(models.Model):
         )
 
     def actualizar_estatus(self):
-        """Actualiza el estatus y recalcula montos al recibir un pago"""
         self.save()
 
 
 class Pago(models.Model):
     """
     Pagos realizados contra adeudos.
-    Un adeudo puede tener múltiples pagos (pagos parciales)
     """
-    # 1 pago solo pude pertenecer a 1 solo adeudo, lo quese puede traducir en que
-    # cada estudiante puede realizar un solo pago a la vez.
     adeudo = models.ForeignKey(
         Adeudo,
         on_delete=models.CASCADE,
@@ -357,21 +330,19 @@ class Pago(models.Model):
         indexes = [
             models.Index(fields=['adeudo'], name='idx_pago_adeudo'),
             models.Index(fields=['fecha_pago'], name='idx_pago_fecha'),
-            models.Index(fields=['metodo_pago'], name='idx_pago_metodo'),
         ]
 
     def __str__(self):
         return f"Pago ${self.monto} - {self.fecha_pago.date()}"
 
     def save(self, *args, **kwargs):
-        """Al guardar un pago, actualiza el adeudo"""
         super().save(*args, **kwargs)
         
-        # Actualizar monto_pagado del adeudo
-        from django.db.models import Sum
+        # Sincronizar adeudo
         total_pagado = self.adeudo.pago_set.aggregate(
             total=Sum('monto')
         )['total'] or 0
         
         self.adeudo.monto_pagado = total_pagado
         self.adeudo.actualizar_estatus()
+
