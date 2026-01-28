@@ -110,13 +110,24 @@ class AdeudoAdmin(admin.ModelAdmin):
         )
     pagar_adeudo.short_description = "Acciones"
     
-    actions = ['recalcular_adeudos']
+    actions = ['recalcular_adeudos', 'registrar_pago_masivo']
     
     @admin.action(description="Recalcular montos y recargos de seleccionados")
     def recalcular_adeudos(self, request, queryset):
         for adeudo in queryset:
             adeudo.save()
         self.message_user(request, f"Se recalcularon {queryset.count()} adeudos.")
+
+    @admin.action(description="Marcar como PAGADO (Dispara reinscripción)")
+    def registrar_pago_masivo(self, request, queryset):
+        with transaction.atomic():
+            count = 0
+            for adeudo in queryset:
+                if adeudo.estatus != 'pagado':
+                    adeudo.estatus = 'pagado'
+                    adeudo.save() # Esto dispara el signal
+                    count += 1
+        self.message_user(request, f"Se marcaron {count} adeudos como pagados.")
 
 @admin.register(Pago)
 class PagoAdmin(admin.ModelAdmin):

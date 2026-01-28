@@ -1,60 +1,95 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from .models import Estudiante
+from .models import (
+    Estudiante, Inscripcion, Grupo, CicloEscolar, 
+    EstadoEstudiante, HistorialEstadosEstudiante
+)
 
 User = get_user_model()
 
 class EstudianteCreationForm(forms.ModelForm):
-    """
-    Formulario personalizado para la creación de estudiantes desde el Admin.
-    Permite crear el Usuario (User) y el Estudiante simultáneamente.
-    """
-    # Campos extra para la creación del Usuario
+    """Formulario para creacion de estudiante con usuario e inscripcion inicial"""
+    
+    # Credenciales
     email_usuario = forms.EmailField(
         required=True, 
-        label="Email del Usuario",
-        help_text="Correo electrónico para el login del estudiante"
+        label="Email del Usuario"
     )
     username_usuario = forms.CharField(
-        required=False, 
-        label="Username (opcional)",
-        help_text="Nombre de usuario opcional para el login"
+        required=True, 
+        label="Username / CURP"
     )
     password_usuario = forms.CharField(
         widget=forms.PasswordInput, 
         required=True, 
-        label="Contraseña del Usuario",
-        help_text="Contraseña para el acceso al sistema"
+        label="Contraseña"
+    )
+
+    # Inscripcion
+    ciclo_escolar = forms.ModelChoiceField(
+        queryset=CicloEscolar.objects.all(),
+        required=True,
+        label="Ciclo Escolar"
+    )
+    grupo = forms.ModelChoiceField(
+        queryset=Grupo.objects.all(),
+        required=True,
+        label="Grupo"
     )
     
     class Meta:
         model = Estudiante
-        exclude = ('usuario', 'matricula') # Campos automáticos
+        fields = ('nombre', 'apellido_paterno', 'apellido_materno', 'direccion')
         
-    def save(self, commit=True):
-        if not commit:
-            # Si commit es False, retornamos la instancia con el usuario asignado si ya existe,
-            # pero como es creación, necesitamos crear el usuario sí o sí.
-            # En el flujo del admin, save() se llama usualmente con commit=True,
-            # o save_model lo maneja. 
-            pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
+        if ciclo_activo:
+            self.fields['ciclo_escolar'].initial = ciclo_activo
+            self.fields['grupo'].queryset = Grupo.objects.filter(ciclo_escolar=ciclo_activo).select_related('grado', 'grado__nivel_educativo')
 
-        # Usamos atomic para asegurar que ambos se crean o ninguno
+    def save(self, commit=True):
         with transaction.atomic():
-            # 1. Crear el Usuario asociado
+            # 1. Crear el Usuario
             user = User.objects.create_user(
                 email=self.cleaned_data['email_usuario'],
-                username=self.cleaned_data.get('username_usuario') or None,
+                username=self.cleaned_data['username_usuario'],
                 password=self.cleaned_data['password_usuario'],
-                nombre=self.cleaned_data.get('nombre', ''),
-                role='estudiante'  # Rol correcto para estudiantes
+                nombre=f"{self.cleaned_data['nombre']} {self.cleaned_data['apellido_paterno']}",
+                role='estudiante',
+                is_staff=False,
+                is_superuser=False
             )
             
-            # 2. Asignar el usuario a la instancia de Estudiante
             self.instance.usuario = user
             
-            # 3. Guardar Estudiante
-            estudiante = super().save(commit=commit)
-            
+            def save_academic_data():
+                # 2. Inscripcion
+                Inscripcion.objects.create(
+                    estudiante=self.instance,
+                    grupo=self.cleaned_data['grupo'],
+                    ciclo_escolar=self.cleaned_data['ciclo_escolar'],
+                    estatus='activo'
+                )
+                
+                # 3. Estado
+                estado_activo = EstadoEstudiante.objects.filter(nombre__iexact='ACTIVO').first()
+                if estado_activo:
+                    HistorialEstadosEstudiante.objects.create(
+                        estudiante=self.instance,
+                        estado=estado_activo,
+                        justificacion="Alta automatica"
+                    )
+
+            if commit:
+                estudiante = super().save(commit=True)
+                save_academic_data()
+            else:
+                estudiante = super().save(commit=False)
+                self.save_m2m = save_academic_data
+                
         return estudiante
+
+
+
