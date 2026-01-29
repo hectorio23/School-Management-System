@@ -7,5 +7,5 @@ services:
       # Permite que el entorno de trabajo sea la ruta que en dode ejecutó
       # el << docker-compose up --build >>
       - .:/app
-
+    environment:
       - PYTHONUNBUFFERED=1

@@ -11,9 +11,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY requirementes.txt .
-RUN pip install --no-cache-dir -r requirementes.txt
-COPY entrypoint.sh .
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 RUN chmod +x entrypoint.sh
 
 # Puerto por el que trabajará el servidor (temporal)

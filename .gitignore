@@ -1,3 +1,5 @@
+school_sys/test_admissions_full.sh 
+school_sys/admissions/check_backup.sh
 school_sys/data_massive_insert.py
 test_login.http
 school_sys/users/fron*
@@ -16,5 +18,8 @@ school_sys/templates/dashboard_admin.html
 school_sys/server.log
 school_sys/admissions/documents
 school_sys/admissions/check.sh
+school_sys/test_doc.pdf
+school_sys/test_img.jpg
 .env
 verify_full_system.py
+venv

@@ -102,6 +102,17 @@ GET  students/dashboard/                 -> dashboard
 POST students/tutores/                   -> actualizar tutores
 POST students/estudio-socioeconomico/    -> crear estudio socioeconomico
 
+--- ADMISIONES (api/admission/) ---
+POST api/admission/register/initiate/    -> Paso 1: Registro (Captcha email)
+POST api/admission/register/confirm/     -> Paso 2: Registro (Datos Personales)
+POST api/admission/login/                -> Login Aspirante (JWT)
+GET  api/admission/dashboard/<folio>/    -> Dashboard del Aspirante (Info + Avisos)
+PUT  api/admission/aspirante/<folio>/phase1/ -> Fase 1: Datos y Tutores (Actualización)
+PUT  api/admission/aspirante/<folio>/phase2/ -> Fase 2: Socioeconómico
+PUT  api/admission/aspirante/<folio>/phase3/ -> Fase 3: Documentación (Multipart)
+POST api/admission/admin/<folio>/mark-paid/  -> [ADMIN] Marcar como pagado (DESHABILITADO)
+GET  api/admission/admin/document/<folio>/<field>/ -> [ADMIN] Ver documento desencriptado
+
 --- DJANGO ADMIN ---
 admin/   -> panel admin django
 

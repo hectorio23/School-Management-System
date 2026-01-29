@@ -141,7 +141,7 @@ class Adeudo(models.Model):
         help_text='Descuento aplicado por estrato'
     )
 
-    recargo_applied = models.DecimalField(
+    recargo_aplicado = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
@@ -254,10 +254,10 @@ class Adeudo(models.Model):
             if not self.recargo_exento:
                 pct_recargo = Decimal('0.10') # 10%
                 fijo_recargo = Decimal('125.00')
-                self.recargo_applied = (monto_con_descuento * pct_recargo) + fijo_recargo
+                self.recargo_aplicado = (monto_con_descuento * pct_recargo) + fijo_recargo
         
         # 5. Calcular Monto Final
-        self.monto_total = monto_con_descuento + self.recargo_applied
+        self.monto_total = monto_con_descuento + self.recargo_aplicado
 
         # 6. Actualizar Estatus
         if self.monto_pagado >= self.monto_total and self.monto_total > 0:

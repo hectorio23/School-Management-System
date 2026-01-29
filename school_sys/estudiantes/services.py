@@ -44,7 +44,14 @@ def generar_adeudos_reinscripcion(ciclo_anterior):
         estatus='activo'
     ).select_related('grupo__grado__nivel_educativo', 'estudiante')
     
-    PRECIOS = {'Preescolar': 1000.0, 'Primaria': 1500.0, 'Secundaria': 2000.0, 'Default': 1500.0}
+    # TODO: Cambiar los valores por una variable de entorno
+    # o crear una tabla con esta info
+    PRECIOS = {
+        'Preescolar': 1000.0, 
+        'Primaria': 1500.0, 
+        'Secundaria': 2000.0, 
+        'Default': 1500.0
+    }
     
     resultados = {"procesados": 0, "egresados": 0, "adeudos_creados": 0, "errores": []}
     

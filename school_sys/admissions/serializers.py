@@ -102,7 +102,7 @@ class AdmissionTutorSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AdmissionTutor
-        fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'email', 'numero_telefono', 'curp', 'parentesco']
+        fields = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'numero_telefono', 'curp', 'parentesco']
 
 class AspirantePhase1Serializer(serializers.ModelSerializer):
     """Fase 1: Datos personales extendidos y tutores."""
@@ -113,7 +113,7 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno', 'curp', 
             'fecha_nacimiento', 'sexo', 'direccion', 'telefono', 
-            'escuela_procedencia', 'promedio_anterior', 'tutores'
+            'escuela_procedencia', 'promedio_anterior', 'nivel_ingreso', 'tutores'
         ]
 
     def validate_curp(self, value):
@@ -159,8 +159,15 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
             'acta_nacimiento_tutor', 'comprobante_domicilio_tutor', 
             'foto_fachada_domicilio', 'comprobante_ingresos', 
             'carta_ingresos', 'ine_tutor', 'contrato_arrendamiento_predial',
-            'carta_bajo_protesta'
+            'carta_bajo_protesta', 'curp_pdf_tutor'
         ]
+        extra_kwargs = {
+            'curp_pdf': {'required': True},
+            'acta_nacimiento': {'required': True},
+            'foto_credencial': {'required': True},
+            'boleta_ciclo_anterior': {'required': True},
+            'boleta_ciclo_actual': {'required': True},
+        }
 
     # Declaramos los campos del tutor como FileFields opcionales no ligados al modelo Aspirante
     acta_nacimiento_tutor = serializers.FileField(required=False)
@@ -171,6 +178,7 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
     ine_tutor = serializers.FileField(required=False)
     contrato_arrendamiento_predial = serializers.FileField(required=False)
     carta_bajo_protesta = serializers.FileField(required=False)
+    curp_pdf_tutor = serializers.FileField(required=False)
 
     def validate(self, data):
         """Valida que los acuerdos legales estén aceptados al finalizar fase."""
