@@ -1,3 +1,5 @@
+school_sys/documents
+school_sys/documents/
 school_sys/test_admissions_full.sh 
 school_sys/admissions/check_backup.sh
 school_sys/data_massive_insert.py
