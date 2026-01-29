@@ -164,12 +164,19 @@ class Aspirante(models.Model):
         ("ASPIRANTE", "Aspirante"),
         ("ACEPTADO", "Aceptado"),
         ("NO_ACEPTADO", "No Aceptado"),
+        ("RECHAZADO", "Rechazado"),
+    ]
+    NIVEL_CHOICES = [
+        ("PREESCOLAR", "Preescolar"),
+        ("PRIMARIA", "Primaria"),
+        ("SECUNDARIA", "Secundaria"),
     ]
     
     # Control de Proceso
     user = models.OneToOneField(AdmissionUser, on_delete=models.CASCADE)
     fase_actual = models.IntegerField(default=1, help_text="1:Datos, 2:Socio, 3:Docs, 4:Pago, 5:Fin")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ASPIRANTE")
+    nivel_ingreso = models.CharField(max_length=20, choices=NIVEL_CHOICES, null=True, blank=True)
 
     # FASE 1: Datos Personales
     nombre = models.CharField(max_length=100)
@@ -220,6 +227,13 @@ class Aspirante(models.Model):
     recibido_por = models.CharField(max_length=255, null=True, blank=True)
     notas = models.TextField(null=True, blank=True)
 
+    # NUEVOS CAMPOS ADMINISTRATIVOS
+    fecha_visita_domiciliaria = models.DateTimeField(null=True, blank=True, help_text="Fecha y hora de la visita domiciliaria")
+    fecha_entrevista_psicologia = models.DateField(null=True, blank=True, help_text="Fecha de la entrevista de psicología")
+    fecha_examen_pedagogico = models.DateField(null=True, blank=True, help_text="Fecha de aplicación de exámenes pedagógicos")
+    comentarios_analisis = models.TextField(null=True, blank=True, help_text="Comentarios del análisis de solicitud")
+    comentarios_comite = models.TextField(null=True, blank=True, help_text="Comentarios del comité de admisiones")
+
     def save(self, *args, **kwargs):
         """Encripta archivos del aspirante antes de persistirlos en disco."""
         files_to_encrypt = [
@@ -243,6 +257,11 @@ class Aspirante(models.Model):
             except Exception:
                 pass
         super().save(*args, **kwargs)
+
+    @property
+    def tutores(self):
+        """Retorna todos los tutores asociados a este aspirante."""
+        return [rel.tutor for rel in AdmissionTutorAspirante.objects.filter(aspirante=self)]
 
     def __str__(self):
         return f"{self.user.folio} - {self.apellido_paterno} {self.nombre}"

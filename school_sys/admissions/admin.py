@@ -89,10 +89,20 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
                 ('aceptacion_reglamento', 'autorizacion_imagen')
             )
         }),
-        ('Fase 4: Información de Pago', {
+        ('Fase 4: Información de Pago (DESHABILITADA)', {
             'fields': (
                 'fecha_pago', 'monto', 'metodo_pago',
                 'numero_referencia', 'ruta_recibo', 'recibido_por', 'notas'
+            ),
+            'classes': ('collapse',),
+        }),
+        ('Evaluaciones Administrativas', {
+            'fields': (
+                'fecha_visita_domiciliaria',
+                'fecha_entrevista_psicologia',
+                'fecha_examen_pedagogico',
+                'comentarios_analisis',
+                'comentarios_comite'
             )
         }),
     )
@@ -149,6 +159,7 @@ class AdmissionTutorAdmin(admin.ModelAdmin):
         ('Documentación del Tutor (Encriptada)', {
             'fields': (
                 ('display_ine', 'ine_tutor'),
+                ('display_curp_pdf', 'curp_pdf'),
                 ('display_domicilio', 'comprobante_domicilio'),
                 ('display_fachada', 'foto_fachada_domicilio'),
                 ('display_ingresos', 'comprobante_ingresos'),
@@ -160,7 +171,7 @@ class AdmissionTutorAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = (
-        'display_ine', 'display_domicilio', 'display_fachada', 
+        'display_ine', 'display_curp_pdf', 'display_domicilio', 'display_fachada', 
         'display_ingresos', 'display_carta_ingresos', 'display_contrato', 'display_protesta'
     )
 
@@ -191,6 +202,7 @@ class AdmissionTutorAdmin(admin.ModelAdmin):
         return mark_safe(f'<a href="{url}" target="_blank" class="button" style="background:#555; color:white; padding:2px 8px;">📄 {label}</a>')
 
     def display_ine(self, obj): return self._get_tutor_secure_link(obj, 'ine_tutor', "Identificación INE")
+    def display_curp_pdf(self, obj): return self._get_tutor_secure_link(obj, 'curp_pdf', "Documento CURP")
     def display_domicilio(self, obj): return self._get_tutor_secure_link(obj, 'comprobante_domicilio', "Comprobante Domicilio")
     def display_fachada(self, obj): return self._get_tutor_secure_link(obj, 'foto_fachada_domicilio', "Foto Fachada")
     def display_ingresos(self, obj): return self._get_tutor_secure_link(obj, 'comprobante_ingresos', "Comprobante Ingresos")

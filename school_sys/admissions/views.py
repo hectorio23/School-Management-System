@@ -1,3 +1,44 @@
+"""
+1. Llenado de Solicitud de Preingreso
+    - Por favor guarde el código que se le asigna al final con el 
+    objetivo de identificar su trámite de forma ágil y segura.
+
+2. Análisis de Solicitudes
+    - La tercera semana de febrero el Comité de Admisiones sesiona 
+    para determinar las solicitudes que avanzan a la siguiente fase.
+
+3. Agenda para Visita Domiciliaria
+    - La cuarta semana de febrero el Departamento de Trabajo Social 
+    se comunica vía telefónica para agendar día y hora de la visita domiciliaria.
+
+4. Visita Domiciliaria
+    - Se realiza la visita por Trabajo Social en la primera 
+    quincena de marzo.
+
+5. Entrevista con Psicología Educativa
+    - Se realiza la entrevista de Psicología Educativa la primera 
+    quincena de marzo, posterior a la visita domiciliaria. 
+    Este proceso contempla la aplicación de instrumentos de evaluación.
+
+6. Aplicación de exámenes pedagógicos
+    - El alumno solicitante se presenta a realizar la evaluación 
+    pedagógica en la fecha que le sea asignada al concluir la entrevista 
+    en Psicología Educativa.
+
+7. Valoración y análisis de aspirantes
+    - El Comité de Admisiones sesiona para valorar cada caso.
+
+8. Publicación de Resultados
+    - Con base en el análisis del Comité de Admisiones, se publicará el 
+    viernes 23 de mayo a partir de las 7:30 a.m. en los diferentes accesos del 
+    Centro Educativo una lista de los alumnos aceptados.
+
+9. Reunión con Padres de Familia
+    - Se citará vía telefónica a las familias que son aceptadas al 
+    Centro Educativo para la Primera Reunión Informativa.
+"""
+
+
 import json
 import mimetypes
 from datetime import timedelta
@@ -105,6 +146,7 @@ def register_confirm(request):
     except VerificationCode.DoesNotExist:
         return Response({"error": "Código o correo inválido"}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
+        # TODO: Remove this line on production!
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # --- ENDPOINTS DE FASES DE ADMISIÓN ---
@@ -112,19 +154,74 @@ def register_confirm(request):
 @api_view(['GET'])
 @authentication_classes([AdmissionJWTAuthentication])
 @permission_classes([IsAuthenticated, IsAspirante])
-def aspirante_me(request, folio):
-    """Obtiene el estado actual y datos del aspirante basado en su folio."""
+def aspirante_dashboard(request, folio):
+    """
+    Endpoint para el dashboard del estudiante.
+    Retorna información detallada y notificaciones dinámicas basadas en fechas.
+    """
     if request.user.folio != folio:
-        return Response({"error": "No tienes permiso para acceder a esta información"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Acceso denegado"}, status=status.HTTP_403_FORBIDDEN)
 
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    
+    # El usuario solicita restringir la información detallada hasta la fase 4
+    if aspirante.fase_actual < 4:
+        return Response({
+            "fase_actual": aspirante.fase_actual,
+            "status": aspirante.status,
+            "message": "Complete las fases anteriores para ver más información."
+        })
+
+    # Datos base (Aspirante + Tutores)
     serializer = AspirantePhase1Serializer(aspirante)
     data = serializer.data
+    
+    # Añadir campos administrativos y de proceso
     data.update({
         'fase_actual': aspirante.fase_actual,
         'status': aspirante.status,
-        'pagado_status': aspirante.pagado_status
+        'direccion': aspirante.direccion,
+        'curp': aspirante.curp,
+        'nivel_ingreso': aspirante.nivel_ingreso,
     })
+
+    # Lógica de Notificaciones Dinámicas
+    now = timezone.now()
+    today = now.date()
+    notification = {
+        "active": False,
+        "type": None,
+        "message": "Espere los resultados",
+        "date": None
+    }
+
+    # Jerarquía: Examen > Entrevista > Visita
+    # Solo se muestran si la fecha no ha pasado (expirado)
+    
+    if aspirante.fecha_examen_pedagogico and aspirante.fecha_examen_pedagogico >= today:
+        notification.update({
+            "active": True,
+            "type": "EXAMEN_PEDAGOGICO",
+            "message": "Fecha para aplicar examen pedagógico",
+            "date": aspirante.fecha_examen_pedagogico
+        })
+    elif aspirante.fecha_entrevista_psicologia and aspirante.fecha_entrevista_psicologia >= today:
+        notification.update({
+            "active": True,
+            "type": "ENTREVISTA_PSICOLOGIA",
+            "message": "Fecha de entrevista psicológica",
+            "date": aspirante.fecha_entrevista_psicologia
+        })
+    elif aspirante.fecha_visita_domiciliaria and aspirante.fecha_visita_domiciliaria.date() >= today:
+        notification.update({
+            "active": True,
+            "type": "VISITA_DOMICILIARIA",
+            "message": "Fecha de visita domiciliaria",
+            "date": aspirante.fecha_visita_domiciliaria
+        })
+
+    data['notificacion'] = notification
+    
     return Response(data)
 
 @api_view(['PUT'])
@@ -139,7 +236,11 @@ def aspirante_phase1(request, folio):
     serializer = AspirantePhase1Serializer(aspirante, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
-        return Response({"message": "Fase 1 OK", "fase_actual": aspirante.fase_actual})
+        return Response({
+            "message": "Fase 1 OK", 
+            "fase_actual": aspirante.fase_actual,
+            "data": AspirantePhase1Serializer(aspirante).data
+        })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT'])
@@ -163,7 +264,11 @@ def aspirante_phase2(request, folio):
     
     if aspirante.fase_actual == 2: aspirante.fase_actual = 3
     aspirante.save()
-    return Response({"message": "Fase 2 OK", "fase_actual": aspirante.fase_actual})
+    return Response({
+        "message": "Fase 2 OK", 
+        "fase_actual": aspirante.fase_actual,
+        "data": AspirantePhase1Serializer(aspirante).data # Reusamos serializer para devolver info completa
+    })
 
 @api_view(['PUT'])
 @authentication_classes([AdmissionJWTAuthentication])
@@ -190,28 +295,47 @@ def aspirante_phase3(request, folio):
                     if field in request.FILES:
                         setattr(aspirante, field, request.FILES[field])
                 
-                # 2. Documentos del tutor (AdmissionTutor model)
-                tutor_rel = AdmissionTutorAspirante.objects.filter(aspirante=aspirante).first()
-                if tutor_rel:
-                    tutor = tutor_rel.tutor
+                # 2. Documentos de los tutores (AdmissionTutor model)
+                tutor_rels = AdmissionTutorAspirante.objects.filter(aspirante=aspirante)
+                if not tutor_rels.exists():
+                     return Response({"error": "Debe registrar al menos un tutor en la Fase 1"}, status=status.HTTP_400_BAD_REQUEST)
+
+                tutor_file_map = {
+                    'acta_nacimiento_tutor': 'acta_nacimiento',
+                    'comprobante_domicilio_tutor': 'comprobante_domicilio',
+                    'foto_fachada_domicilio': 'foto_fachada_domicilio',
+                    'comprobante_ingresos': 'comprobante_ingresos',
+                    'carta_ingresos': 'carta_ingresos',
+                    'ine_tutor': 'ine_tutor',
+                    'contrato_arrendamiento_predial': 'contrato_arrendamiento_predial',
+                    'carta_bajo_protesta': 'carta_bajo_protesta',
+                    'curp_pdf_tutor': 'curp_pdf'
+                }
+
+                for rel in tutor_rels:
+                    tutor = rel.tutor
                     tutor_updated = False
                     
-                    # Mapa de campos del request -> campos del modelo Tutor
-                    tutor_file_map = {
-                        'acta_nacimiento_tutor': 'acta_nacimiento',
-                        'comprobante_domicilio_tutor': 'comprobante_domicilio',
-                        'foto_fachada_domicilio': 'foto_fachada_domicilio',
-                        'comprobante_ingresos': 'comprobante_ingresos',
-                        'carta_ingresos': 'carta_ingresos',
-                        'ine_tutor': 'ine_tutor',
-                        'contrato_arrendamiento_predial': 'contrato_arrendamiento_predial',
-                        'carta_bajo_protesta': 'carta_bajo_protesta'
-                    }
-                    
                     for req_field, model_field in tutor_file_map.items():
-                        if req_field in request.FILES:
-                            setattr(tutor, model_field, request.FILES[req_field])
+                        # Buscamos archivos específicos o genéricos
+                        specific_field = f"tutor_{tutor.id}_{req_field}"
+                        file_obj = None
+                        
+                        if specific_field in request.FILES:
+                            file_obj = request.FILES[specific_field]
+                        elif req_field in request.FILES and tutor_rels.count() == 1:
+                            file_obj = request.FILES[req_field]
+                        
+                        if file_obj:
+                            setattr(tutor, model_field, file_obj)
                             tutor_updated = True
+                        else:
+                            # Verificar si ya existe el archivo en el modelo (si es una actualización parcial)
+                            existing_file = getattr(tutor, model_field)
+                            if not existing_file:
+                                return Response({
+                                    "error": f"El documento '{req_field}' es obligatorio para el tutor {tutor.nombre}"
+                                }, status=status.HTTP_400_BAD_REQUEST)
                     
                     if tutor_updated:
                         tutor.save()
@@ -226,7 +350,7 @@ def aspirante_phase3(request, folio):
                     aspirante.fase_actual = 4
                 
                 aspirante.save()
-            return Response({"message": "Fase 3 OK. Pendiente de Pago.", "fase_actual": aspirante.fase_actual})
+            return Response({"message": "Fase 3 OK.", "fase_actual": aspirante.fase_actual})
         except Exception as e:
             return Response({"error": f"Error al procesar archivos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -237,16 +361,16 @@ def aspirante_phase3(request, folio):
 @api_view(['POST'])
 @permission_classes([AllowAny]) # Nota: Ajustar a IsAdministrador en producción
 def admin_mark_paid(request, folio):
-    """Fase 4: Registro manual de pago para finalizar el proceso del aspirante."""
-    aspirante = get_object_or_404(Aspirante, user__folio=folio)
-    aspirante.pagado_status = True
-    aspirante.status = 'ACEPTADO'
-    aspirante.fase_actual = 5
-    aspirante.fecha_pago = timezone.now()
-    aspirante.recibido_por = request.data.get('admin_name', 'Admin')
-    aspirante.metodo_pago = request.data.get('metodo_pago', 'Efectivo')
-    aspirante.save()
-    return Response({"message": "Pago registrado. Aspirante Aprobado.", "fase_actual": 5})
+    """Fase 4: Registro manual de pago para finalizar el proceso del aspirante. (COMENTADO)"""
+    # aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    # aspirante.pagado_status = True
+    # aspirante.status = 'ACEPTADO'
+    # aspirante.fase_actual = 5
+    # aspirante.fecha_pago = timezone.now()
+    # aspirante.recibido_por = request.data.get('admin_name', 'Admin')
+    # aspirante.metodo_pago = request.data.get('metodo_pago', 'Efectivo')
+    # aspirante.save()
+    return Response({"message": "La fase de pago está deshabilitada temporalmente."}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
 @permission_classes([IsAdministrador])

@@ -7,10 +7,10 @@ urlpatterns = [
     path('register/confirm/', views.register_confirm, name='register_confirm'),
     path('login/', views.login_view, name='login_view'),
     # Phases
-    path('me/<int:folio>/', views.aspirante_me, name='aspirante_me'),
-    path('me/<int:folio>/phase1/', views.aspirante_phase1, name='aspirante_phase1'),
-    path('me/<int:folio>/phase2/', views.aspirante_phase2, name='aspirante_phase2'),
-    path('me/<int:folio>/phase3/', views.aspirante_phase3, name='aspirante_phase3'),
+    path('aspirante/<int:folio>/phase1/', views.aspirante_phase1, name='aspirante_phase1'),
+    path('aspirante/<int:folio>/phase2/', views.aspirante_phase2, name='aspirante_phase2'),
+    path('aspirante/<int:folio>/phase3/', views.aspirante_phase3, name='aspirante_phase3'),
+    path('dashboard/<int:folio>/', views.aspirante_dashboard, name='aspirante_dashboard'),
     # Admin
     path('admin/<int:folio>/mark-paid/', views.admin_mark_paid, name='admin_mark_paid'),
     path('admin/document/<int:folio>/<str:field_name>/', views.admin_view_document, name='admin_view_document'),

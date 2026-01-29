@@ -6,7 +6,7 @@ Este documento detalla los endpoints disponibles para el panel administrativo re
 
 ## Autenticación y Tokens
 
-Todos los endpoints requieren el encabezado `Authorization`.
+TODOS los endpoints requieren el encabezado `Authorization`.
 
 **Headers:**
 ```http
@@ -22,6 +22,7 @@ Content-Type: application/json
 
 ### 1.1 Listar Estudiantes
 Retorna una lista paginada (60 por página).
+<!-- TODO: Cambiar a n > 300 en producción  -->
 - **Método:** `GET`
 - **URL:** `/api/admin/students/`
 - **Respuesta (200 OK):**
@@ -56,9 +57,9 @@ Crea un usuario de Django y su perfil de estudiante asociado.
         "password": "Password123"
     },
     "nombre": "JUAN",
-    "apellido_paterno": "PÉREZ",
-    "apellido_materno": "GARCÍA",
-    "direccion": "CALLE FALSA 123",
+    "apellido_paterno": "MADRAZO",
+    "apellido_materno": "MADDEVDEV",
+    "direccion": "YESIS MARIE",
     "telefono": "555-1234",
     "curp": "CURP1234567890",
     "grupo_id": 1

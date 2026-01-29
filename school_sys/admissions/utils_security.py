@@ -20,16 +20,16 @@ def get_fernet_key():
         salt=salt,
         iterations=100000,
     )
-    # Derivamos la llave para Fernet (AES-128)
+    # Derivamos la llave para Fernet << AES-128 >>
     key = base64.urlsafe_b64encode(kdf.derive(settings.SECRET_KEY.encode()))
     return key
 
 def encrypt_data(data):
-    """Encripta datos binarios (bytes) utilizando el algoritmo Fernet."""
+    """Encripta datos binarios << bytes >> utilizando el algoritmo Fernet."""
     f = Fernet(get_fernet_key())
     return f.encrypt(data)
 
 def decrypt_data(data):
-    """Desencripta datos binarios (bytes) utilizando la llave derivada del sistema."""
+    """Desencripta datos binarios << bytes >> utilizando la llave derivada del sistema."""
     f = Fernet(get_fernet_key())
     return f.decrypt(data)
