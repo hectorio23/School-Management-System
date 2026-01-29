@@ -14,4 +14,8 @@ urlpatterns = [
     # Admin
     path('admin/<int:folio>/mark-paid/', views.admin_mark_paid, name='admin_mark_paid'),
     path('admin/document/<int:folio>/<str:field_name>/', views.admin_view_document, name='admin_view_document'),
+    path('admin/aspirante/<int:folio>/document/<str:field_name>/', views.admin_view_aspirante_document, name='admin_view_aspirante_document'),
+    path('admin/tutor/<int:tutor_id>/document/<str:field_name>/', views.admin_view_tutor_document, name='admin_view_tutor_document'),
+    # Public Templates
+    path('templates/<str:template_name>/', views.download_template, name='download_template'),
 ]

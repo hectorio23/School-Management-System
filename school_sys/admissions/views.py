@@ -39,6 +39,7 @@
 """
 
 
+import os
 import json
 import mimetypes
 from datetime import timedelta
@@ -46,6 +47,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
 from django.http import HttpResponse
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
@@ -56,7 +58,7 @@ from users.permissions import IsAdministrador
 from .permissions import IsAspirante
 from .authentication import AdmissionJWTAuthentication
 from .utils_security import decrypt_data
-from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutorAspirante
+from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
 from .serializers import (
     VerificationCodeSerializer, 
     VerifyCodeSerializer, 
@@ -221,6 +223,43 @@ def aspirante_dashboard(request, folio):
         })
 
     data['notificacion'] = notification
+    
+    # Lista de documentos requeridos para la visita domiciliaria (mostrar en fase 4+)
+    data['documentos_requeridos'] = {
+        "mensaje": "Favor de contar con los siguientes documentos a la mano:",
+        "documentos": [
+            {
+                "nombre": "Comprobante de domicilio",
+                "descripcion": "Con tres meses de vigencia y que coincida con la credencial del INE"
+            },
+            {
+                "nombre": "Fotografía de la fachada del domicilio",
+                "descripcion": "Fotografía clara del domicilio del aspirante"
+            },
+            {
+                "nombre": "Comprobante de ingresos",
+                "descripcion": "Recibo de nómina o formato proporcionado por la institución"
+            },
+            {
+                "nombre": "Carta de Ingresos",
+                "descripcion": "En caso de no contar con recibo de nómina, descargar y completar esta carta",
+                "descarga_url": "/api/admission/templates/carta_ingresos/"
+            },
+            {
+                "nombre": "Credencial del INE",
+                "descripcion": "Credencial del INE de los padres de familia o tutores"
+            },
+            {
+                "nombre": "Contrato de arrendamiento o recibo de predial",
+                "descripcion": "Documento que acredite la propiedad o arrendamiento del domicilio"
+            },
+            {
+                "nombre": "Carta bajo protesta",
+                "descripcion": "Descargar, completar y firmar esta carta",
+                "descarga_url": "/api/admission/templates/carta_bajo_protesta/"
+            }
+        ]
+    }
     
     return Response(data)
 
@@ -423,3 +462,116 @@ def admin_view_document(request, folio, field_name):
         return HttpResponse(decrypted_content, content_type=content_type)
     except Exception as e:
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAdministrador])
+def admin_view_aspirante_document(request, folio, field_name):
+    """
+    Endpoint para que el administrador vea documentos del aspirante.
+    Parámetros:
+        - folio: ID del aspirante
+        - field_name: Nombre del campo (curp_pdf, acta_nacimiento, foto_credencial, 
+                      boleta_ciclo_anterior, boleta_ciclo_actual)
+    """
+    aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    
+    allowed_fields = [
+        'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
+        'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+    ]
+    
+    if field_name not in allowed_fields:
+        return Response({
+            "error": f"Campo no válido: {field_name}",
+            "campos_permitidos": allowed_fields
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    file_field = getattr(aspirante, field_name, None)
+    if not file_field:
+        return Response({"error": "No hay archivo cargado para este campo"}, status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        decrypted_content = decrypt_data(file_field.read())
+        content_type, _ = mimetypes.guess_type(file_field.name)
+        if not content_type:
+            content_type = "application/octet-stream"
+        return HttpResponse(decrypted_content, content_type=content_type)
+    except Exception as e:
+        return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAdministrador])
+def admin_view_tutor_document(request, tutor_id, field_name):
+    """
+    Endpoint para que el administrador vea documentos del tutor por su ID.
+    Parámetros:
+        - tutor_id: ID del tutor
+        - field_name: Nombre del campo (acta_nacimiento, curp_pdf, comprobante_domicilio,
+                      foto_fachada_domicilio, comprobante_ingresos, carta_ingresos,
+                      ine_tutor, contrato_arrendamiento_predial, carta_bajo_protesta)
+    """
+    tutor = get_object_or_404(AdmissionTutor, id=tutor_id)
+    
+    allowed_fields = [
+        'acta_nacimiento', 'curp_pdf', 'comprobante_domicilio', 
+        'foto_fachada_domicilio', 'comprobante_ingresos', 'carta_ingresos',
+        'ine_tutor', 'contrato_arrendamiento_predial', 'carta_bajo_protesta'
+    ]
+    
+    if field_name not in allowed_fields:
+        return Response({
+            "error": f"Campo no válido: {field_name}",
+            "campos_permitidos": allowed_fields
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    file_field = getattr(tutor, field_name, None)
+    if not file_field:
+        return Response({"error": "No hay archivo cargado para este campo"}, status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        decrypted_content = decrypt_data(file_field.read())
+        content_type, _ = mimetypes.guess_type(file_field.name)
+        if not content_type:
+            content_type = "application/octet-stream"
+        return HttpResponse(decrypted_content, content_type=content_type)
+    except Exception as e:
+        return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# --- ENDPOINTS PÚBLICOS ---
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def download_template(request, template_name):
+    """
+    Endpoint público para descargar plantillas de documentos.
+    Parámetros:
+        - template_name: 'carta_ingresos' o 'carta_bajo_protesta'
+    """
+    
+    templates_map = {
+        'carta_ingresos': 'cartas-de-ingresos-2025.pdf',
+        'carta_bajo_protesta': 'cartas-bajo-protesta-2025.pdf',
+    }
+    
+    if template_name not in templates_map:
+        return Response({
+            "error": f"Plantilla no válida: {template_name}",
+            "plantillas_disponibles": list(templates_map.keys())
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    file_name = templates_map[template_name]
+    file_path = os.path.join(settings.BASE_DIR, 'documents', file_name)
+    
+    if not os.path.exists(file_path):
+        return Response({"error": "Archivo de plantilla no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        
+        response = HttpResponse(content, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+        return response
+    except Exception as e:
+        return Response({"error": f"Error al leer archivo: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

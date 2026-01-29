@@ -10,6 +10,47 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
 
+# --- VALIDACIÓN DE DOCUMENTOS ---
+
+ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png']
+ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+]
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+def validate_document_file(file_obj):
+    """
+    Valida que un archivo sea PDF o imagen (JPG, PNG).
+    Verifica extensión, tipo MIME y tamaño máximo.
+    """
+    if not file_obj:
+        return file_obj
+    
+    # Verificar tamaño
+    if hasattr(file_obj, 'size') and file_obj.size > MAX_FILE_SIZE:
+        raise serializers.ValidationError(
+            f"El archivo excede el tamaño máximo permitido de 10MB. Tamaño actual: {file_obj.size / (1024*1024):.2f}MB"
+        )
+    
+    # Verificar extensión
+    file_name = file_obj.name.lower() if hasattr(file_obj, 'name') else ''
+    extension = file_name.split('.')[-1] if '.' in file_name else ''
+    if extension not in ALLOWED_EXTENSIONS:
+        raise serializers.ValidationError(
+            f"Extensión no permitida: .{extension}. Solo se aceptan: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    
+    # Verificar tipo MIME (content_type)
+    content_type = getattr(file_obj, 'content_type', None)
+    if content_type and content_type not in ALLOWED_MIME_TYPES:
+        raise serializers.ValidationError(
+            f"Tipo de archivo no permitido: {content_type}. Solo se aceptan PDF e imágenes (JPG, PNG)"
+        )
+    
+    return file_obj
+
 # --- SERIALIZADORES DE AUTENTICACIÓN ---
 
 class VerificationCodeSerializer(serializers.ModelSerializer):
@@ -188,3 +229,48 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
             if not data.get('autorizacion_imagen', self.instance.autorizacion_imagen):
                 raise serializers.ValidationError("Debe autorizar el uso de imagen")
         return data
+
+    # --- Validadores de documentos del aspirante ---
+    def validate_curp_pdf(self, value):
+        return validate_document_file(value)
+    
+    def validate_acta_nacimiento(self, value):
+        return validate_document_file(value)
+    
+    def validate_foto_credencial(self, value):
+        return validate_document_file(value)
+    
+    def validate_boleta_ciclo_anterior(self, value):
+        return validate_document_file(value)
+    
+    def validate_boleta_ciclo_actual(self, value):
+        return validate_document_file(value)
+
+    # --- Validadores de documentos del tutor ---
+    def validate_acta_nacimiento_tutor(self, value):
+        return validate_document_file(value)
+    
+    def validate_comprobante_domicilio_tutor(self, value):
+        return validate_document_file(value)
+    
+    def validate_foto_fachada_domicilio(self, value):
+        return validate_document_file(value)
+    
+    def validate_comprobante_ingresos(self, value):
+        return validate_document_file(value)
+    
+    def validate_carta_ingresos(self, value):
+        return validate_document_file(value)
+    
+    def validate_ine_tutor(self, value):
+        return validate_document_file(value)
+    
+    def validate_contrato_arrendamiento_predial(self, value):
+        return validate_document_file(value)
+    
+    def validate_carta_bajo_protesta(self, value):
+        return validate_document_file(value)
+    
+    def validate_curp_pdf_tutor(self, value):
+        return validate_document_file(value)
+
