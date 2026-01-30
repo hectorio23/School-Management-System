@@ -21,6 +21,7 @@ urlpatterns = [
     path("students/", include("estudiantes.urls")),
     path("api/admin/", include("users.urls")),
     path("api/admission/", include("admissions.urls")),
+    path("api/comedor/", include("comedor.urls")),
     path("api/token/", EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name='token_refresh'),
 

@@ -96,6 +96,25 @@ DELETE api/admin/pagos/<id>/             -> BLOQUEADO
 GET  api/admin/students/evaluaciones/    -> lista evaluaciones
 GET  api/admin/students/evaluaciones/<id>/ -> detalle evaluación
 
+--- REPORTES FINANCIEROS ---
+GET api/admin/reportes/financieros/ingresos-estrato/   -> ingresos men/anual por estrato
+GET api/admin/reportes/financieros/recaudacion/        -> recaudación vs recargos
+GET api/admin/reportes/financieros/adeudos-vencidos/   -> estudiantes con deuda vencida
+
+--- REPORTES ACADEMICOS Y EXPORTACIONES ---
+GET api/admin/reportes/academicos/estadisticas/ -> stats inscripciones/bajas
+GET api/admin/exportar/estudiantes/             -> exportar estudiantes (Excel/PDF)
+GET api/admin/exportar/aspirantes/              -> exportar aspirantes (Excel)
+
+--- COMEDOR (api/comedor/) ---
+GET  api/comedor/admin/asistencias/           -> historial asistencias
+POST api/comedor/admin/asistencias/registrar/ -> registrar consumo (+adeudo auto)
+GET  api/comedor/admin/reportes/diario/       -> reporte diario
+GET  api/comedor/admin/reportes/semanal/      -> reporte semanal
+GET  api/comedor/admin/reportes/mensual/      -> reporte mensual
+GET  api/comedor/admin/alergias/              -> lista alumnos con alergias
+
+
 --- ESTUDIANTES (students/) ---
 GET  students/info/                      -> info personal del estudiante logueado
 GET  students/dashboard/                 -> dashboard
@@ -181,4 +200,14 @@ urlpatterns = [
     # --- PAGOS ---
     path('pagos/', views.admin_pagos_list, name='admin_pagos_list'),
     path('pagos/<int:pk>/', views.admin_pagos_detail, name='admin_pagos_detail'),
+
+    # --- REPORTES FINANCIEROS ---
+    path('reportes/financieros/ingresos-estrato/', views.admin_reporte_ingresos_estrato, name='admin_reporte_ingresos_estrato'),
+    path('reportes/financieros/recaudacion/', views.admin_reporte_recaudacion, name='admin_reporte_recaudacion'),
+    path('reportes/financieros/adeudos-vencidos/', views.admin_estudiantes_adeudos_vencidos, name='admin_estudiantes_adeudos_vencidos'),
+
+    # --- REPORTES ACADEMICOS ---
+    path('reportes/academicos/estadisticas/', views.admin_estadisticas_academicas, name='admin_estadisticas_academicas'),
+    path('exportar/estudiantes/', views.admin_exportar_estudiantes, name='admin_exportar_estudiantes'),
+    path('exportar/aspirantes/', views.admin_exportar_aspirantes, name='admin_exportar_aspirantes'),
 ]

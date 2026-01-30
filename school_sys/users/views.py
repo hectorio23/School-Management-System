@@ -1002,3 +1002,254 @@ def admin_evaluaciones_detail(request, pk):
     evaluacion = get_object_or_404(EvaluacionSocioeconomica, pk=pk)
     serializer = EvaluacionSerializer(evaluacion)
     return Response(serializer.data)
+
+# =============================================================================
+# REPORTES FINANCIEROS
+# =============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_reporte_ingresos_estrato(request):
+    """
+    GET /api/admin/reportes/financieros/ingresos-estrato/
+    Reporte de ingresos por estrato socioeconómico (mensual y anual).
+    """
+    anio = request.query_params.get('anio', timezone.now().year)
+    mes = request.query_params.get('mes', timezone.now().month)
+    
+    # Filtrar pagos del año/mes
+    pagos = Pago.objects.filter(
+        fecha_pago__year=anio
+    ).select_related('adeudo__estudiante')
+    
+    # Agrupar por estrato
+    data_anual = {}
+    data_mensual = {}
+    
+    # Inicializar estratos (para que salgan todos aunque sea en 0)
+    estratos = Estrato.objects.all()
+    for e in estratos:
+        data_anual[e.nombre] = 0.00
+        data_mensual[e.nombre] = 0.00
+    data_anual["Sin Asignar"] = 0.00
+    data_mensual["Sin Asignar"] = 0.00
+    
+    for pago in pagos:
+        estudiante = pago.adeudo.estudiante
+        estrato = estudiante.get_estrato_actual()
+        nombre_estrato = estrato.nombre if estrato else "Sin Asignar"
+        
+        monto = float(pago.monto)
+        
+        # Acumulado Anual
+        data_anual[nombre_estrato] = data_anual.get(nombre_estrato, 0) + monto
+        
+        # Acumulado Mensual (si coincide el mes)
+        if pago.fecha_pago.month == int(mes):
+            data_mensual[nombre_estrato] = data_mensual.get(nombre_estrato, 0) + monto
+            
+    return Response({
+        "anio": anio,
+        "mes": mes,
+        "ingresos_anuales_por_estrato": data_anual,
+        "ingresos_mensuales_por_estrato": data_mensual
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_reporte_recaudacion(request):
+    """
+    GET /api/admin/reportes/financieros/recaudacion/
+    Reporte de recaudación ordinaria vs recargos.
+    Basado en el desglose de los ADEUDOS que han sido pagados (parcial o totalmente).
+    """
+    anio = request.query_params.get('anio', timezone.now().year)
+    mes = request.query_params.get('mes', timezone.now().month)
+    
+    pagos = Pago.objects.filter(
+        fecha_pago__year=anio,
+        fecha_pago__month=mes
+    ).select_related('adeudo')
+    
+    total_recaudado = 0.00
+    total_base_estimado = 0.00
+    total_recargos_estimado = 0.00
+    
+    # Nota: Como el pago es un monto global, haremos una estimación proporcional
+    # o simplemente sumaremos lo que el adeudo dice que tiene de recargo 
+    # si el pago cubre el total.
+    # Estrategia simple: Reportar qué parte de lo cobrado corresponde a recargos
+    # asumiendo que el recargo se cobra al final o proporcionalmente?
+    # Mejor: Reportar el monto total de recargos GENERADOS vs PAGADOS en el periodo es complejo.
+    # Simplificación: Sumar 'recargo_aplicado' de los adeudos que recibieron pago en este mes.
+    # Esto no es exacto contablemente pero da una idea.
+    
+    # Estrategia Alternativa (Más precisa para reporte de "Ingresos"):
+    # Considerar que todo pago primero cubre recargos y luego capital (o viceversa).
+    # O simplemente reportar el Total Recaudado y, por separado, el Total de Recargos Generados en el mes.
+    
+    # Vamos a reportar: 
+    # 1. Total Cobrado (Real)
+    # 2. Total de Recargos que se han cobrado (asumiendo que si se paga el adeudo, se paga el recargo).
+    
+    for pago in pagos:
+        total_recaudado += float(pago.monto)
+        
+        adeudo = pago.adeudo
+        if adeudo.recargo_aplicado > 0:
+            # Si el adeudo tiene recargo, ¿cuánto de este pago es recargo?
+            # Asumimos prorrata simple para estadistica: 
+            # (recargo / total_adeudo) * monto_pago
+            if adeudo.monto_total > 0:
+                ratio = float(adeudo.recargo_aplicado) / float(adeudo.monto_total)
+                recargo_parte = float(pago.monto) * ratio
+                total_recargos_estimado += recargo_parte
+                total_base_estimado += (float(pago.monto) - recargo_parte)
+            else:
+                total_base_estimado += float(pago.monto)
+        else:
+            total_base_estimado += float(pago.monto)
+            
+    return Response({
+        "periodo": f"{mes}/{anio}",
+        "total_recaudado": round(total_recaudado, 2),
+        "desglose_estimado": {
+            "ordinario": round(total_base_estimado, 2),
+            "recargos_moratorios": round(total_recargos_estimado, 2)
+        },
+        "nota": "El desglose es una estimación proporcional basada en los adeudos pagados."
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_estudiantes_adeudos_vencidos(request):
+    """
+    GET /api/admin/reportes/financieros/adeudos-vencidos/
+    Lista estudiantes con deuda vencida total.
+    """
+    # Estudiantes con al menos un adeudo vencido
+    estudiantes_deudores = Estudiante.objects.filter(
+        adeudo__estatus='vencido'
+    ).distinct()
+    
+    data = []
+    for est in estudiantes_deudores:
+        adeudos_vencidos = est.adeudo_set.filter(estatus='vencido')
+        total_vencido = sum(a.monto_total - a.monto_pagado for a in adeudos_vencidos)
+        
+        grupo_str = "S/A"
+        if est.grupo:
+             grupo_str = f"{est.grupo.grado.nombre} {est.grupo.nombre}"
+             
+        data.append({
+            "matricula": est.matricula,
+            "nombre": f"{est.nombre} {est.apellido_paterno}",
+            "grupo": grupo_str,
+            "cantidad_adeudos_vencidos": adeudos_vencidos.count(),
+            "monto_total_vencido": total_vencido
+        })
+        
+    return Response(data)
+
+# =============================================================================
+# REPORTES ACADÉMICOS Y EXPORTACIONES
+# =============================================================================
+
+from .utils_export import generar_excel_estudiantes, generar_pdf_estudiantes, generar_excel_aspirantes
+from admissions.models import Aspirante
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_estadisticas_academicas(request):
+    """
+    GET /api/admin/reportes/academicos/estadisticas/
+    Estadísticas de inscripciones, bajas y reinscripciones.
+    """
+    # 1. Total Inscritos Actuales (Estudiantes activos)
+    total_activos = Estudiante.objects.filter(
+        historialestadosestudiante__estado__es_estado_activo=True
+    ).distinct().count()
+    
+    # Inscritos en ciclo actual
+    inscritos_ciclo_actual = Inscripcion.objects.filter(ciclo_escolar__activo=True).count()
+    
+    # 2. Bajas (en el último año o ciclo activo)
+    bajas_totales = HistorialEstadosEstudiante.objects.filter(
+        estado__nombre__icontains='BAJA'
+    ).count()
+    
+    # 3. Reinscripciones (Simple: total activos - nuevos ingreso)
+    # Definición aproximada: Inscripciones en ciclo actual que tienen inscripciones previas
+    reinscritos = 0
+    inscripciones_actuales = Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('estudiante')
+    if inscripciones_actuales.exists():
+        # Tomamos una muestra o lo hacemos query
+        # Estudiantes en ciclo actual que tienen una inscripción en un ciclo DIFERENTE (y anterior)
+        estudiantes_ids = inscripciones_actuales.values_list('estudiante_id', flat=True)
+        reinscritos = Inscripcion.objects.filter(
+            estudiante_id__in=estudiantes_ids
+        ).exclude(ciclo_escolar__activo=True).values('estudiante').distinct().count()
+            
+    return Response({
+        "inscritos_ciclo_actual": inscritos_ciclo_actual,
+        "estudiantes_activos_totales": total_activos,
+        "bajas_historicas": bajas_totales,
+        "reinscripciones_ciclo_actual": reinscritos
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_exportar_estudiantes(request):
+    """
+    GET /api/admin/exportar/estudiantes/?format=excel|pdf
+    Exporta el listado de estudiantes.
+    """
+    fmt = request.query_params.get('format', 'excel')
+    
+    # Obtener estudiantes
+    queryset = Estudiante.objects.select_related('usuario').prefetch_related(
+        models.Prefetch(
+            'inscripciones',
+            queryset=Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo'),
+            to_attr='active_enrollment'
+        )
+    ).all().order_by('matricula')
+    
+    if fmt == 'pdf':
+        buffer = generar_pdf_estudiantes(queryset)
+        if not buffer:
+            return Response({"error": "Librería ReportLab no disponible"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="estudiantes.pdf"'
+        return response
+    else:
+        # Excel default
+        buffer = generar_excel_estudiantes(queryset)
+        if not buffer:
+             return Response({"error": "Librería OpenPyXL no disponible"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+             
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="estudiantes.xlsx"'
+        return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_exportar_aspirantes(request):
+    """
+    GET /api/admin/exportar/aspirantes/
+    Exporta el listado de aspirantes en Excel.
+    """
+    queryset = Aspirante.objects.select_related('user').all().order_by('apellido_paterno')
+    
+    buffer = generar_excel_aspirantes(queryset)
+    if not buffer:
+         return Response({"error": "Librería OpenPyXL no disponible"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+         
+    response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="aspirantes.xlsx"'
+    return response

@@ -207,7 +207,7 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
             'acta_nacimiento': {'required': True},
             'foto_credencial': {'required': True},
             'boleta_ciclo_anterior': {'required': True},
-            'boleta_ciclo_actual': {'required': True},
+            'boleta_ciclo_actual': {'required': False},
         }
 
     # Declaramos los campos del tutor como FileFields opcionales no ligados al modelo Aspirante
@@ -228,6 +228,16 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Debe aceptar el reglamento")
             if not data.get('autorizacion_imagen', self.instance.autorizacion_imagen):
                 raise serializers.ValidationError("Debe autorizar el uso de imagen")
+            
+            # Validación condicional de boleta actual
+            nivel = self.instance.nivel_ingreso
+            # Para secundaria y preparatoria ES requerida
+            if nivel not in ['PREESCOLAR', 'PRIMARIA']:
+                current_file = self.instance.boleta_ciclo_actual
+                new_file = data.get('boleta_ciclo_actual')
+                if not current_file and not new_file:
+                     raise serializers.ValidationError({"boleta_ciclo_actual": "Este documento es requerido para el nivel seleccionado."})
+
         return data
 
     # --- Validadores de documentos del aspirante ---

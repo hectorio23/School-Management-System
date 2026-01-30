@@ -67,3 +67,24 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} ({self.role})"
+
+
+class LoginAttempt(models.Model):
+    """
+    Registro de intentos de inicio de sesión para protección contra fuerza bruta.
+    """
+    email = models.EmailField()
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    was_successful = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "login_attempts"
+        indexes = [
+            models.Index(fields=["email", "timestamp"], name="idx_login_email_time"),
+            models.Index(fields=["ip_address", "timestamp"], name="idx_login_ip_time"),
+        ]
+
+    def __str__(self):
+        status = "EXITOSO" if self.was_successful else "FALLIDO"
+        return f"{self.email} - {self.timestamp} - {status}"

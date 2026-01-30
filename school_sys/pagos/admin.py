@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import ConceptoPago, Adeudo, Pago
 from .forms import ConceptoPagoForm
+from django.urls import reverse
+from django.utils.html import format_html
 
 @admin.register(ConceptoPago)
 class ConceptoPagoAdmin(admin.ModelAdmin):
@@ -96,9 +98,6 @@ class AdeudoAdmin(admin.ModelAdmin):
     get_saldo_pendiente.short_description = "Pendiente"
     
     def pagar_adeudo(self, obj):
-        from django.urls import reverse
-        from django.utils.html import format_html
-        
         saldo = float(obj.monto_total) - float(obj.monto_pagado)
         if saldo <= 0:
             return "-"

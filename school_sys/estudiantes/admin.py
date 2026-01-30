@@ -13,6 +13,11 @@ from .forms import EstudianteCreationForm
 from .services import generar_adeudos_reinscripcion, asegurar_grupos_ciclo
 from django.utils import timezone
 
+from users.utils_export import generar_excel_estudiantes
+from django.http import HttpResponse
+from users.utils_export import generar_pdf_estudiantes
+        
+
 # --- Inlines ---
 
 class InscripcionInline(admin.TabularInline):
@@ -184,6 +189,31 @@ class EstudianteAdmin(admin.ModelAdmin):
             return format_html('<span style="color: green; font-weight: bold;">{} ({}%)</span>', beca.nombre, beca.porcentaje)
         return "-"
     get_beca_display.short_description = "Beca Activa"
+
+    actions = ["export_as_excel", "export_as_pdf"]
+
+    @admin.action(description="Exportar a Excel")
+    def export_as_excel(self, request, queryset):
+        buffer = generar_excel_estudiantes(queryset)
+        if not buffer:
+            self.message_user(request, "Error: Librería openpyxl no instalada.", level='ERROR')
+            return
+            
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="estudiantes.xlsx"'
+        return response
+
+    @admin.action(description="Exportar a PDF")
+    def export_as_pdf(self, request, queryset):
+        buffer = generar_pdf_estudiantes(queryset)
+        if not buffer:
+             self.message_user(request, "Error: Librería reportlab no instalada.", level='ERROR')
+             return
+
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="estudiantes.pdf"'
+        return response
+
 
 @admin.register(Tutor)
 class TutorAdmin(admin.ModelAdmin):

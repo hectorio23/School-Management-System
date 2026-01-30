@@ -1,0 +1,174 @@
+import os
+from decimal import Decimal
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.db.models import Count, Sum
+
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+from users.permissions import IsAdminOrGestorComedor
+from estudiantes.models import Estudiante
+from .models import AsistenciaCafeteria, AdeudoComedor, MenuSemanal
+from .serializers import (
+    AsistenciaCafeteriaSerializer, 
+    AdeudoComedorSerializer, 
+    MenuSemanalSerializer,
+    EstudianteAlergiaSerializer
+)
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_asistencias_list(request):
+    """Lista todas las asistencias registradas (filtro opcional por fecha)."""
+    queryset = AsistenciaCafeteria.objects.select_related('estudiante', 'menu').all().order_by('-fecha_asistencia')
+    
+    fecha = request.query_params.get('fecha')
+    if fecha:
+        queryset = queryset.filter(fecha_asistencia=fecha)
+        
+    serializer = AsistenciaCafeteriaSerializer(queryset, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_registrar_asistencia(request):
+    """
+    Registra asistencia y genera adeudo automático.
+    Body: { "estudiante_id": <int>, "fecha": "YYYY-MM-DD", "tipo_comida": "Comida/Desayuno" }
+    """
+    estudiante_id = request.data.get('estudiante_id') or request.data.get('matricula')
+    fecha = request.data.get('fecha', timezone.now().date())
+    tipo_comida = request.data.get('tipo_comida', 'Comida')
+    
+    if not estudiante_id:
+        return Response({"error": "Se requiere estudiante_id o matricula"}, status=status.HTTP_400_BAD_REQUEST)
+
+    estudiante = get_object_or_404(Estudiante, pk=estudiante_id)
+    
+    # Verificar duplicados
+    if AsistenciaCafeteria.objects.filter(estudiante=estudiante, fecha_asistencia=fecha, tipo_comida=tipo_comida).exists():
+        return Response({"error": "El estudiante ya tiene asistencia registrada para este día y tipo."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        with transaction.atomic():
+            # 1. Registrar Asistencia
+            costo = Decimal(os.getenv('COSTO_COMIDA', '10.00'))
+            
+            asistencia = AsistenciaCafeteria.objects.create(
+                estudiante=estudiante,
+                fecha_asistencia=fecha,
+                tipo_comida=tipo_comida,
+                precio_aplicado=costo
+            )
+            
+            # 2. Generar Adeudo Automático
+            AdeudoComedor.objects.create(
+                estudiante=estudiante,
+                asistencia=asistencia,
+                monto=costo,
+                # fecha_vencimiento se calcula en save() del modelo
+            )
+            
+            return Response({
+                "message": "Asistencia registrada y adeudo generado.",
+                "asistencia_id": asistencia.id,
+                "costo": costo
+            }, status=status.HTTP_201_CREATED)
+            
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_reporte_diario(request):
+    """Reporte de asistencia del día especificado (o hoy)."""
+    fecha = request.query_params.get('fecha', timezone.now().date())
+    asistencias = AsistenciaCafeteria.objects.filter(fecha_asistencia=fecha)
+    
+    total_asistencias = asistencias.count()
+    total_recaudado = asistencias.aggregate(Sum('precio_aplicado'))['precio_aplicado__sum'] or 0
+    
+    return Response({
+        "fecha": fecha,
+        "total_asistencias": total_asistencias,
+        "total_recaudado": total_recaudado,
+        "detalles": AsistenciaCafeteriaSerializer(asistencias, many=True).data
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_reporte_semanal(request):
+    """Reporte semanal. Requiere fecha_inicio y fecha_fin."""
+    fecha_inicio = request.query_params.get('fecha_inicio')
+    fecha_fin = request.query_params.get('fecha_fin')
+    
+    if not fecha_inicio or not fecha_fin:
+        # Default: Semana actual
+        hoy = timezone.now().date()
+        fecha_inicio = hoy - timezone.timedelta(days=hoy.weekday())
+        fecha_fin = fecha_inicio + timezone.timedelta(days=6)
+        
+        # return Response({"error": "Debe proporcionar fecha_inicio y fecha_fin"}, status=status.HTTP_400_BAD_REQUEST)
+
+    asistencias = AsistenciaCafeteria.objects.filter(fecha_asistencia__range=[fecha_inicio, fecha_fin])
+    
+    por_dia = asistencias.values('fecha_asistencia').annotate(
+        total=Count('id'), ingreso=Sum('precio_aplicado')
+    ).order_by('fecha_asistencia')
+    
+    return Response({
+        "periodo": f"{fecha_inicio} al {fecha_fin}",
+        "total_semana": asistencias.count(),
+        "ingreso_semana": asistencias.aggregate(Sum('precio_aplicado'))['precio_aplicado__sum'] or 0,
+        "desglose_dia": por_dia
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_reporte_mensual(request):
+    """Reporte mensual. Requiere mes (1-12) y anio."""
+    hoy = timezone.now().date()
+    mes = int(request.query_params.get('mes', hoy.month))
+    anio = int(request.query_params.get('anio', hoy.year))
+    
+    asistencias = AsistenciaCafeteria.objects.filter(
+        fecha_asistencia__year=anio, 
+        fecha_asistencia__month=mes
+    )
+    
+    return Response({
+        "mes": mes,
+        "anio": anio,
+        "total_mes": asistencias.count(),
+        "ingreso_mes": asistencias.aggregate(Sum('precio_aplicado'))['precio_aplicado__sum'] or 0,
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_alertas_alergias(request):
+    """Lista estudiantes con alergias registradas."""
+    estudiantes = Estudiante.objects.filter(
+        alergias_alimentarias__isnull=False
+    ).exclude(alergias_alimentarias="").order_by('nivel_educativo', 'grupo')
+    
+    serializer = EstudianteAlergiaSerializer(estudiantes, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_historial_asistencia_estudiante(request, matricula):
+    """Historial de comedores de un estudiante específico."""
+    asistencias = AsistenciaCafeteria.objects.filter(estudiante__matricula=matricula).order_by('-fecha_asistencia')
+    adeudos = AdeudoComedor.objects.filter(estudiante__matricula=matricula).order_by('-fecha_generacion')
+    
+    return Response({
+        "estudiante_id": matricula,
+        "total_asistencias": asistencias.count(),
+        "adeudos_pendientes": adeudos.filter(pagado=False).count(),
+        "historial_asistencia": AsistenciaCafeteriaSerializer(asistencias, many=True).data,
+        "adeudos": AdeudoComedorSerializer(adeudos, many=True).data
+    })
