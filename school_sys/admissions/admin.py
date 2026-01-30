@@ -7,6 +7,8 @@ from .models import (
     AdmissionTutorAspirante, VerificationCode
 )
 
+from users.utils_export import generar_excel_aspirantes
+from django.http import HttpResponse
 # --- FORMULARIOS ---
 
 class AdmissionUserForm(forms.ModelForm):
@@ -144,6 +146,20 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
 
     def display_boleta_act(self, obj): return self._get_secure_link(obj, 'boleta_ciclo_actual', "Boleta Actual")
     display_boleta_act.short_description = "Boleta Ciclo Actual"
+
+    actions = ["export_as_excel"]
+
+    @admin.action(description="Exportar Lista de Aspirantes a Excel")
+    def export_as_excel(self, request, queryset):
+        buffer = generar_excel_aspirantes(queryset)
+        if not buffer:
+            self.message_user(request, "Error: Librería openpyxl no instalada.", level='ERROR')
+            return
+            
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="aspirantes.xlsx"'
+        return response
+
 
 
 @admin.register(AdmissionTutor)

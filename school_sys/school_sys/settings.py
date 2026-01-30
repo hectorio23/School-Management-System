@@ -30,9 +30,10 @@ REST_FRAMEWORK = {
 
 # For JWT Tokens settings 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME'))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('REFRESH_TOKEN_LIFETIME'))),
-    'ALGORITHM': os.getenv('ALGORITHM'),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 10))),
+    # Preferencia por configuración en horas, fallback a minutos si no existe
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=int(os.getenv('JWT_REFRESH_LIFETIME_HOURS', 24))),
+    'ALGORITHM': os.getenv('ALGORITHM', 'HS256'),
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
     "USER_ID_FIELD": "id",

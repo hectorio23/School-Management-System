@@ -265,3 +265,54 @@ Actualiza el estatus `valida` de todas las becas según la fecha actual.
 - **URLs:** `/api/admin/students/evaluaciones/` o `/api/admin/students/evaluaciones/<id>/`
 - **Respuesta:** Detalle de estudios socioeconómicos realizados por los estudiantes.
 
+---
+
+## 13. Comedor (api/comedor/admin/)
+
+### 13.1 Asistencias
+- **Listar:** `GET /api/comedor/admin/asistencias/?fecha=YYYY-MM-DD`
+- **Registrar:** `POST /api/comedor/admin/asistencias/registrar/`
+  - Body: `{"estudiante_id": 1, "tipo_comida": "Comida"}`
+  - *Genera automáticamente un adeudo de comedor.*
+
+### 13.2 Reportes
+- **Diario:** `GET /api/comedor/admin/reportes/diario/?fecha=YYYY-MM-DD`
+- **Semanal:** `GET /api/comedor/admin/reportes/semanal/?fecha_inicio=...&fecha_fin=...`
+- **Mensual:** `GET /api/comedor/admin/reportes/mensual/?mes=MM&anio=YYYY`
+
+### 13.3 Alertas
+- **Alergias:** `GET /api/comedor/admin/alergias/` (Lista estudiantes con alergias)
+
+---
+
+## 14. Reportes Financieros (api/admin/reportes/financieros/)
+
+### 14.1 Ingresos por Estrato
+- **URL:** `GET .../ingresos-estrato/?mes=MM&anio=YYYY`
+- **Salida:** Desglose anual y mensual de ingresos por cada estrato socioeconómico.
+
+### 14.2 Recaudación vs Recargos
+- **URL:** `GET .../recaudacion/?mes=MM&anio=YYYY`
+- **Salida:** Total recaudado y estimación de cuánto corresponde a deuda base vs recargos.
+
+### 14.3 Adeudos Vencidos
+- **URL:** `GET .../adeudos-vencidos/`
+- **Salida:** Lista de estudiantes con deuda vencida y montos totales.
+
+---
+
+## 15. Reportes Académicos y Exportación (api/admin/)
+
+### 15.1 Estadísticas
+- **URL:** `GET /api/admin/reportes/academicos/estadisticas/`
+- **Dato:** Inscritos activos, reinscripciones ciclo actual, bajas históricas.
+
+### 15.2 Exportar Estudiantes
+- **URL:** `GET /api/admin/exportar/estudiantes/?format=excel` (o `pdf`)
+- **Descarga:** Archivo .xlsx o .pdf con listado completo.
+
+### 15.3 Exportar Aspirantes
+- **URL:** `GET /api/admin/exportar/aspirantes/`
+- **Descarga:** Archivo .xlsx con listado de aspirantes en proceso.
+
+
