@@ -1,5 +1,9 @@
 from django.db import models
 from estudiantes.models import Estudiante
+import os
+from django.utils import timezone
+from datetime import timedelta
+from decimal import Decimal
 
 
 #########################################################
@@ -151,31 +155,42 @@ class AdeudoComedor(models.Model):
         return False
 
     def save(self, *args, **kwargs):
-        import os
-        from django.utils import timezone
-        from datetime import timedelta
-        from decimal import Decimal
         from pagos.models import Adeudo, ConceptoPago
 
-        # 1. Calcular Fecha de Vencimiento (Local logic)
+        # 1. Usar monto por defecto desde variable de entorno
+        default_amount = Decimal(os.getenv('COMEDOR_DEFAULT_AMOUNT', '10'))
+        self.monto = default_amount
+
+        # 2. Calcular Fecha de Vencimiento (Local logic)
         if not self.fecha_vencimiento:
             dias_vigencia = int(os.getenv('DIAS_VIGENCIA_ADEUDO_COMEDOR', 10))
             self.fecha_vencimiento = timezone.now().date() + timedelta(days=dias_vigencia)
 
-        # 2. Verificar Recargos (Local logic)
+        # 3. Verificar si aplicar descuentos (beca + estrato)
+        # Si APPLY_TOTAL_DISCOUNT=0, NO se aplican descuentos al comedor
+        apply_discount = os.getenv('APPLY_TOTAL_DISCOUNT', '0') == '1'
+        
+        descuento = Decimal('0.00')
+        if apply_discount and self.estudiante:
+            # Aplicar descuentos de beca + estrato
+            descuento = self.estudiante.get_monto_descuento(self.monto)
+        
+        monto_con_descuento = max(Decimal('0.00'), self.monto - descuento)
+
+        # 4. Verificar Recargos (Local logic)
         # Usamos self.pagado (property) para checar
         is_paid = self.pagado
         
         if not is_paid and self.fecha_vencimiento < timezone.now().date():
             pct_recargo = Decimal(os.getenv('RECARGO_COMEDOR_PORCENTAJE', '120')) / 100
-            self.recargo_aplicado = self.monto * pct_recargo
+            self.recargo_aplicado = monto_con_descuento * pct_recargo
         else:
             self.recargo_aplicado = Decimal('0.00')
 
-        # 3. Calcular Total
-        self.monto_total = self.monto + self.recargo_aplicado
+        # 5. Calcular Total
+        self.monto_total = monto_con_descuento + self.recargo_aplicado
         
-        # 4. Sincronizar/Crear Adeudo Principal
+        # 6. Sincronizar/Crear Adeudo Principal
         # Necesitamos un ConceptoPago para Comedor
         concepto, _ = ConceptoPago.objects.get_or_create(
             nombre="Consumo Cafeteria",
@@ -193,6 +208,7 @@ class AdeudoComedor(models.Model):
                 estudiante=self.estudiante,
                 concepto=concepto,
                 monto_base=self.monto,
+                descuento_aplicado=descuento,
                 monto_total=self.monto_total,
                 recargo_aplicado=self.recargo_aplicado,
                 fecha_vencimiento=self.fecha_vencimiento,
@@ -204,13 +220,16 @@ class AdeudoComedor(models.Model):
             # Actualizar Adeudo Existente
             self.adeudo.monto_total = self.monto_total
             self.adeudo.recargo_aplicado = self.recargo_aplicado
+            self.adeudo.descuento_aplicado = descuento
             self.adeudo.fecha_vencimiento = self.fecha_vencimiento
-            # Evitar recursion infinita si Adeudo.save() llama logica compleja?
-            # Adeudo.save recalcula cosas, pero si le pasamos valores, deberia respetarlos o
-            # debemos tener cuidado. Adeudo.save recalcula recargos si status es pendiente.
-            # Para forzar nuestros valores, tal vez necesitemos flag o update directo.
-            # Por ahora, save() estandar.
-            self.adeudo.save()
+            # Evitar recursion infinita si Adeudo.save() llama logica compleja
+            # Usar update directo para evitar recálculos
+            Adeudo.objects.filter(pk=self.adeudo.pk).update(
+                monto_total=self.monto_total,
+                recargo_aplicado=self.recargo_aplicado,
+                descuento_aplicado=descuento,
+                fecha_vencimiento=self.fecha_vencimiento
+            )
         
         super().save(*args, **kwargs)
 

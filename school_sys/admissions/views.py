@@ -57,6 +57,13 @@ from django.contrib.auth.hashers import make_password
 from users.permissions import IsAdministrador
 from .permissions import IsAspirante
 from .authentication import AdmissionJWTAuthentication
+from dateutil.relativedelta import relativedelta
+from users.models import User
+from estudiantes.models import (
+    Estudiante, Tutor, EstudianteTutor, EstadoEstudiante,
+    HistorialEstadosEstudiante, CicloEscolar, Grupo, Grado, NivelEducativo
+)
+from django.test import RequestFactory
 from .utils_security import decrypt_data
 from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
 from .serializers import (
@@ -574,4 +581,252 @@ def download_template(request, template_name):
         return response
     except Exception as e:
         return Response({"error": f"Error al leer archivo: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# --- ENDPOINTS DE MIGRACIÓN DE ASPIRANTES ---
+
+@api_view(['POST'])
+@permission_classes([IsAdministrador])
+def migrate_aspirante_to_student(request, folio):
+    """
+    Migra un aspirante aceptado a estudiante.
+    
+    POST /api/admission/admin/<folio>/migrate/
+    
+    Validaciones:
+    - Status: ACEPTADO
+    - Fase actual: >= 4 (documentos completos)
+    - Ciclo escolar activo (creado hace menos de 3 meses)
+    - Grupo disponible con cupo (máx. 30 estudiantes)
+    
+    Proceso:
+    1. Crear User con rol 'estudiante'
+    2. Crear Estudiante con matrícula secuencial
+    3. Crear/Reutilizar Tutor y vincular
+    4. Asignar a grupo según nivel de ingreso
+    """
+    
+    aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    
+    # 1. Validar status
+    if aspirante.status != 'ACEPTADO':
+        return Response({
+            "error": f"El aspirante debe tener status 'ACEPTADO'. Status actual: {aspirante.status}"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 2. Validar fase (documentos completos)
+    if aspirante.fase_actual < 4:
+        return Response({
+            "error": f"El aspirante debe completar al menos la fase 4. Fase actual: {aspirante.fase_actual}"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 3. Validar ciclo escolar activo (menos de 3 meses)
+    fecha_limite = timezone.now().date() - relativedelta(months=3)
+    ciclo_activo = CicloEscolar.objects.filter(
+        activo=True,
+        fecha_inicio__gte=fecha_limite
+    ).first()
+    
+    if not ciclo_activo:
+        return Response({
+            "error": "No hay ciclo escolar activo o el ciclo actual tiene más de 3 meses. "
+                     "No se pueden aceptar nuevos estudiantes."
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 4. Buscar grupo disponible según nivel de ingreso
+    nivel_ingreso = aspirante.nivel_ingreso  # Ej: "1ro de Primaria"
+    
+    # Parsear nivel e identificar grado
+    grupo_asignado = None
+    grupos_disponibles = Grupo.objects.filter(
+        grado__nivel__nombre__icontains=nivel_ingreso.split()[-1] if nivel_ingreso else 'Primaria'
+    ).order_by('nombre')
+    
+    for grupo in grupos_disponibles:
+        estudiantes_en_grupo = Estudiante.objects.filter(grupo=grupo).count()
+        if estudiantes_en_grupo < 30:  # Máximo 30 estudiantes por grupo
+            grupo_asignado = grupo
+            break
+    
+    if not grupo_asignado:
+        return Response({
+            "error": f"No hay grupos disponibles con cupo para el nivel: {nivel_ingreso}"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        with transaction.atomic():
+            # 5. Crear User para el estudiante
+            email = aspirante.user.email
+            # Generar username basado en email
+            username = email.split('@')[0]
+            base_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}_{counter}"
+                counter += 1
+            
+            # Obtener password original (hasheado) del AdmissionUser
+            user = User.objects.create(
+                username=username,
+                email=email,
+                password=aspirante.user.password,  # Ya está hasheado
+                role='estudiante',
+                is_active=True
+            )
+            
+            # 6. Obtener/Crear estado "Activo"
+            estado_activo, _ = EstadoEstudiante.objects.get_or_create(
+                nombre='Activo',
+                defaults={
+                    'descripcion': 'Estudiante inscrito y activo',
+                    'es_estado_activo': True
+                }
+            )
+            
+            # 7. Crear Estudiante
+            estudiante = Estudiante.objects.create(
+                usuario=user,
+                nombre=aspirante.nombre.upper(),
+                apellido_paterno=aspirante.apellido_paterno.upper(),
+                apellido_materno=aspirante.apellido_materno.upper(),
+                direccion=aspirante.direccion or 'PENDIENTE',
+                curp=aspirante.curp,
+                fecha_nacimiento=aspirante.fecha_nacimiento,
+                sexo=aspirante.sexo,
+                telefono=aspirante.telefono,
+                escuela_procedencia=aspirante.escuela_procedencia,
+                grupo=grupo_asignado
+            )
+            
+            # 8. Crear historial de estado inicial
+            HistorialEstado.objects.create(
+                estudiante=estudiante,
+                estado=estado_activo,
+                justificacion='Inscripción por admisión'
+            )
+            
+            # 9. Migrar tutores (reutilizar si existe por email/curp)
+            tutores_admision = AdmissionTutorAspirante.objects.filter(aspirante=aspirante)
+            tutores_creados = []
+            
+            for rel in tutores_admision:
+                tutor_adm = rel.tutor
+                
+                # Buscar tutor existente por email
+                tutor_existente = None
+                if tutor_adm.correo:
+                    tutor_existente = Tutor.objects.filter(correo=tutor_adm.correo).first()
+                
+                if tutor_existente:
+                    tutor = tutor_existente
+                else:
+                    # Crear nuevo tutor
+                    tutor = Tutor.objects.create(
+                        nombre=tutor_adm.nombre.upper(),
+                        apellido_paterno=tutor_adm.apellido_paterno.upper(),
+                        apellido_materno=tutor_adm.apellido_materno.upper() if tutor_adm.apellido_materno else '',
+                        telefono=tutor_adm.telefono or '',
+                        correo=tutor_adm.correo or '',
+                        parentesco=rel.parentesco
+                    )
+                
+                # Vincular tutor con estudiante
+                EstudianteTutor.objects.create(
+                    estudiante=estudiante,
+                    tutor=tutor,
+                    parentesco=rel.parentesco,
+                    es_principal=(len(tutores_creados) == 0)  # Primer tutor es principal
+                )
+                tutores_creados.append(tutor.id)
+            
+            # 10. Actualizar aspirante
+            aspirante.status = 'MIGRADO'
+            aspirante.save()
+            
+            return Response({
+                "message": "Aspirante migrado exitosamente a estudiante",
+                "estudiante": {
+                    "matricula": estudiante.matricula,
+                    "nombre_completo": f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}",
+                    "grupo": str(grupo_asignado),
+                    "email": user.email,
+                    "username": user.username
+                },
+                "tutores_vinculados": tutores_creados
+            }, status=status.HTTP_201_CREATED)
+            
+    except Exception as e:
+        return Response({
+            "error": f"Error al migrar aspirante: {str(e)}"
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdministrador])
+def migrate_all_accepted(request):
+    """
+    Migra todos los aspirantes con status 'ACEPTADO' a estudiantes.
+    
+    POST /api/admission/admin/migrate-all/
+    
+    Body opcional:
+    {
+        "nivel_ingreso": "Primaria"  // Filtrar por nivel
+    }
+    
+    Retorna lista de aspirantes migrados y errores.
+    """
+    nivel_filter = request.data.get('nivel_ingreso')
+    
+    aspirantes = Aspirante.objects.filter(status='ACEPTADO', fase_actual__gte=4)
+    if nivel_filter:
+        aspirantes = aspirantes.filter(nivel_ingreso__icontains=nivel_filter)
+    
+    resultados = {
+        "migrados": [],
+        "errores": [],
+        "total_procesados": 0
+    }
+    
+    for aspirante in aspirantes:
+        resultados["total_procesados"] += 1
+        
+        # Simulamos la llamada al endpoint individual
+        try:
+            # Creamos un pseudo-request
+            factory = RequestFactory()
+            pseudo_request = factory.post(f'/api/admission/admin/{aspirante.user.folio}/migrate/')
+            pseudo_request.user = request.user
+            pseudo_request.data = {}
+            
+            response = migrate_aspirante_to_student(pseudo_request, aspirante.user.folio)
+            
+            if response.status_code == 201:
+                resultados["migrados"].append({
+                    "folio": aspirante.user.folio,
+                    "nombre": f"{aspirante.nombre} {aspirante.apellido_paterno}",
+                    "matricula": response.data.get("estudiante", {}).get("matricula")
+                })
+            else:
+                resultados["errores"].append({
+                    "folio": aspirante.user.folio,
+                    "nombre": f"{aspirante.nombre} {aspirante.apellido_paterno}",
+                    "error": response.data.get("error", "Error desconocido")
+                })
+        except Exception as e:
+            resultados["errores"].append({
+                "folio": aspirante.user.folio,
+                "nombre": f"{aspirante.nombre} {aspirante.apellido_paterno}",
+                "error": str(e)
+            })
+    
+    return Response({
+        "message": f"Proceso de migración completado",
+        "resumen": {
+            "total_procesados": resultados["total_procesados"],
+            "migrados_exitosamente": len(resultados["migrados"]),
+            "con_errores": len(resultados["errores"])
+        },
+        "detalle": resultados
+    }, status=status.HTTP_200_OK)
 

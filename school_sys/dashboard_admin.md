@@ -315,4 +315,145 @@ Actualiza el estatus `valida` de todas las becas según la fecha actual.
 - **URL:** `GET /api/admin/exportar/aspirantes/`
 - **Descarga:** Archivo .xlsx con listado de aspirantes en proceso.
 
+---
 
+## 16. Migración de Aspirantes (api/admission/admin/)
+
+### 16.1 Migrar Aspirante Individual
+Convierte un aspirante ACEPTADO en estudiante activo.
+- **Método:** `POST`
+- **URL:** `/api/admission/admin/<folio>/migrate/`
+- **Validaciones:**
+  - Status: ACEPTADO
+  - Fase >= 4 (documentos completos)
+  - Ciclo escolar activo (< 3 meses desde inicio)
+  - Grupo disponible con cupo (máx. 30 estudiantes)
+- **Respuesta (201 Created):**
+```json
+{
+    "message": "Aspirante migrado exitosamente a estudiante",
+    "estudiante": {
+        "matricula": 220610,
+        "nombre_completo": "JUAN PÉREZ GARCÍA",
+        "grupo": "1°A Primaria",
+        "email": "juan@school.com",
+        "username": "juan"
+    },
+    "tutores_vinculados": [1, 2]
+}
+```
+
+### 16.2 Migrar Todos los Aceptados
+Migra en lote todos los aspirantes con status ACEPTADO.
+- **Método:** `POST`
+- **URL:** `/api/admission/admin/migrate-all/`
+- **Cuerpo (JSON, opcional):**
+```json
+{
+    "nivel_ingreso": "Primaria"
+}
+```
+- **Respuesta (200 OK):**
+```json
+{
+    "message": "Proceso de migración completado",
+    "resumen": {
+        "total_procesados": 25,
+        "migrados_exitosamente": 23,
+        "con_errores": 2
+    },
+    "detalle": {
+        "migrados": [...],
+        "errores": [...]
+    }
+}
+```
+
+---
+
+## 17. Cronjobs (Tareas Programadas)
+
+### 17.1 Generación de Reinscripción
+**Archivo:** `cron_reinscripcion.py`
+- **Frecuencia:** Una vez al inicio del ciclo escolar
+- **Cron:** `0 0 1 8 *` (1 de agosto)
+- **Acción:** 
+  - Genera adeudo "Reinscripción [ciclo]" para estudiantes activos
+  - Cambia status a "No Reinscrito"
+- **Ejecución:**
+```bash
+python manage.py shell < cron_reinscripcion.py
+```
+
+### 17.2 Recálculo de Adeudos Vencidos
+**Archivo:** `cron_adeudos_vencidos.py`
+- **Frecuencia:** Diario a las 00:01
+- **Cron:** `1 0 * * *`
+- **Variables de entorno:**
+  - `OVERDUE_FIXED_SURCHARGE`: Recargo fijo (default: $125)
+  - `OVERDUE_DAILY_PERCENTAGE`: Porcentaje diario (default: 10%)
+  - `DAYS_BEFORE_DEACTIVATION`: Días antes de baja (default: 10)
+- **Acción:**
+  - Aplica recargo fijo una sola vez
+  - Aplica 10% diario después del primer día
+  - Status -> "Vencido"
+  - Después de N días: da de baja y congela adeudo
+  - Envía emails a estudiante y tutores
+
+### 17.3 Recordatorio de Estudio Socioeconómico
+**Archivo:** `cron_recordatorio_socioeconomico.py`
+- **Frecuencia:** Mensual (día 1)
+- **Cron:** `0 9 1 * *`
+- **Variables de entorno:**
+  - `MONTHS_BETWEEN_SOCIOECONOMIC_STUDIES`: Meses entre estudios (default: 1)
+- **Acción:**
+  - Verifica si el ciclo termina en < 2 meses
+  - Identifica estudiantes sin estudio reciente
+  - Envía recordatorio por email
+
+---
+
+## 18. Variables de Entorno de Producción
+
+### 18.1 Comedor
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `COMEDOR_DEFAULT_AMOUNT` | 10 | Costo por defecto del consumo |
+| `APPLY_TOTAL_DISCOUNT` | 0 | 1=Aplicar descuentos, 0=No aplicar |
+| `DIAS_VIGENCIA_ADEUDO_COMEDOR` | 10 | Días para vencimiento |
+| `RECARGO_COMEDOR_PORCENTAJE` | 120 | Porcentaje de recargo (120 = 20%) |
+
+### 18.2 Adeudos
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `OVERDUE_FIXED_SURCHARGE` | 125 | Recargo fijo en pesos |
+| `OVERDUE_DAILY_PERCENTAGE` | 10 | Porcentaje diario |
+| `DAYS_BEFORE_DEACTIVATION` | 10 | Días antes de dar de baja |
+
+### 18.3 Estudios Socioeconómicos
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `MONTHS_BETWEEN_SOCIOECONOMIC_STUDIES` | 1 | Meses entre estudios |
+
+---
+
+## 19. Scripts de Testing
+
+### 19.1 Ubicación
+- `test_endpoints_admin.sh` - Endpoints administrativos
+- `test_endpoints_estudiante.sh` - Endpoints de estudiantes
+- `test_endpoints_admissions.sh` - Flujo de admisiones
+- `test_endpoints_comedor.sh` - Endpoints de comedor
+
+### 19.2 Uso
+```bash
+# Dar permisos de ejecución
+chmod +x test_endpoints_*.sh
+
+# Ejecutar con token
+export TOKEN="eyJhbGciOiJIUzI1..."
+./test_endpoints_admin.sh http://127.0.0.1:8000 "$TOKEN"
+
+# O pasar como argumento
+./test_endpoints_estudiante.sh http://127.0.0.1:8000
+```

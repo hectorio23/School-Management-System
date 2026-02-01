@@ -24,3 +24,13 @@ school_sys/test_img.jpg
 .env
 verify_full_system.py
 venv
+school_sys/test_endpoints_admin.sh
+school_sys/test_endpoints_admissions.sh
+school_sys/test_endpoints_comedor.sh
+school_sys/test_endpoints_estudiante.sh
+school_sys/create_test_admin.py
+school_sys/create_test_student.py
+school_sys/cron_adeudos_vencidos.py
+school_sys/cron_recordatorio_socioeconomico.py
+school_sys/cron_reinscripcion.py
+school_sys/menus/

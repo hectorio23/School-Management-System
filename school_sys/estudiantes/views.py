@@ -12,6 +12,9 @@ from .serializers import EstudianteInfoSerializer, TutorUpdateSerializer, Estudi
 from .permissions import IsEstudiante
 from django.http import HttpResponse
 from django.shortcuts import render
+import os
+from django.utils import timezone
+from datetime import timedelta
 
 
 """Aqui es donde va la direccón del dashboard en caso de que 
@@ -171,10 +174,16 @@ def create_estudio_socioeconomico_view(request):
     POST /students/estudio-socioeconomico/
     
     Crea una nueva evaluación socioeconómica para el estudiante.
+    
+    Validaciones:
+    - Tiempo mínimo entre estudios (configurado en MONTHS_BETWEEN_SOCIOECONOMIC_STUDIES)
+    - Cambios de estrato > 2 niveles requieren aprobación especial
+    
     Calcula el estrato automáticamente basado en el ingreso mensual (Cambiar en producción):
     - Ingreso <= 10,000 -> Estrato B
     - Ingreso > 10,000 -> Estrato A
     """
+    
     try:
         estudiante = request.user.perfil_estudiante
     except Estudiante.DoesNotExist:
@@ -183,26 +192,67 @@ def create_estudio_socioeconomico_view(request):
             status=status.HTTP_404_NOT_FOUND
         )
 
+    # Validar tiempo desde último estudio
+    meses_requeridos = int(os.getenv('MONTHS_BETWEEN_SOCIOECONOMIC_STUDIES', '1'))
+    fecha_limite = timezone.now() - timedelta(days=30 * meses_requeridos)
+    
+    ultimo_estudio = EvaluacionSocioeconomica.objects.filter(
+        estudiante=estudiante,
+        fecha_evaluacion__gte=fecha_limite
+    ).first()
+    
+    if ultimo_estudio:
+        dias_restantes = (ultimo_estudio.fecha_evaluacion + timedelta(days=30 * meses_requeridos) - timezone.now()).days
+        return Response({
+            "error": f"Debe esperar {meses_requeridos} mes(es) entre estudios socioeconómicos.",
+            "ultimo_estudio": ultimo_estudio.fecha_evaluacion.strftime("%Y-%m-%d"),
+            "dias_restantes": max(0, dias_restantes)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     serializer = EstudioSocioeconomicoCreateSerializer(data=request.data)
     if serializer.is_valid():
         validated_data = serializer.validated_data
         
-        # Calcular Estrato
+        # Calcular Estrato sugerido
         ingreso = validated_data.get('ingreso_mensual')
-        nombre_estrato = 'B' if ingreso <= 10000 else 'A'
+        
+        # Definir rangos de estrato por ingreso
+        # TODO: Esto debería venir de la tabla Estrato o configuración
+        if ingreso <= 5000:
+            nombre_estrato = 'C'
+        elif ingreso <= 10000:
+            nombre_estrato = 'B'
+        else:
+            nombre_estrato = 'A'
         
         try:
-            estrato = Estrato.objects.get(nombre=nombre_estrato)
+            estrato_sugerido = Estrato.objects.get(nombre=nombre_estrato)
         except Estrato.DoesNotExist:
-             return Response(
-                {"error": f"[X] - El estrato '{nombre_estrato}' no está configurado en el sistema."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # Fallback: buscar el primer estrato activo
+            estrato_sugerido = Estrato.objects.filter(activo=True).first()
+            if not estrato_sugerido:
+                return Response(
+                    {"error": f"[X] - El estrato '{nombre_estrato}' no está configurado en el sistema."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        # Detectar cambio grande de estrato (> 2 niveles)
+        requiere_aprobacion_especial = False
+        estrato_actual = estudiante.get_estrato_actual()
+        
+        if estrato_actual:
+            # Mapeo de estratos a niveles numéricos para comparación
+            niveles = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6}
+            nivel_actual = niveles.get(estrato_actual.nombre, 0)
+            nivel_nuevo = niveles.get(estrato_sugerido.nombre, 0)
+            
+            diferencia = abs(nivel_actual - nivel_nuevo)
+            if diferencia > 2:
+                requiere_aprobacion_especial = True
             
         # Extraer archivos para procesarlos aparte
         acta = validated_data.pop('acta_nacimiento', None)
         curp = validated_data.pop('curp', None)
-
 
         ## Guardar archivos
         # TODO: Hacer función que gestione el almacenamiento de los archivos
@@ -220,18 +270,30 @@ def create_estudio_socioeconomico_view(request):
         # Crear evaluación
         evaluacion = EvaluacionSocioeconomica.objects.create(
             estudiante=estudiante,
-            estrato=estrato,
+            estrato=None if requiere_aprobacion_especial else estrato_sugerido,  # No asignar si requiere aprobación
+            estrato_sugerido=estrato_sugerido,
             ingreso_mensual=ingreso,
             tipo_vivienda=validated_data.get('tipo_vivienda'),
             miembros_hogar=validated_data.get('miembros_hogar'),
+            documentos_json='{}',  # JSON vacío por defecto
+            requiere_aprobacion_especial=requiere_aprobacion_especial,
+            aprobado=None if requiere_aprobacion_especial else True,  # Pendiente si requiere aprobación
+            # Guardar snapshot del porcentaje de descuento al momento de la evaluación
+            porcentaje_descuento_snapshot=estrato_sugerido.porcentaje_descuento if estrato_sugerido else None
         )
         
-        return Response({
+        response_data = {
             "message": "[+] - Evaluación socioeconómica registrada correctamente.",
-            "estrato_sugerido": estrato.nombre,
-            "NOTA": "El administrador tiene que validar el Estrato socioeconómico",
-            # "descuento": estrato.porcentaje_descuento
-        }, status=status.HTTP_201_CREATED)
+            "estrato_sugerido": estrato_sugerido.nombre,
+            "requiere_aprobacion_especial": requiere_aprobacion_especial,
+        }
+        
+        if requiere_aprobacion_especial:
+            response_data["NOTA"] = "El cambio de estrato es significativo (más de 2 niveles). Requiere aprobación del administrador."
+        else:
+            response_data["NOTA"] = "El administrador tiene que validar el Estrato socioeconómico"
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
         
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

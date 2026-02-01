@@ -8,6 +8,7 @@ try:
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 except ImportError:
     openpyxl = None
+    Font = Alignment = PatternFill = Border = Side = None
 
 try:
     from reportlab.lib import colors
@@ -16,7 +17,7 @@ try:
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
 except ImportError:
-    pass
+    colors = letter = landscape = SimpleDocTemplate = Table = TableStyle = Paragraph = Spacer = getSampleStyleSheet = ParagraphStyle = inch = None
 
 def generar_excel_estudiantes(queryset):
     """Genera un archivo Excel con la lista de estudiantes."""

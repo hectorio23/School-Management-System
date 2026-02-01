@@ -9,6 +9,14 @@ from .models import (
 
 from users.utils_export import generar_excel_aspirantes
 from django.http import HttpResponse
+from django.db import transaction
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+from users.models import User
+from estudiantes.models import (
+    Estudiante, Tutor, EstudianteTutor, EstadoEstudiante,
+    HistorialEstadosEstudiante, CicloEscolar, Grupo
+)
 # --- FORMULARIOS ---
 
 class AdmissionUserForm(forms.ModelForm):
@@ -147,7 +155,7 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
     def display_boleta_act(self, obj): return self._get_secure_link(obj, 'boleta_ciclo_actual', "Boleta Actual")
     display_boleta_act.short_description = "Boleta Ciclo Actual"
 
-    actions = ["export_as_excel"]
+    actions = ["export_as_excel", "migrate_to_students", "mark_as_accepted"]
 
     @admin.action(description="Exportar Lista de Aspirantes a Excel")
     def export_as_excel(self, request, queryset):
@@ -159,6 +167,148 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
         response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename="aspirantes.xlsx"'
         return response
+
+    @admin.action(description="Migrar aspirantes seleccionados a Estudiantes")
+    def migrate_to_students(self, request, queryset):
+        """
+        Migra los aspirantes seleccionados con status ACEPTADO a estudiantes.
+        Solo procesa aspirantes con fase >= 4 y status = ACEPTADO.
+        """
+        
+        # Validar ciclo escolar activo
+        fecha_limite = timezone.now().date() - relativedelta(months=3)
+        ciclo_activo = CicloEscolar.objects.filter(
+            activo=True,
+            fecha_inicio__gte=fecha_limite
+        ).first()
+        
+        if not ciclo_activo:
+            self.message_user(
+                request, 
+                "No hay ciclo escolar activo o el ciclo actual tiene más de 3 meses.",
+                level='ERROR'
+            )
+            return
+        
+        # Filtrar solo aspirantes válidos
+        aspirantes_validos = queryset.filter(
+            status='ACEPTADO',
+            fase_actual__gte=4
+        )
+        
+        if not aspirantes_validos.exists():
+            self.message_user(
+                request, 
+                "No hay aspirantes válidos para migrar (deben tener status ACEPTADO y fase >= 4).",
+                level='WARNING'
+            )
+            return
+        
+        migrados = 0
+        errores = []
+        
+        with transaction.atomic():
+            for aspirante in aspirantes_validos:
+                try:
+                    # Buscar grupo disponible
+                    nivel_ingreso = aspirante.nivel_ingreso or 'Primaria'
+                    grupos = Grupo.objects.filter(
+                        grado__nivel__nombre__icontains=nivel_ingreso.split()[-1]
+                    ).order_by('nombre')
+                    
+                    grupo_asignado = None
+                    for grupo in grupos:
+                        if Estudiante.objects.filter(grupo=grupo).count() < 30:
+                            grupo_asignado = grupo
+                            break
+                    
+                    if not grupo_asignado:
+                        errores.append(f"{aspirante.nombre}: Sin grupo disponible")
+                        continue
+                    
+                    # Crear usuario
+                    email = aspirante.user.email
+                    username = email.split('@')[0]
+                    counter = 1
+                    while User.objects.filter(username=username).exists():
+                        username = f"{email.split('@')[0]}_{counter}"
+                        counter += 1
+                    
+                    user = User.objects.create(
+                        username=username,
+                        email=email,
+                        password=aspirante.user.password,
+                        role='estudiante',
+                        is_active=True
+                    )
+                    
+                    # Crear estudiante
+                    estado_activo, _ = EstadoEstudiante.objects.get_or_create(
+                        nombre='Activo',
+                        defaults={'descripcion': 'Estudiante inscrito y activo', 'es_estado_activo': True}
+                    )
+                    
+                    estudiante = Estudiante.objects.create(
+                        usuario=user,
+                        nombre=aspirante.nombre.upper(),
+                        apellido_paterno=aspirante.apellido_paterno.upper(),
+                        apellido_materno=aspirante.apellido_materno.upper(),
+                        direccion=aspirante.direccion or 'PENDIENTE',
+                        curp=aspirante.curp,
+                        fecha_nacimiento=aspirante.fecha_nacimiento,
+                        sexo=aspirante.sexo,
+                        telefono=aspirante.telefono,
+                        escuela_procedencia=aspirante.escuela_procedencia,
+                        grupo=grupo_asignado
+                    )
+                    
+                    HistorialEstado.objects.create(
+                        estudiante=estudiante,
+                        estado=estado_activo,
+                        justificacion='Inscripción por admisión (Admin)'
+                    )
+                    
+                    # Migrar tutores
+                    for rel in AdmissionTutorAspirante.objects.filter(aspirante=aspirante):
+                        tutor_adm = rel.tutor
+                        tutor_existente = Tutor.objects.filter(correo=tutor_adm.correo).first() if tutor_adm.correo else None
+                        
+                        if tutor_existente:
+                            tutor = tutor_existente
+                        else:
+                            tutor = Tutor.objects.create(
+                                nombre=tutor_adm.nombre.upper(),
+                                apellido_paterno=tutor_adm.apellido_paterno.upper(),
+                                apellido_materno=tutor_adm.apellido_materno.upper() if tutor_adm.apellido_materno else '',
+                                telefono=tutor_adm.telefono or '',
+                                correo=tutor_adm.correo or '',
+                                parentesco=rel.parentesco
+                            )
+                        
+                        EstudianteTutor.objects.create(
+                            estudiante=estudiante,
+                            tutor=tutor,
+                            parentesco=rel.parentesco,
+                            es_principal=True
+                        )
+                    
+                    aspirante.status = 'MIGRADO'
+                    aspirante.save()
+                    migrados += 1
+                    
+                except Exception as e:
+                    errores.append(f"{aspirante.nombre}: {str(e)}")
+        
+        if migrados > 0:
+            self.message_user(request, f"{migrados} aspirante(s) migrado(s) exitosamente a estudiantes.")
+        if errores:
+            self.message_user(request, f"Errores: {'; '.join(errores[:5])}", level='WARNING')
+
+    @admin.action(description="Marcar como ACEPTADO")
+    def mark_as_accepted(self, request, queryset):
+        """Marca los aspirantes seleccionados como ACEPTADO (si tienen fase >= 4)."""
+        actualizados = queryset.filter(fase_actual__gte=4).update(status='ACEPTADO')
+        self.message_user(request, f"{actualizados} aspirante(s) marcado(s) como ACEPTADO.")
 
 
 

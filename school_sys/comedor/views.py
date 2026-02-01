@@ -12,12 +12,13 @@ from rest_framework.permissions import IsAuthenticated
 
 from users.permissions import IsAdminOrGestorComedor
 from estudiantes.models import Estudiante
-from .models import AsistenciaCafeteria, AdeudoComedor, MenuSemanal
+from .models import AsistenciaCafeteria, AdeudoComedor, MenuSemanal, Menu
 from .serializers import (
     AsistenciaCafeteriaSerializer, 
     AdeudoComedorSerializer, 
     MenuSemanalSerializer,
-    EstudianteAlergiaSerializer
+    EstudianteAlergiaSerializer,
+    MenuSerializer
 )
 
 @api_view(['GET'])
@@ -172,3 +173,63 @@ def admin_historial_asistencia_estudiante(request, matricula):
         "historial_asistencia": AsistenciaCafeteriaSerializer(asistencias, many=True).data,
         "adeudos": AdeudoComedorSerializer(adeudos, many=True).data
     })
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_menus_list(request):
+    """
+    GET: Listar menús disponibles
+    POST: Crear nuevo menú
+    """
+    if request.method == 'GET':
+        menus = Menu.objects.all().order_by('desactivar', 'descripcion')
+        serializer = MenuSerializer(menus, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = MenuSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminOrGestorComedor])
+def admin_menu_semanal(request):
+    """
+    GET: Obtener menú semanal de la semana actual (o por fecha)
+    POST: Crear/Actualizar menú semanal
+    """
+    if request.method == 'GET':
+        hoy = timezone.now().date()
+        fecha_target = request.query_params.get('fecha')
+        
+        if fecha_target:
+            # Si dan fecha, buscar la semana que contiene esa fecha
+            try:
+                # Lógica simple: Buscar si existe un MenuSemanal que inicie cerca
+                # Idealmente MenuSemanal tiene fecha_inicio y cubre 7 dias
+                menu_semanal = MenuSemanal.objects.filter(semana_inicio__lte=fecha_target).order_by('-semana_inicio').first()
+            except:
+                menu_semanal = None
+        else:
+            # Buscar el más reciente o el de esta semana
+            inicio_semana = hoy - timezone.timedelta(days=hoy.weekday())
+            menu_semanal = MenuSemanal.objects.filter(semana_inicio=inicio_semana).first()
+            
+            if not menu_semanal:
+                # Fallback al último creado
+                menu_semanal = MenuSemanal.objects.order_by('-semana_inicio').first()
+
+        if not menu_semanal:
+            return Response({"detail": "No hay menú semanal configurado"}, status=status.HTTP_404_NOT_FOUND)
+            
+        serializer = MenuSemanalSerializer(menu_semanal)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = MenuSemanalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
