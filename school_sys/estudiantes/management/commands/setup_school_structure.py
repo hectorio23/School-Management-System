@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from estudiantes.models import NivelEducativo, Grado, CicloEscolar
 from django.utils import timezone
 import datetime
+from estudiantes.services import asegurar_grupos_ciclo
 
 class Command(BaseCommand):
     help = 'Crea la estructura inicial de niveles educativos, grados y ciclo escolar'
@@ -122,7 +123,6 @@ class Command(BaseCommand):
         # 4. Crear Grupos (A, B, C) para cada Grado en el ciclo identificado
         self.stdout.write(self.style.WARNING(f'Asegurando grupos A, B y C para el ciclo {ciclo.nombre}...'))
         
-        from estudiantes.services import asegurar_grupos_ciclo
         grupos_count = asegurar_grupos_ciclo(ciclo)
 
         self.stdout.write(self.style.SUCCESS(f'Se crearon {grupos_count} grupos nuevos para el ciclo {ciclo.nombre}.'))

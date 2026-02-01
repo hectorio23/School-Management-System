@@ -206,6 +206,20 @@ class Adeudo(models.Model):
         blank=True,
         help_text='Justificacion si fue creado manualmente'
     )
+    
+    # Campos para control de recargos vencidos
+    recargo_fijo_aplicado = models.BooleanField(
+        default=False,
+        help_text='True si ya se aplicó el recargo fijo de $125 (una sola vez)'
+    )
+    dias_mora = models.IntegerField(
+        default=0,
+        help_text='Días transcurridos desde vencimiento'
+    )
+    adeudo_congelado = models.BooleanField(
+        default=False,
+        help_text='True si el adeudo está congelado por baja del estudiante'
+    )
 
     class Meta:
         verbose_name = "Adeudo"

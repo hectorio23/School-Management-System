@@ -173,6 +173,39 @@ class Estudiante(models.Model):
     apellido_materno = models.CharField(max_length=255)
     direccion = models.TextField()
 
+    # Campos migrados desde Aspirante
+    curp = models.CharField(
+        max_length=18, 
+        unique=True, 
+        null=True, 
+        blank=True,
+        validators=[MinLengthValidator(18)],
+        help_text="CURP del estudiante"
+    )
+    fecha_nacimiento = models.DateField(
+        null=True, 
+        blank=True,
+        help_text="Fecha de nacimiento del estudiante"
+    )
+    sexo = models.CharField(
+        max_length=1, 
+        choices=[("M", "Masculino"), ("F", "Femenino")], 
+        null=True, 
+        blank=True
+    )
+    telefono = models.CharField(
+        max_length=20, 
+        null=True, 
+        blank=True,
+        help_text="Teléfono de contacto predeterminado (del tutor principal)"
+    )
+    escuela_procedencia = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True,
+        help_text="Escuela de procedencia del estudiante"
+    )
+
     updateable = models.BooleanField(default=True)
     porcentaje_beca = models.DecimalField(
         max_digits=5, 
@@ -601,6 +634,16 @@ class EvaluacionSocioeconomica(models.Model):
         null=True,
         blank=True,
         help_text='Explicación de por qué se asignó este estrato'
+    )
+    
+    # Snapshot del porcentaje de descuento al momento de la evaluación
+    # Este campo mantiene el historial inmutable incluso si el estrato se modifica después
+    porcentaje_descuento_snapshot = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Porcentaje de descuento del estrato al momento de la evaluación'
     )
 
 
