@@ -54,7 +54,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import make_password
 
-from users.permissions import IsAdministrador
+from users.permissions import IsAdministrador, CanManageAdmisiones
 from .permissions import IsAspirante
 from .authentication import AdmissionJWTAuthentication
 from dateutil.relativedelta import relativedelta
@@ -419,7 +419,7 @@ def admin_mark_paid(request, folio):
     return Response({"message": "La fase de pago está deshabilitada temporalmente."}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanManageAdmisiones])
 def admin_view_document(request, folio, field_name):
     """Visor seguro para administradores. Desencripta documentos del estudiante o tutor."""
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
@@ -471,7 +471,7 @@ def admin_view_document(request, folio, field_name):
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanManageAdmisiones])
 def admin_view_aspirante_document(request, folio, field_name):
     """
     Endpoint para que el administrador vea documentos del aspirante.
@@ -507,7 +507,7 @@ def admin_view_aspirante_document(request, folio, field_name):
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanManageAdmisiones])
 def admin_view_tutor_document(request, tutor_id, field_name):
     """
     Endpoint para que el administrador vea documentos del tutor por su ID.
@@ -586,7 +586,7 @@ def download_template(request, template_name):
 # --- ENDPOINTS DE MIGRACIÓN DE ASPIRANTES ---
 
 @api_view(['POST'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanManageAdmisiones])
 def migrate_aspirante_to_student(request, folio):
     """
     Migra un aspirante aceptado a estudiante.
@@ -762,7 +762,7 @@ def migrate_aspirante_to_student(request, folio):
 
 
 @api_view(['POST'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanManageAdmisiones])
 def migrate_all_accepted(request):
     """
     Migra todos los aspirantes con status 'ACEPTADO' a estudiantes.

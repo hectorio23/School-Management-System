@@ -31,16 +31,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     ROLE_CHOICES = (
         ("estudiante", "Estudiante"),
-        ("administrador", "Administrador"),
-        ("contador", "Contador"),
-        ("cafeteria", "Cafetería"),
-        ("bibliotecario", "Bibliotecario"),
+        ("administrador", "Administrador TI"),
+        ("becas_admin", "Administrador de Becas"),
+        ("finanzas_admin", "Administrador de Finanzas"),
+        ("comedor_admin", "Administrador de Comedor"),
+        ("admisiones_admin", "Administrador de Admisiones"),
+        # ("contador", "Contador"),
+        # ("cafeteria", "Cafetería"),
+        # ("bibliotecario", "Bibliotecario"),
     )
+
+    # Roles que tienen privilegios administrativos
+    ADMIN_ROLES = ['administrador', 'becas_admin', 'finanzas_admin', 'comedor_admin', 'admisiones_admin']
 
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
     nombre = models.CharField(max_length=200)
-    role = models.CharField(max_length=20, default="estudiante", choices=ROLE_CHOICES, editable=False)
+    role = models.CharField(max_length=20, default="estudiante", choices=ROLE_CHOICES)
 
     activo = models.BooleanField(default=True)
 
@@ -59,6 +66,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.mfa_code = None
         self.mfa_expires_at = None
         self.save(update_fields=["mfa_code", "mfa_expires_at"])
+
+    def is_admin_role(self):
+        """Verifica si el usuario tiene algún rol administrativo."""
+        return self.role in self.ADMIN_ROLES
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "role"]

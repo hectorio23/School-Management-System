@@ -8,6 +8,11 @@ from django.shortcuts import render, get_object_or_404
 from django.db import transaction, models
 from django.utils import timezone
 
+from .permissions import (
+    IsAdministrador, CanAccessStudentInfo, CanManageBecas, 
+    CanManageFinanzas, CanManageComedor
+)
+
 from .serializers import EmailTokenObtainPairSerializer
 from .serializers_admin import (
     TutorSerializer, 
@@ -59,7 +64,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 # =============================================================================
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([CanAccessStudentInfo])
 def admin_student_list(request):
     """
     GET /api/admin/students/
@@ -114,7 +119,7 @@ def admin_student_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([CanAccessStudentInfo])
 def admin_student_detail(request, matricula):
     """
     GET /api/admin/students/<matricula>/
@@ -223,7 +228,7 @@ def admin_student_detail(request, matricula):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_student_create(request):
     """
     POST /api/admin/students/create/
@@ -237,7 +242,7 @@ def admin_student_create(request):
 
 
 @api_view(['PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_student_update(request, matricula):
     """
     PUT /api/admin/students/<matricula>/update/ - Actualizar estudiante
@@ -290,7 +295,7 @@ def admin_student_update(request, matricula):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanAccessStudentInfo])
 def admin_tutores_list(request):
 
     """
@@ -313,7 +318,7 @@ def admin_tutores_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanAccessStudentInfo])
 def admin_tutores_detail(request, pk):
     """
     GET /api/admin/students/tutores/<id>/ - Detalle tutor
@@ -343,7 +348,7 @@ def admin_tutores_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_conceptos_list(request):
     """
     GET /api/admin/conceptos/ - Lista conceptos de pago
@@ -366,7 +371,7 @@ def admin_conceptos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_conceptos_detail(request, pk):
     """
     GET /api/admin/conceptos/<id>/ - Detalle concepto
@@ -393,7 +398,7 @@ def admin_conceptos_detail(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_conceptos_generar_adeudos(request, pk):
     """
     POST /api/admin/conceptos/<id>/generar-adeudos/
@@ -466,7 +471,7 @@ def _generar_adeudos_masivos(data, concepto):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_grados_list(request):
     """
     GET /api/admin/grados/ - Lista grados
@@ -486,7 +491,7 @@ def admin_grados_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_grados_detail(request, pk):
     """
     GET /api/admin/grados/<id>/ - Detalle grado
@@ -516,7 +521,7 @@ def admin_grados_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_grupos_list(request):
     """
     GET /api/admin/grupos/ - Lista grupos
@@ -536,7 +541,7 @@ def admin_grupos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_grupos_detail(request, pk):
     """
     GET /api/admin/grupos/<id>/ - Detalle grupo
@@ -566,7 +571,7 @@ def admin_grupos_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_estratos_list(request):
     """
     GET /api/admin/estratos/ - Lista estratos
@@ -586,7 +591,7 @@ def admin_estratos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_estratos_detail(request, pk):
     """
     GET /api/admin/estratos/<id>/ - Detalle estrato
@@ -617,7 +622,7 @@ def admin_estratos_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_estados_list(request):
     """
     GET /api/admin/estados/ - Lista estados de estudiante
@@ -637,7 +642,7 @@ def admin_estados_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdministrador])
 def admin_estados_detail(request, pk):
     """
     GET /api/admin/estados/<id>/ - Detalle estado
@@ -667,7 +672,7 @@ def admin_estados_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_list(request):
     """
     GET /api/admin/becas/ - Lista becas
@@ -687,7 +692,7 @@ def admin_becas_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_detail(request, pk):
     """
     GET /api/admin/becas/<id>/ - Detalle beca
@@ -713,7 +718,7 @@ def admin_becas_detail(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_verificar_vigencia(request):
     """
     POST /api/admin/becas/verificar-vigencia/
@@ -731,7 +736,7 @@ def admin_becas_verificar_vigencia(request):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_estudiantes_list(request):
     """
     GET /api/admin/becas-estudiantes/ - Lista asignaciones beca-estudiante
@@ -753,7 +758,7 @@ def admin_becas_estudiantes_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_estudiantes_detail(request, pk):
     """
     GET /api/admin/becas-estudiantes/<id>/ - Detalle asignación
@@ -779,7 +784,7 @@ def admin_becas_estudiantes_detail(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_estudiantes_retirar_masivo(request):
     """
     POST /api/admin/becas-estudiantes/retirar-masivo/
@@ -797,7 +802,7 @@ def admin_becas_estudiantes_retirar_masivo(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_becas_estudiantes_activar_masivo(request):
     """
     POST /api/admin/becas-estudiantes/activar-masivo/
@@ -818,7 +823,7 @@ def admin_becas_estudiantes_activar_masivo(request):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_adeudos_list(request):
     """
     GET /api/admin/pagos/adeudos/ - Lista adeudos
@@ -840,7 +845,7 @@ def admin_adeudos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_adeudos_detail(request, pk):
     """
     GET /api/admin/pagos/adeudos/<id>/ - Detalle adeudo
@@ -866,7 +871,7 @@ def admin_adeudos_detail(request, pk):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_adeudos_vencidos(request):
     """
     GET /api/admin/pagos/adeudos/vencidos/
@@ -884,7 +889,7 @@ def admin_adeudos_vencidos(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_adeudos_recalcular(request):
     """
     POST /api/admin/pagos/adeudos/recalcular/
@@ -906,7 +911,7 @@ def admin_adeudos_recalcular(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_adeudos_exentar(request, pk):
     """
     POST /api/admin/pagos/adeudos/<id>/exentar/
@@ -930,7 +935,7 @@ def admin_adeudos_exentar(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_pagos_list(request):
     """
     GET /api/admin/pagos/ - Lista pagos
@@ -952,7 +957,7 @@ def admin_pagos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageFinanzas])
 def admin_pagos_detail(request, pk):
     """
     GET /api/admin/pagos/<id>/ - Detalle pago
@@ -981,7 +986,7 @@ def admin_pagos_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_evaluaciones_list(request):
     """
     GET /api/admin/students/evaluaciones/ - Lista evaluaciones socioeconómicas
@@ -994,7 +999,7 @@ def admin_evaluaciones_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([CanManageBecas])
 def admin_evaluaciones_detail(request, pk):
     """
     GET /api/admin/students/evaluaciones/<id>/ - Detalle evaluación
