@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from users.permissions import IsAdminOrGestorComedor
+from users.permissions import CanManageComedor
 from estudiantes.models import Estudiante
 from .models import AsistenciaCafeteria, AdeudoComedor, MenuSemanal, Menu
 from .serializers import (
@@ -22,7 +22,7 @@ from .serializers import (
 )
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_asistencias_list(request):
     """Lista todas las asistencias registradas (filtro opcional por fecha)."""
     queryset = AsistenciaCafeteria.objects.select_related('estudiante', 'menu').all().order_by('-fecha_asistencia')
@@ -35,7 +35,7 @@ def admin_asistencias_list(request):
     return Response(serializer.data)
 
 @api_view(['POST'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_registrar_asistencia(request):
     """
     Registra asistencia y genera adeudo automático.
@@ -84,7 +84,7 @@ def admin_registrar_asistencia(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_reporte_diario(request):
     """Reporte de asistencia del día especificado (o hoy)."""
     fecha = request.query_params.get('fecha', timezone.now().date())
@@ -101,7 +101,7 @@ def admin_reporte_diario(request):
     })
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_reporte_semanal(request):
     """Reporte semanal. Requiere fecha_inicio y fecha_fin."""
     fecha_inicio = request.query_params.get('fecha_inicio')
@@ -129,7 +129,7 @@ def admin_reporte_semanal(request):
     })
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_reporte_mensual(request):
     """Reporte mensual. Requiere mes (1-12) y anio."""
     hoy = timezone.now().date()
@@ -149,7 +149,7 @@ def admin_reporte_mensual(request):
     })
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_alertas_alergias(request):
     """Lista estudiantes con alergias registradas."""
     estudiantes = Estudiante.objects.filter(
@@ -160,7 +160,7 @@ def admin_alertas_alergias(request):
     return Response(serializer.data)
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_historial_asistencia_estudiante(request, matricula):
     """Historial de comedores de un estudiante específico."""
     asistencias = AsistenciaCafeteria.objects.filter(estudiante__matricula=matricula).order_by('-fecha_asistencia')
@@ -175,7 +175,7 @@ def admin_historial_asistencia_estudiante(request, matricula):
     })
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_menus_list(request):
     """
     GET: Listar menús disponibles
@@ -194,7 +194,7 @@ def admin_menus_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminOrGestorComedor])
+@permission_classes([CanManageComedor])
 def admin_menu_semanal(request):
     """
     GET: Obtener menú semanal de la semana actual (o por fecha)
