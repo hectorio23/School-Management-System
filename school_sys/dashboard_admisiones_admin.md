@@ -19,17 +19,17 @@ Content-Type: application/json
 ## Permisos del Rol
 
 El rol `admisiones_admin` tiene acceso a:
-- [+] Gestión de aspirantes
-- [+] Visualización de documentos de aspirantes
-- [+] Migración de aspirantes a estudiantes
-- [+] Administración del proceso de admisión
+- Gestión de aspirantes
+- Visualización de documentos de aspirantes
+- Migración de aspirantes a estudiantes
+- Administración del proceso de admisión
 
 **No tiene acceso a:**
-- [X] Información de estudiantes actuales
-- [X] Becas y estratos
-- [X] Adeudos y pagos
-- [X] Comedor
-- [X] Panel Django Admin
+- Información de estudiantes actuales
+- Becas y estratos
+- Adeudos y pagos
+- Comedor
+- Panel Django Admin
 
 ---
 

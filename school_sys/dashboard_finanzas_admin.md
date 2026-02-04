@@ -19,18 +19,18 @@ Content-Type: application/json
 ## Permisos del Rol
 
 El rol `finanzas_admin` tiene acceso a:
-- ✅ Información de estudiantes (solo lectura)
-- ✅ Gestión completa de conceptos de pago
-- ✅ Gestión de adeudos
-- ✅ Gestión de pagos
-- ✅ Reportes financieros
+- Información de estudiantes (solo lectura)
+- Gestión completa de conceptos de pago
+- Gestión de adeudos
+- Gestión de pagos
+- Reportes financieros
 
 **No tiene acceso a:**
-- ❌ CRUD de estudiantes (crear, modificar, eliminar)
-- ❌ Becas y estratos
-- ❌ Comedor
-- ❌ Admisiones
-- ❌ Panel Django Admin
+- CRUD de estudiantes (crear, modificar, eliminar)
+- Becas y estratos
+- Comedor
+- Admisiones
+- Panel Django Admin
 
 ---
 
@@ -176,7 +176,7 @@ El rol `finanzas_admin` tiene acceso a:
 ### 4.5 Eliminar Pago
 - **Método:** `DELETE`
 - **URL:** `/api/admin/pagos/<id>/`
-- **Nota:** ⚠️ **BLOQUEADO** - No se permite eliminar pagos por integridad contable.
+- **Nota:** **BLOQUEADO** - No se permite eliminar pagos por integridad contable.
 
 ---
 

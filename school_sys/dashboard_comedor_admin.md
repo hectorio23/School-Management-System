@@ -19,18 +19,18 @@ Content-Type: application/json
 ## Permisos del Rol
 
 El rol `comedor_admin` tiene acceso a:
-- ✅ Información de estudiantes (solo lectura)
-- ✅ Registro de asistencias al comedor
-- ✅ Gestión de menús
-- ✅ Reportes de comedor (diario, semanal, mensual)
-- ✅ Alertas de alergias
+- Información de estudiantes (solo lectura)
+- Registro de asistencias al comedor
+- Gestión de menús
+- Reportes de comedor (diario, semanal, mensual)
+- Alertas de alergias
 
 **No tiene acceso a:**
-- ❌ CRUD de estudiantes (crear, modificar, eliminar)
-- ❌ Becas y estratos
-- ❌ Adeudos y pagos generales
-- ❌ Admisiones
-- ❌ Panel Django Admin
+- CRUD de estudiantes (crear, modificar, eliminar)
+- Becas y estratos
+- Adeudos y pagos generales
+- Admisiones
+- Panel Django Admin
 
 ---
 

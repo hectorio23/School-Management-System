@@ -488,7 +488,7 @@ class HistorialEstadosEstudiante(models.Model):
         ]
 
     def __str__(self):
-        return f"[+] - {self.estudiante} - {self.estado} ({self.fecha_creacion.date()})"
+        return f"{self.estudiante} - {self.estado} ({self.fecha_creacion.date()})"
 
 
 #########################################################
@@ -660,7 +660,7 @@ class EvaluacionSocioeconomica(models.Model):
 
     def __str__(self):
         estado = "Aprobada" if self.aprobado else "Pendiente" if self.aprobado is None else "Rechazada"
-        return f"[+] Evaluación {self.estudiante} - {estado}"
+        return f"Evaluación {self.estudiante} - {estado}"
 
 
 #########################################################

@@ -8,10 +8,10 @@ from .models import NivelEducativo
 
 def calcular_siguiente_grado(inscripcion_actual):
     """Calcula el siguiente grado o nivel educativo"""
-    if not inscripcion_actual or not inscripcion_actual.get_grupo() or not inscripcion_actual.get_grado():
+    if not inscripcion_actual or not inscripcion_actual.grupo or not inscripcion_actual.grupo.grado:
         return None
         
-    grado_actual = inscripcion_actual.get_grado()
+    grado_actual = inscripcion_actual.grupo.grado
     nivel_actual = grado_actual.nivel_educativo
     
     if not nivel_actual:

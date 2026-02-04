@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.db.models import Sum
 from datetime import timedelta, date, datetime
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 from estudiantes.models import Estudiante
 
 #########################################################
@@ -350,6 +351,17 @@ class Pago(models.Model):
         return f"Pago ${self.monto} - {self.fecha_pago.date()}"
 
     def save(self, *args, **kwargs):
+        # Validar si es reinscripción y tiene otros adeudos pendientes
+        if self.adeudo.concepto.tipo_concepto == 'reinscripcion':
+            # Solo permitir si es el único adeudo pendiente (excluyendo el actual)
+            otros_pendientes = Adeudo.objects.filter(
+                estudiante=self.adeudo.estudiante,
+                estatus__in=['pendiente', 'vencido', 'parcial']
+            ).exclude(pk=self.adeudo.pk).exists()
+            
+            if otros_pendientes:
+                raise ValidationError("No se puede pagar la reinscripción si existen otros adeudos vencidos o pendientes.")
+
         super().save(*args, **kwargs)
         
         # Sincronizar adeudo

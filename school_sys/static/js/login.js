@@ -4,7 +4,7 @@
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 const AUTH_ENDPOINTS = {
     login: `${API_BASE_URL}/token/`,
-    verifyMFA: `${API_BASE_URL}/token/mfa-verify/`,  
+    verifyMFA: `${API_BASE_URL}/token/mfa-verify/`,
 };
 // Utilidades para manejo de tokens (Cookies)
 const TokenManager = {
@@ -101,7 +101,7 @@ const UI = {
             modal.className = 'modal-overlay';
             modal.innerHTML = `
                 <div class="modal-content">
-                    <div class="modal-icon">⚠️</div>
+                    <div class="modal-icon">!</div>
                     <p class="modal-message"></p>
                 </div>
             `;
@@ -112,7 +112,7 @@ const UI = {
         if (messageEl) messageEl.textContent = message;
 
         modal.style.display = 'flex';
-        
+
         setTimeout(() => {
             modal.style.display = 'none';
         }, duration);
@@ -141,7 +141,7 @@ const MFAManager = {
         }
 
         mfaContainer.style.display = 'flex';
-        
+
         // Iniciar temporizador
         this.startTimer();
 
@@ -201,28 +201,28 @@ const MFAManager = {
                 </form>
 
                 <div class="security-badge">
-                    <span class="security-badge-icon">🛡️</span>
+                    <span class="security-badge-icon">*</span>
                     <span class="security-badge-text">Tu información está protegida y encriptada</span>
                 </div>
             </div>`
-        ;
+            ;
 
-    // Agregar listener para solo permitir números en el input
-    setTimeout(() => {
-        const codeInput = container.querySelector('#mfaCode');
-        if (codeInput) {
-            codeInput.addEventListener('input', (e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            });
-        }
-    }, 0);
+        // Agregar listener para solo permitir números en el input
+        setTimeout(() => {
+            const codeInput = container.querySelector('#mfaCode');
+            if (codeInput) {
+                codeInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                });
+            }
+        }, 0);
 
-    return container;
+        return container;
     },
 
     startTimer() {
         this.updateTimerDisplay();
-        
+
         this.timerInterval = setInterval(() => {
             const now = new Date();
             const remaining = this.expiryTime - now;
@@ -238,14 +238,14 @@ const MFAManager = {
     updateTimerDisplay() {
         const now = new Date();
         const remaining = Math.max(0, this.expiryTime - now);
-        
+
         const minutes = Math.floor(remaining / 60000);
         const seconds = Math.floor((remaining % 60000) / 1000);
-        
+
         const timerEl = document.getElementById('mfaTimer');
         if (timerEl) {
             timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            
+
             // Cambiar color si queda poco tiempo
             if (remaining < 30000) {
                 timerEl.style.color = '#dc3545';
@@ -255,10 +255,10 @@ const MFAManager = {
 
     handleExpiry() {
         this.cleanup();
-        
+
         // Mostrar modal de tiempo expirado
         UI.showModal('⏰ Tiempo expirado. Por favor inicia sesión nuevamente.', 3000);
-        
+
         // Volver al login después del modal
         setTimeout(() => {
             this.hide();
@@ -306,7 +306,7 @@ const APIService = {
 
         try {
             const response = await fetch(url, config);
-            
+
             // Intentar parsear JSON
             let data;
             try {
@@ -316,11 +316,11 @@ const APIService = {
             }
 
             if (!response.ok) {
-                const errorMessage = data.detail || 
-                                    data.error ||
-                                    (data.password ? data.password[0] : null) || 
-                                    (data.email ? data.email[0] : null) || 
-                                    'Error de autenticación';
+                const errorMessage = data.detail ||
+                    data.error ||
+                    (data.password ? data.password[0] : null) ||
+                    (data.email ? data.email[0] : null) ||
+                    'Error de autenticación';
                 throw new Error(errorMessage);
             }
 
@@ -399,7 +399,7 @@ const Auth = {
             if (response.access && response.refresh) {
                 TokenManager.set(response.access, response.refresh);
                 MFAManager.cleanup();
-                
+
                 UI.showLoading('Autenticación exitosa. Redirigiendo...');
 
                 setTimeout(() => {
@@ -412,7 +412,7 @@ const Auth = {
 
         } catch (error) {
             UI.hideLoading();
-            
+
             // Si el error es "Invalid or expired code", mostrar en el formulario MFA
             if (error.message.includes('Invalid') || error.message.includes('expired')) {
                 MFAManager.showMFAError(error.message);
