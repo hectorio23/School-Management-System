@@ -1,7 +1,19 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from pagos.models import Adeudo, Pago
+from .models import Inscripcion, Estudiante
 from .services import procesar_reinscripcion_automatica
+
+@receiver(post_save, sender=Inscripcion)
+def freeze_debts_on_withdrawal(sender, instance, created, **kwargs):
+    """
+    Cuando un estudiante es dado de baja, se congelan sus adeudos pendientes.
+    """
+    if instance.estatus in ['baja_temporal', 'baja_definitiva']:
+        Adeudo.objects.filter(
+            estudiante=instance.estudiante,
+            estatus__in=['pendiente', 'vencido', 'parcial']
+        ).update(adeudo_congelado=True)
 
 @receiver(post_save, sender=Pago)
 def trigger_reinscripcion_on_pago(sender, instance, created, **kwargs):

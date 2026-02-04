@@ -8,3 +8,4 @@ python-dotenv
 cryptography
 django-jazzmin 
 django-admin-honeypot
+reportlab

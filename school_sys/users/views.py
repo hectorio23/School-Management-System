@@ -37,6 +37,15 @@ from estudiantes.models import (
 )
 from pagos.models import Pago, Adeudo, ConceptoPago
 
+# Imports para Password Reset
+import random
+import jwt
+from datetime import datetime, timedelta
+from django.conf import settings
+from rest_framework.views import APIView
+from admissions.models import AdmissionUser, VerificationCode
+from users.models import User
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def dashboard(request):
@@ -1258,3 +1267,165 @@ def admin_exportar_aspirantes(request):
     response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="aspirantes.xlsx"'
     return response
+
+# =============================================================================
+# PASSWORD RESET FLOW
+# =============================================================================
+
+class PasswordResetRequestView(APIView):
+    """
+    Paso 1: Solicitar código de restablecimiento.
+    Busca en Estudiantes (User) o Aspirantes (AdmissionUser).
+    Genera código de 6 dígitos y (simula) envío por correo.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 1. Buscar en USUARIOS (Estudiantes active)
+        try:
+            user = User.objects.get(email=email, role='estudiante')
+            code = f"{random.randint(100000, 999999)}"
+            user.mfa_code = code
+            user.mfa_expires_at = timezone.now() + timedelta(minutes=15)
+            user.save(update_fields=['mfa_code', 'mfa_expires_at'])
+            
+            print(f"\\n[MOCK EMAIL] Password Reset Code para ESTUDIANTE {email}: {code}\\n")
+            response_data = {'message': f'Si el correo existe, se ha enviado un código de verificación.'}
+            if settings.DEBUG:
+                response_data['code_debug'] = code
+            return Response(response_data)
+            
+        except User.DoesNotExist:
+            pass
+            
+        # 2. Buscar en ASPIRANTES
+        try:
+            adm_user = AdmissionUser.objects.get(email=email)
+            code = f"{random.randint(100000, 999999)}"
+            
+            # Usar VerificationCode (reutilizando modelo existente en admissions)
+            VerificationCode.objects.update_or_create(
+                email=email,
+                defaults={
+                    'code': code,
+                    'created_at': timezone.now(),
+                    'expires_at': timezone.now() + timedelta(minutes=15),
+                    'is_verified': False
+                }
+            )
+            
+            print(f"\\n[MOCK EMAIL] Password Reset Code para ASPIRANTE {email}: {code}\\n")
+            return Response({'message': f'Si el correo existe, se ha enviado un código de verificación.'})
+            
+        except AdmissionUser.DoesNotExist:
+            pass
+            
+        # Retornar éxito genérico para evitar enumeración de usuarios
+        return Response({'message': f'Si el correo existe, se ha enviado un código de verificación.'})
+
+
+class PasswordResetVerifyView(APIView):
+    """
+    Paso 2: Verificar código recibio por email.
+    Retorna un 'reset_token' (JWT temporal) si es válido.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        
+        if not email or not code:
+            return Response({'error': 'Email y código requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # 1. Verificar Estudiante
+        try:
+            user = User.objects.get(email=email, role='estudiante')
+            if user.mfa_code == code and user.mfa_expires_at and user.mfa_expires_at > timezone.now():
+                # Código válido
+                token_payload = {
+                    'email': email,
+                    'type': 'password_reset',
+                    'user_type': 'student',
+                    'exp': datetime.utcnow() + timedelta(minutes=15)
+                }
+                reset_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm='HS256')
+                return Response({'message': 'Código válido', 'reset_token': reset_token})
+        except User.DoesNotExist:
+            pass
+            
+        # 2. Verificar Aspirante
+        try:
+            # Check VerificationCode table
+            vc = VerificationCode.objects.filter(email=email, code=code, is_verified=False).last()
+            if vc and vc.is_valid():
+                # Código válido
+                token_payload = {
+                    'email': email,
+                    'type': 'password_reset',
+                    'user_type': 'aspirante',
+                    'exp': datetime.utcnow() + timedelta(minutes=15)
+                }
+                reset_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm='HS256')
+                
+                # Marcar como verificado para que no se reuse el mismísimo codigo inmediatamente (opcional)
+                vc.is_verified = True
+                vc.save()
+                
+                return Response({'message': 'Código válido', 'reset_token': reset_token})
+        except Exception as e:
+            pass
+            
+        return Response({'error': 'Código inválido o expirado'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetConfirmView(APIView):
+    """
+    Paso 3: Cambiar la contraseña usando el reset_token.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        reset_token = request.data.get('reset_token')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+        
+        if not reset_token or not new_password:
+            return Response({'error': 'Token y nueva contraseña requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if new_password != confirm_password:
+            return Response({'error': 'Las contraseñas no coinciden'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            payload = jwt.decode(reset_token, settings.SECRET_KEY, algorithms=['HS256'])
+            if payload.get('type') != 'password_reset':
+                raise jwt.InvalidTokenError
+                
+            email = payload.get('email')
+            user_type = payload.get('user_type')
+            
+            if user_type == 'student':
+                user = User.objects.get(email=email)
+                user.set_password(new_password)
+                # Limpiar MFA code
+                user.mfa_code = None
+                user.mfa_expires_at = None
+                user.save()
+                return Response({'message': 'Contraseña actualizada exitosamente (Estudiante)'})
+                
+            elif user_type == 'aspirante':
+                adm_user = AdmissionUser.objects.get(email=email)
+                adm_user.set_password(new_password)
+                adm_user.save()
+                return Response({'message': 'Contraseña actualizada exitosamente (Aspirante)'})
+                
+        except jwt.ExpiredSignatureError:
+            return Response({'error': 'El token ha expirado'}, status=status.HTTP_400_BAD_REQUEST)
+        except jwt.InvalidTokenError:
+            return Response({'error': 'Token inválido'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': f'Error al actualizar contraseña: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)

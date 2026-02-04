@@ -66,6 +66,8 @@ from estudiantes.models import (
 from django.test import RequestFactory
 from .utils_security import decrypt_data
 from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
+from .utils_pdf import generar_contrato_servicios
+from django.core.mail import send_mail
 from .serializers import (
     VerificationCodeSerializer, 
     VerifyCodeSerializer, 
@@ -394,6 +396,17 @@ def aspirante_phase3(request, folio):
                 
                 if aspirante.fase_actual == 3: 
                     aspirante.fase_actual = 4
+                    # Notificar por correo
+                    try:
+                        send_mail(
+                            subject="Confirmación de Inscripción - Proceso Completado",
+                            message=f"Hola {aspirante.nombre},\n\nHas completado exitosamente el proceso de inscripción (Fase 3).\nTu solicitud ha pasado a la fase de validación final (Fase 4).\nPuedes descargar tu contrato de servicios educativos desde el dashboard.",
+                            from_email=None,
+                            recipient_list=[aspirante.user.email],
+                            fail_silently=True,
+                        )
+                    except Exception:
+                        pass
                 
                 aspirante.save()
             return Response({"message": "Fase 3 OK.", "fase_actual": aspirante.fase_actual})
@@ -401,6 +414,21 @@ def aspirante_phase3(request, folio):
             return Response({"error": f"Error al procesar archivos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@authentication_classes([AdmissionJWTAuthentication])
+@permission_classes([IsAuthenticated, IsAspirante])
+def download_contrato(request, folio):
+    """Permite al aspirante descargar su contrato de servicios educativos."""
+    if request.user.folio != folio:
+        return Response({"error": "No tienes permiso para descargar este documento"}, status=status.HTTP_403_FORBIDDEN)
+    
+    aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    buffer = generar_contrato_servicios(aspirante)
+    
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="contrato_{folio}.pdf"'
+    return response
 
 # --- ENDPOINTS ADMINISTRATIVOS ---
 

@@ -19,18 +19,18 @@ Content-Type: application/json
 ## Permisos del Rol
 
 El rol `becas_admin` tiene acceso a:
-- ✅ Información de estudiantes (solo lectura)
-- ✅ Gestión completa de becas
-- ✅ Gestión de estratos socioeconómicos
-- ✅ Evaluaciones socioeconómicas
-- ✅ Asignación/retiro de becas a estudiantes
+- Información de estudiantes (solo lectura)
+- Gestión completa de becas
+- Gestión de estratos socioeconómicos
+- Evaluaciones socioeconómicas
+- Asignación/retiro de becas a estudiantes
 
 **No tiene acceso a:**
-- ❌ CRUD de estudiantes (crear, modificar, eliminar)
-- ❌ Adeudos y pagos
-- ❌ Comedor
-- ❌ Admisiones
-- ❌ Panel Django Admin
+- CRUD de estudiantes (crear, modificar, eliminar)
+- Adeudos y pagos
+- Comedor
+- Admisiones
+- Panel Django Admin
 
 ---
 

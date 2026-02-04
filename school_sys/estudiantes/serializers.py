@@ -10,7 +10,38 @@ from .models import (
     Estrato, EvaluacionSocioeconomica,
     NivelEducativo, CicloEscolar, Inscripcion
 )
-from pagos.models import Adeudo
+from pagos.models import Adeudo, Pago, ConceptoPago
+
+# =============================================================================
+# SERIALIZERS PAGOS (Lectura para Estudiantes)
+# =============================================================================
+
+class ConceptoSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConceptoPago
+        fields = ['id', 'nombre', 'descripcion', 'monto_base', 'tipo_concepto']
+
+class EstudiantePagoSerializer(serializers.ModelSerializer):
+    """Serializer para mostrar los pagos en el historial del estudiante"""
+    fecha_pago = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    
+    class Meta:
+        model = Pago
+        fields = ['id', 'monto', 'fecha_pago', 'metodo_pago', 'numero_referencia', 'ruta_recibo', 'notas']
+
+class EstudianteAdeudoDetalleSerializer(serializers.ModelSerializer):
+    """Serializer detallado de Adeudo para historial"""
+    concepto = ConceptoSimpleSerializer(read_only=True)
+    pagos = EstudiantePagoSerializer(many=True, source='pago_set', read_only=True)
+    
+    class Meta:
+        model = Adeudo
+        fields = [
+            'id', 'concepto', 'monto_base', 'descuento_aplicado', 
+            'recargo_aplicado', 'monto_total', 'monto_pagado',
+            'estatus', 'fecha_generacion', 'fecha_vencimiento',
+            'pagos'
+        ]
 
 
 # =============================================================================

@@ -4,6 +4,11 @@ import os
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
+try:
+    from pagos.models import Adeudo, ConceptoPago
+except ImportError:
+    # Handle circular import if necessary, but preferred at top
+    pass
 
 
 #########################################################
@@ -155,8 +160,6 @@ class AdeudoComedor(models.Model):
         return False
 
     def save(self, *args, **kwargs):
-        from pagos.models import Adeudo, ConceptoPago
-
         # 1. Usar monto por defecto desde variable de entorno
         default_amount = Decimal(os.getenv('COMEDOR_DEFAULT_AMOUNT', '10'))
         self.monto = default_amount

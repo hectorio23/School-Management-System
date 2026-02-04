@@ -135,7 +135,7 @@ curl -s -X PUT http://127.0.0.1:8000/students/tutores/ \
 **Respuesta Exitosa (200 OK):**
 ```json
 {
-    "message": "[+] - Todos los tutores proporcionadosfueron actualizados correctamente.",
+    "message": "Todos los tutores proporcionados fueron actualizados correctamente.",
     "tutores": [
         {
             "id": 3,
@@ -180,8 +180,60 @@ curl -X POST http://127.0.0.1:8000/students/estudio-socioeconomico/ \
 **Respuesta Exitosa (201 Created):**
 ```json
 {
-    "message": "[+] - Evaluación socioeconómica registrada correctamente.",
+    "message": "Evaluación socioeconómica registrada correctamente.",
     "estrato_sugerido": "B",
     "NOTA": "El administrador tiene que validar el Estrato socioeconómico"
+}
+```
+
+---
+
+## 5. Historial de Pagos (Nuevo)
+
+Permite al alumno consultar su estado de cuenta detallado, incluyendo adeudos pendientes y pagados.
+
+**URL:** `/students/pagos/historial/`
+**Método:** `GET`
+**Headers:** `Authorization: Bearer <access_token>`
+
+**Respuesta Exitosa (200 OK):**
+```json
+{
+    "balance_total": 520.00,
+    "adeudos": [
+        {
+            "id": 10,
+            "concepto": {"nombre": "Colegiatura Enero", "monto_base": "5000.00"},
+            "monto_total": "4500.00",
+            "monto_pagado": "4500.00",
+            "estatus": "pagado",
+            "pagos": [
+                {"monto": "4500.00", "fecha_pago": "2024-01-05 10:00:00", "metodo_pago": "Transferencia"}
+            ]
+        }
+    ]
+}
+```
+
+## 6. Simulador de Pagos (Nuevo)
+
+Calcula el monto a pagar en una fecha futura, incluyendo recargos automáticos si aplica (10% + $125).
+
+**URL:** `/students/pagos/simular/`
+**Método:** `POST`
+**Body:** `{ "adeudo_id": 10, "fecha_pago": "2024-02-15" }`
+
+**Respuesta Exitosa (200 OK):**
+```json
+{
+    "adeudo_id": 10,
+    "fecha_simulada": "2024-02-15",
+    "desglose": {
+        "monto_base": 5000.00,
+        "descuento": 500.00,
+        "recargo_estimado": 575.00,
+        "subtotal_antes_recargo": 4500.00
+    },
+    "total_a_pagar": 5075.00
 }
 ```

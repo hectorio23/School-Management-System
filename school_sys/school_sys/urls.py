@@ -3,7 +3,12 @@
     puerto 443 por defecto
 """
 from rest_framework_simplejwt.views import TokenRefreshView
-from users.views import EmailTokenObtainPairView
+from users.views import (
+    EmailTokenObtainPairView,
+    PasswordResetRequestView,
+    PasswordResetVerifyView,
+    PasswordResetConfirmView
+)
 
 # from django.conf.urls.static import static
 from django.urls import path, include
@@ -26,4 +31,9 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view(), name='token_refresh'),
 
     path("api/token/mfa-verify/", VerifyMFATokenView, name="mfa_verify"),
+    
+    # Password Reset
+    path("api/auth/password-reset/request/", PasswordResetRequestView.as_view(), name="password_reset_request"),
+    path("api/auth/password-reset/verify/", PasswordResetVerifyView.as_view(), name="password_reset_verify"),
+    path("api/auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
 ]
