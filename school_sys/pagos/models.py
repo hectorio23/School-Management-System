@@ -169,7 +169,8 @@ class Adeudo(models.Model):
     )
     fecha_vencimiento = models.DateField(
         help_text='Fecha límite de pago',
-        default=timezone.now().date() + timedelta(days=31)
+        null=True,
+        blank=True
     )
 
     # Estado
@@ -238,14 +239,17 @@ class Adeudo(models.Model):
 
     def save(self, *args, **kwargs):
         # 1. Calcular Fecha de Vencimiento
+        # 1. Calcular Fecha de Vencimiento si no existe
         if not self.fecha_vencimiento:
-            hoy = timezone.localdate()
-            mes_siguiente = hoy.month + 1 if hoy.month < 12 else 1
-            anio_siguiente = hoy.year if hoy.month < 12 else hoy.year + 1
-            try:
-                self.fecha_vencimiento = date(anio_siguiente, mes_siguiente, 10)
-            except ValueError:
-                self.fecha_vencimiento = date(anio_siguiente, mes_siguiente, 28)
+            generacion = self.fecha_generacion or timezone.localdate()
+            if generacion.month == 12:
+                mes_vencimiento = 1
+                anio_vencimiento = generacion.year + 1
+            else:
+                mes_vencimiento = generacion.month + 1
+                anio_vencimiento = generacion.year
+            
+            self.fecha_vencimiento = date(anio_vencimiento, mes_vencimiento, 10)
 
         # 2. Asegurar Monto Base
         if (self.monto_base is None or self.monto_base == 0) and self.concepto:
