@@ -56,28 +56,23 @@ def admin_registrar_asistencia(request):
         
     try:
         with transaction.atomic():
-            # 1. Registrar Asistencia
-            costo = Decimal(os.getenv('COSTO_COMIDA', '10.00'))
-            
+            # 1. Registrar Asistencia (El precio se calcula automáticamente en el modelo)
             asistencia = AsistenciaCafeteria.objects.create(
                 estudiante=estudiante,
                 fecha_asistencia=fecha,
-                tipo_comida=tipo_comida,
-                precio_aplicado=costo
+                tipo_comida=tipo_comida
             )
             
-            # 2. Generar Adeudo Automático
-            AdeudoComedor.objects.create(
+            # 2. Generar Adeudo Automático (El monto se toma del precio_aplicado de la asistencia)
+            adeudo_com = AdeudoComedor.objects.create(
                 estudiante=estudiante,
-                asistencia=asistencia,
-                monto=costo,
-                # fecha_vencimiento se calcula en save() del modelo
+                asistencia=asistencia
             )
             
             return Response({
                 "message": "Asistencia registrada y adeudo generado.",
                 "asistencia_id": asistencia.id,
-                "costo": costo
+                "costo": asistencia.precio_aplicado
             }, status=status.HTTP_201_CREATED)
             
     except Exception as e:

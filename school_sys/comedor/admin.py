@@ -7,7 +7,7 @@ from django.db.models import F
 
 @admin.register(Menu)
 class MenuAdmin(admin.ModelAdmin):
-    list_display = ('descripcion', 'precio', 'desactivar')
+    list_display = ('descripcion', 'desactivar')
     list_filter = ('desactivar',) 
     search_fields = ('descripcion',)
 
@@ -24,24 +24,22 @@ class AsistenciaCafeteriaAdmin(admin.ModelAdmin):
     search_fields = ('estudiante__nombre', 'estudiante__apellido_paterno', 'estudiante__matricula')
     date_hierarchy = 'fecha_asistencia'
     autocomplete_fields = ['estudiante', 'menu']
+    readonly_fields = ('precio_aplicado', 'fecha_registro')
     
     fieldsets = (
         ('Información de Asistencia', {
             'fields': ('estudiante', 'fecha_asistencia', 'tipo_comida', 'menu')
         }),
-        ('Detalles de Cobro', {
-            'fields': ('precio_aplicado',)
-        })
     )
 
     def save_model(self, request, obj, form, change):
         is_new = obj.pk is None
         
+        # El precio se calcula ahora en el save() del modelo
         if not obj.precio_aplicado:
-            if obj.menu:
-                obj.precio_aplicado = obj.menu.precio
-            else:
-                 obj.precio_aplicado = 10.00
+            from decimal import Decimal
+            import os
+            obj.precio_aplicado = Decimal(os.getenv('COSTO_COMIDA', '10.00'))
 
         with transaction.atomic():
             super().save_model(request, obj, form, change)
@@ -67,7 +65,7 @@ class AdeudoComedorAdmin(admin.ModelAdmin):
     search_fields = ('estudiante__nombre', 'estudiante__apellido_paterno', 'estudiante__matricula')
     autocomplete_fields = ['estudiante', 'asistencia']
     
-    readonly_fields = ('fecha_generacion', 'recargo_aplicado', 'monto_total', 'adeudo')
+    readonly_fields = ('fecha_generacion', 'monto', 'recargo_aplicado', 'monto_total', 'adeudo')
     
     actions = ['marcar_como_pagado']
     

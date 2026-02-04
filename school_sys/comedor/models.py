@@ -2,7 +2,7 @@ from django.db import models
 from estudiantes.models import Estudiante
 import os
 from django.utils import timezone
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 try:
     from pagos.models import Adeudo, ConceptoPago
@@ -21,11 +21,6 @@ class Menu(models.Model):
         help_text="Nombre de la comida"
     )
 
-    precio = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text='Precio'
-    )
 
     desactivar = models.BooleanField(
         default=False,
@@ -37,7 +32,7 @@ class Menu(models.Model):
         db_table = 'Menu'
 
     def __str__(self):
-        return f"{ self.descripcion } -> { self.precio }"
+        return self.descripcion
 
 
 class AsistenciaCafeteria(models.Model):
@@ -63,7 +58,9 @@ class AsistenciaCafeteria(models.Model):
     precio_aplicado = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        help_text='Precio aplicado con descuento ya calculado'
+        help_text='Precio aplicado (se automatiiza al guardar si está vacio)',
+        null=True,
+        blank=True
     )
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
@@ -76,6 +73,11 @@ class AsistenciaCafeteria(models.Model):
             models.Index(fields=['estudiante'], name='idx_cafeteria_estudiante'),
             models.Index(fields=['fecha_asistencia'], name='idx_cafeteria_fecha'),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.precio_aplicado:
+            self.precio_aplicado = Decimal(os.getenv('COSTO_COMIDA', '10.00'))
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.estudiante} - {self.fecha_asistencia} ({self.tipo_comida})"
@@ -161,13 +163,19 @@ class AdeudoComedor(models.Model):
 
     def save(self, *args, **kwargs):
         # 1. Usar monto por defecto desde variable de entorno
-        default_amount = Decimal(os.getenv('COMEDOR_DEFAULT_AMOUNT', '10'))
+        default_amount = Decimal(os.getenv('COSTO_COMIDA', '10.00'))
         self.monto = default_amount
 
-        # 2. Calcular Fecha de Vencimiento (Local logic)
+        # 2. Calcular Fecha de Vencimiento (Día 10 del mes siguiente)
         if not self.fecha_vencimiento:
-            dias_vigencia = int(os.getenv('DIAS_VIGENCIA_ADEUDO_COMEDOR', 10))
-            self.fecha_vencimiento = timezone.now().date() + timedelta(days=dias_vigencia)
+            hoy = timezone.localdate()
+            if hoy.month == 12:
+                mes_v = 1
+                anio_v = hoy.year + 1
+            else:
+                mes_v = hoy.month + 1
+                anio_v = hoy.year
+            self.fecha_vencimiento = date(anio_v, mes_v, 10)
 
         # 3. Verificar si aplicar descuentos (beca + estrato)
         # Si APPLY_TOTAL_DISCOUNT=0, NO se aplican descuentos al comedor

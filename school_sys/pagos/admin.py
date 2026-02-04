@@ -71,6 +71,21 @@ class AdeudoAdmin(admin.ModelAdmin):
         }),
     )
     
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        if not initial.get('fecha_vencimiento'):
+            from datetime import date
+            from django.utils import timezone
+            hoy = timezone.localdate()
+            if hoy.month == 12:
+                mes_v = 1
+                anio_v = hoy.year + 1
+            else:
+                mes_v = hoy.month + 1
+                anio_v = hoy.year
+            initial['fecha_vencimiento'] = date(anio_v, mes_v, 10).strftime('%Y-%m-%d')
+        return initial
+
     def get_matricula(self, obj):
         return obj.estudiante.matricula
     get_matricula.short_description = "Matrícula"
