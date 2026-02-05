@@ -110,12 +110,24 @@ class Adeudo(models.Model):
     """
     Adeudos generados por concepto.
     """
+    TIPO_ADEUDO_CHOICES = [
+        ('CONCEPTO DE PAGO', 'Concepto de Pago'),
+        ('COMEDOR', 'Asistencia Comedor'),
+    ]
+
     ESTATUS_CHOICES = [
         ('pendiente', 'Pendiente'),
         ('vencido', 'Vencido'),
         ('pagado', 'Pagado'),
         ('cancelado', 'Cancelado'),
     ]
+
+    tipo_adeudo = models.CharField(
+        max_length=50,
+        choices=TIPO_ADEUDO_CHOICES,
+        default='CONCEPTO DE PAGO',
+        help_text='Tipo de adeudo para seguimiento'
+    )
 
     estudiante = models.ForeignKey(
         Estudiante,

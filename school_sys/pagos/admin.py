@@ -48,7 +48,7 @@ class AdeudoAdmin(admin.ModelAdmin):
         'get_monto_base', 'get_descuento', 'get_monto_total', 
         'get_saldo_pendiente', 'estatus', 'fecha_vencimiento', 'pagar_adeudo'
     )
-    list_filter = ('estatus', 'concepto', 'fecha_vencimiento', 'estudiante__grupo__grado__nivel')
+    list_filter = ('estatus', 'concepto', 'fecha_vencimiento', 'estudiante__inscripciones__grupo__grado__nivel_educativo')
     search_fields = ('estudiante__nombre', 'estudiante__apellido_paterno', 'estudiante__matricula', 'concepto__nombre')
     autocomplete_fields = ['estudiante', 'concepto']
     ordering = ('-fecha_generacion',)

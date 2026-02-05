@@ -23,7 +23,7 @@ from users.utils_export import generar_pdf_estudiantes
 class InscripcionInline(admin.TabularInline):
     model = Inscripcion
     extra = 0
-    autocomplete_fields = ['grupo', 'ciclo_escolar']
+    autocomplete_fields = ['grupo']
     readonly_fields = ('fecha_inscripcion',)
     verbose_name = "Historial de Inscripción"
     verbose_name_plural = "Historial de Inscripciones"
@@ -115,12 +115,15 @@ class EstudianteAdmin(admin.ModelAdmin):
     add_form = EstudianteCreationForm
     
     list_display = ('matricula', 'get_nombre_completo', 'get_grado_grupo', 'get_estado_actual', 'get_estrato_display', 'get_beca_display')
-    list_filter = ('inscripciones__ciclo_escolar', 'inscripciones__grupo__grado')
+    list_filter = (
+        'inscripciones__grupo__ciclo_escolar', 
+        'inscripciones__grupo__grado',
+        'inscripciones__estatus'
+    )
     search_fields = ('matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 'usuario__email')
     ordering = ('apellido_paterno', 'apellido_materno')
     
     inlines = [InscripcionInline, EstudianteTutorInline, EvaluacionSocioeconomicaInline, BecaEstudianteInline]
-    exclude = ('grupo',)
 
     fieldsets = (
         ('Información Personal', {
@@ -294,9 +297,9 @@ class CicloEscolarAdmin(admin.ModelAdmin):
 @admin.register(Inscripcion)
 class InscripcionAdmin(admin.ModelAdmin):
     list_display = ('estudiante', 'grupo', 'ciclo_escolar', 'estatus', 'fecha_inscripcion')
-    list_filter = ('ciclo_escolar', 'estatus', 'grupo__grado')
+    list_filter = ('grupo__ciclo_escolar', 'estatus', 'grupo__grado')
     search_fields = ('estudiante__nombre', 'estudiante__matricula')
-    autocomplete_fields = ['estudiante', 'grupo', 'ciclo_escolar']
+    autocomplete_fields = ['estudiante', 'grupo']
 
 
 @admin.register(Estrato)

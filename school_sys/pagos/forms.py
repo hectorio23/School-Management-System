@@ -42,8 +42,8 @@ class ConceptoPagoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Cargar niveles dinámicamente desde los grados existentes
-        niveles = Grado.objects.values_list('nivel', flat=True).distinct().order_by('nivel')
-        choices = [('', '-- Seleccionar --')] + [(n, n) for n in niveles]
+        niveles = NivelEducativo.objects.all().order_by('orden')
+        choices = [('', '-- Seleccionar --')] + [(n.nombre, n.nombre) for n in niveles]
         self.fields['aplicar_a_nivel'].choices = choices
     
     class Meta:
@@ -72,11 +72,12 @@ class ConceptoPagoForm(forms.ModelForm):
             estudiantes = estudiantes.filter(matricula=matricula.strip())
         else:
             if nivel:
-                estudiantes = estudiantes.filter(grupo__grado__nivel=nivel)
+                estudiantes = estudiantes.filter(inscripciones__grupo__grado__nivel_educativo__nombre=nivel, inscripciones__grupo__ciclo_escolar__activo=True)
             if grado:
-                estudiantes = estudiantes.filter(grupo__grado=grado)
+                estudiantes = estudiantes.filter(inscripciones__grupo__grado=grado, inscripciones__grupo__ciclo_escolar__activo=True)
             if grupo:
-                estudiantes = estudiantes.filter(grupo=grupo)
+                estudiantes = estudiantes.filter(inscripciones__grupo=grupo, inscripciones__grupo__ciclo_escolar__activo=True)
+            estudiantes = estudiantes.distinct()
         
         count = 0
         with transaction.atomic():

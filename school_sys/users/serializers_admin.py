@@ -104,6 +104,7 @@ class EstudianteAdminSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user_data = validated_data.pop('user_data')
         grupo_id = validated_data.pop('grupo_id', None)
+        grado_id = validated_data.pop('grado_id', None)  # Pop redundant fields
         estado_id = validated_data.pop('estado_id', None)
         beca_id = validated_data.pop('beca_id', None)
 
@@ -121,24 +122,16 @@ class EstudianteAdminSerializer(serializers.ModelSerializer):
                 Inscripcion.objects.create(
                     estudiante=estudiante,
                     grupo_id=grupo_id,
-                    ciclo_escolar=ciclo_activo,
                     estatus='activo'
                 )
             
-            # Registro de estado
-            if estado_id:
-                HistorialEstadosEstudiante.objects.create(
-                    estudiante=estudiante,
-                    estado_id=estado_id,
-                    justificacion="Estado inicial asignado mediante API Admin."
-                )
-            else:
+                # 3. Estado
                 estado_activo = EstadoEstudiante.objects.filter(nombre__iexact='ACTIVO').first()
                 if estado_activo:
                     HistorialEstadosEstudiante.objects.create(
                         estudiante=estudiante,
                         estado=estado_activo,
-                        justificacion="Asignación automática de estado activo."
+                        justificacion="Alta automática"
                     )
 
             if beca_id:
@@ -175,7 +168,7 @@ class EstudianteUpdateSerializer(serializers.ModelSerializer):
                 
                 Inscripcion.objects.update_or_create(
                     estudiante=instance,
-                    ciclo_escolar=ciclo_activo,
+                    grupo__ciclo_escolar=ciclo_activo,
                     defaults={'grupo_id': grupo_id, 'estatus': 'activo'}
                 )
 

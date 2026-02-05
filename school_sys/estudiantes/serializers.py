@@ -86,11 +86,16 @@ class GrupoSerializer(serializers.ModelSerializer):
 class InscripcionSerializer(serializers.ModelSerializer):
     """Serializer para el historial de inscripciones"""
     grupo = GrupoSerializer(read_only=True)
-    ciclo_escolar = CicloEscolarSerializer(read_only=True)
+    ciclo_escolar = serializers.SerializerMethodField()
     
     class Meta:
         model = Inscripcion
         fields = ["id", "grupo", "ciclo_escolar", "estatus", "fecha_inscripcion", "promedio_final"]
+
+    def get_ciclo_escolar(self, obj):
+        if obj.grupo and obj.grupo.ciclo_escolar:
+            return CicloEscolarSerializer(obj.grupo.ciclo_escolar).data
+        return None
 
 
 
@@ -249,7 +254,7 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
     
     def get_inscripcion_activa(self, obj):
         """Obtiene la inscripción del ciclo actual activo"""
-        inscripcion = obj.inscripciones.filter(ciclo_escolar__activo=True).first()
+        inscripcion = obj.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
         if inscripcion:
             return InscripcionSerializer(inscripcion).data
         return None

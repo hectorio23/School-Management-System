@@ -12,14 +12,15 @@ from rest_framework.permissions import IsAuthenticated
 
 from users.permissions import CanManageComedor
 from estudiantes.models import Estudiante
-from .models import AsistenciaCafeteria, AdeudoComedor, MenuSemanal, Menu
+from .models import AsistenciaCafeteria, MenuSemanal, Menu
+from pagos.models import Adeudo
 from .serializers import (
     AsistenciaCafeteriaSerializer, 
-    AdeudoComedorSerializer, 
     MenuSemanalSerializer,
     EstudianteAlergiaSerializer,
     MenuSerializer
 )
+from users.serializers_admin import AdeudoSerializer
 
 @api_view(['GET'])
 @permission_classes([CanManageComedor])
@@ -63,11 +64,8 @@ def admin_registrar_asistencia(request):
                 tipo_comida=tipo_comida
             )
             
-            # 2. Generar Adeudo Automático (El monto se toma del precio_aplicado de la asistencia)
-            adeudo_com = AdeudoComedor.objects.create(
-                estudiante=estudiante,
-                asistencia=asistencia
-            )
+            # 2. Generar Adeudo Automático (Manejado en el save() de AsistenciaCafeteria)
+            # Ya no creamos AdeudoComedor explícitamente aquí
             
             return Response({
                 "message": "Asistencia registrada y adeudo generado.",
@@ -149,7 +147,7 @@ def admin_alertas_alergias(request):
     """Lista estudiantes con alergias registradas."""
     estudiantes = Estudiante.objects.filter(
         alergias_alimentarias__isnull=False
-    ).exclude(alergias_alimentarias="").order_by('nivel_educativo', 'grupo')
+    ).exclude(alergias_alimentarias="").order_by('apellido_paterno', 'nombre')
     
     serializer = EstudianteAlergiaSerializer(estudiantes, many=True)
     return Response(serializer.data)
@@ -159,14 +157,14 @@ def admin_alertas_alergias(request):
 def admin_historial_asistencia_estudiante(request, matricula):
     """Historial de comedores de un estudiante específico."""
     asistencias = AsistenciaCafeteria.objects.filter(estudiante__matricula=matricula).order_by('-fecha_asistencia')
-    adeudos = AdeudoComedor.objects.filter(estudiante__matricula=matricula).order_by('-fecha_generacion')
+    adeudos = Adeudo.objects.filter(estudiante__matricula=matricula, tipo_adeudo='COMEDOR').order_by('-fecha_generacion')
     
     return Response({
         "estudiante_id": matricula,
         "total_asistencias": asistencias.count(),
-        "adeudos_pendientes": adeudos.filter(pagado=False).count(),
+        "adeudos_pendientes": adeudos.exclude(estatus='pagado').count(),
         "historial_asistencia": AsistenciaCafeteriaSerializer(asistencias, many=True).data,
-        "adeudos": AdeudoComedorSerializer(adeudos, many=True).data
+        "adeudos": AdeudoSerializer(adeudos, many=True).data
     })
 
 @api_view(['GET', 'POST'])
