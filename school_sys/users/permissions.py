@@ -89,11 +89,12 @@ class CanAccessStudentInfo(BasePermission):
     Roles permitidos: administrador, becas_admin, finanzas_admin, comedor_admin
     """
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        if not (request.user and request.user.is_authenticated):
             return False
-        if request.user.is_superuser:
+        # El rol 'administrador' (TI) tiene acceso total
+        if request.user.role == 'administrador':
             return True
-        allowed_roles = ['administrador', 'becas_admin', 'finanzas_admin', 'comedor_admin']
+        allowed_roles = ['becas_admin', 'finanzas_admin', 'comedor_admin']
         return request.user.role in allowed_roles
 
 
@@ -103,11 +104,11 @@ class CanManageBecas(BasePermission):
     Roles permitidos: administrador, becas_admin
     """
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        if not (request.user and request.user.is_authenticated):
             return False
-        if request.user.is_superuser:
+        if request.user.role == 'administrador':
             return True
-        return request.user.role in ['administrador', 'becas_admin']
+        return request.user.role == 'becas_admin'
 
 
 class CanManageFinanzas(BasePermission):
@@ -116,11 +117,11 @@ class CanManageFinanzas(BasePermission):
     Roles permitidos: administrador, finanzas_admin
     """
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        if not (request.user and request.user.is_authenticated):
             return False
-        if request.user.is_superuser:
+        if request.user.role == 'administrador':
             return True
-        return request.user.role in ['administrador', 'finanzas_admin']
+        return request.user.role == 'finanzas_admin'
 
 
 class CanManageComedor(BasePermission):
@@ -129,11 +130,11 @@ class CanManageComedor(BasePermission):
     Roles permitidos: administrador, comedor_admin
     """
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        if not (request.user and request.user.is_authenticated):
             return False
-        if request.user.is_superuser:
+        if request.user.role == 'administrador':
             return True
-        return request.user.role in ['administrador', 'comedor_admin']
+        return request.user.role == 'comedor_admin'
 
 
 class CanManageAdmisiones(BasePermission):
@@ -142,11 +143,11 @@ class CanManageAdmisiones(BasePermission):
     Roles permitidos: administrador, admisiones_admin
     """
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        if not (request.user and request.user.is_authenticated):
             return False
-        if request.user.is_superuser:
+        if request.user.role == 'administrador':
             return True
-        return request.user.role in ['administrador', 'admisiones_admin']
+        return request.user.role == 'admisiones_admin'
 
 
 # =============================================================================

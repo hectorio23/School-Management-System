@@ -1,7 +1,6 @@
 django
 djangorestframework
 djangorestframework-simplejwt
-faker
 pymysql
 mysqlclient
 python-dotenv
@@ -9,3 +8,4 @@ cryptography
 django-jazzmin 
 django-admin-honeypot
 reportlab
+django-cors-headers
