@@ -37,21 +37,21 @@ class PromotionLogicTests(TestCase):
 
     def test_promotion_within_level(self):
         """Test: 1° Preescolar -> 2° Preescolar"""
-        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_prees_1, ciclo_escolar=self.ciclo)
+        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_prees_1)
         
         siguiente = calcular_siguiente_grado(inscripcion)
         self.assertEqual(siguiente, self.g2_preescolar)
 
     def test_promotion_change_level_prees_to_prim(self):
         """Test: 3° Preescolar -> 1° Primaria"""
-        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_prees_3, ciclo_escolar=self.ciclo)
+        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_prees_3)
         
         siguiente = calcular_siguiente_grado(inscripcion)
         self.assertEqual(siguiente, self.g1_primaria)
 
     def test_promotion_change_level_prim_to_sec(self):
         """Test: 6° Primaria -> 1° Secundaria"""
-        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_prim_6, ciclo_escolar=self.ciclo)
+        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_prim_6)
         
         siguiente = calcular_siguiente_grado(inscripcion)
         # We didn't explicitly create G1 Secundaria but logic should find it if it exists. 
@@ -60,7 +60,7 @@ class PromotionLogicTests(TestCase):
 
     def test_promotion_graduation(self):
         """Test: 3° Secundaria -> EGRESADO"""
-        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_sec_3, ciclo_escolar=self.ciclo)
+        inscripcion = Inscripcion.objects.create(estudiante=self.estudiante, grupo=self.grupo_sec_3)
         
         siguiente = calcular_siguiente_grado(inscripcion)
         self.assertEqual(siguiente, "EGRESADO")

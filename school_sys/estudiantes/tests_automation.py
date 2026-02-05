@@ -29,18 +29,19 @@ class AutomationTests(TestCase):
         self.inscripcion = Inscripcion.objects.create(
             estudiante=self.estudiante, 
             grupo=self.grupo_1a, 
-            ciclo_escolar=self.ciclo_anterior,
             estatus='activo'
         )
 
-        # 4. Setup Concepto Pago Reinscripción
-        self.concepto_reinsc = ConceptoPago.objects.create(
+        # 4. Setup Concepto Pago Reinscripción (Matching services.py name)
+        self.concepto_reinsc, _ = ConceptoPago.objects.get_or_create(
             nombre="Reinscripción Primaria",
-            descripcion="Reinscripción anual",
-            monto_base=1500.00,
-            nivel_educativo="Primaria",
             tipo_concepto="reinscripcion",
-            activo=True
+            nivel_educativo="Primaria",
+            defaults={
+                'descripcion': "Reinscripción anual",
+                'monto_base': 1500.00,
+                'activo': True
+            }
         )
 
     def test_generar_adeudo_reinscripcion(self):
@@ -57,10 +58,14 @@ class AutomationTests(TestCase):
         resultados = generar_adeudos_reinscripcion(self.ciclo_anterior)
         
         self.assertEqual(resultados["procesados"], 1)
-        self.assertEqual(resultados["adeudos_creados"], 1)
+        self.assertEqual(resultados["adeudos_creados"], 1, f"Adeudos no creados. Resultados: {resultados}")
         
         # Verificar Adeudo creado
-        adeudo = Adeudo.objects.get(estudiante=self.estudiante, concepto=self.concepto_reinsc)
+        adeudo = Adeudo.objects.get(
+            estudiante=self.estudiante, 
+            concepto__nombre="Reinscripción Primaria Automática",
+            concepto__nivel_educativo="Primaria"
+        )
         self.assertEqual(adeudo.monto_base, Decimal("1500.00"))
         self.assertEqual(adeudo.estatus, 'pendiente')
         
@@ -94,14 +99,15 @@ class AutomationTests(TestCase):
             metodo_pago="Transferencia"
         )
         
-        # 3. Ejecutar Lógica de Reinscripción (normalmente trigger por signal, aquí manual)
-        resultado = procesar_reinscripcion_automatica(pago)
-        self.assertTrue(resultado)
+        # 3. La lógica ya debió ejecutarse vía signal (post_save en Pago)
+        # La función procesar_reinscripcion_automatica retornará False en la segunda llamada
+        # porque la inscripción ya existe.
+        procesar_reinscripcion_automatica(pago)
         
         # 4. Verificar nueva inscripción
         nueva_inscripcion = Inscripcion.objects.get(
             estudiante=self.estudiante,
-            ciclo_escolar=self.ciclo_nuevo
+            grupo__ciclo_escolar=self.ciclo_nuevo
         )
         self.assertEqual(nueva_inscripcion.grupo, self.grupo_2a)
         self.assertEqual(nueva_inscripcion.estatus, 'activo')

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Menu, AsistenciaCafeteria, AdeudoComedor, MenuSemanal
+from .models import Menu, AsistenciaCafeteria, MenuSemanal
 from estudiantes.models import Estudiante
 
 class MenuSerializer(serializers.ModelSerializer):
@@ -13,7 +13,7 @@ class MenuSemanalSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AsistenciaCafeteriaSerializer(serializers.ModelSerializer):
-    estudiante_nombre = serializers.CharField(source='estudiante.nombre_completo', read_only=True)
+    estudiante_nombre = serializers.SerializerMethodField()
     
     class Meta:
         model = AsistenciaCafeteria
@@ -23,17 +23,8 @@ class AsistenciaCafeteriaSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['fecha_registro', 'precio_aplicado']
 
-class AdeudoComedorSerializer(serializers.ModelSerializer):
-    estudiante_nombre = serializers.CharField(source='estudiante.nombre_completo', read_only=True)
-    
-    class Meta:
-        model = AdeudoComedor
-        fields = [
-            'id', 'estudiante', 'estudiante_nombre', 'asistencia', 'adeudo',
-            'monto', 'fecha_generacion', 'fecha_vencimiento', 
-            'recargo_aplicado', 'monto_total', 'pagado'
-        ]
-        read_only_fields = ['pagado']
+    def get_estudiante_nombre(self, obj):
+        return f"{obj.estudiante.nombre} {obj.estudiante.apellido_paterno} {obj.estudiante.apellido_materno}"
 
 class EstudianteAlergiaSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
@@ -47,6 +38,7 @@ class EstudianteAlergiaSerializer(serializers.ModelSerializer):
         return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}"
     
     def get_grado_grupo(self, obj):
-        if obj.grupo:
-            return f"{obj.grupo.grado.nombre} {obj.grupo.nombre}"
+        grupo = obj.grupo_actual
+        if grupo:
+            return f"{grupo.grado.nombre} {grupo.nombre}"
         return "Sin grupo"

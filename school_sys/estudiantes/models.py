@@ -141,8 +141,9 @@ class Grupo(models.Model):
         ]
 
     def __str__(self):
-        nivel = self.grado.nivel_educativo.nombre if self.grado.nivel_educativo else self.grado.nivel
-        return f"{self.grado.nombre}{self.nombre} - {nivel}"
+        grado_str = self.grado.nombre if self.grado else "S/G"
+        ciclo_str = self.ciclo_escolar.nombre if self.ciclo_escolar else "S/C"
+        return f"{grado_str}{self.nombre} ({ciclo_str})"
 
 
 
@@ -221,13 +222,17 @@ class Estudiante(models.Model):
         help_text='Alergias alimentarias del estudiante'
     )
     
-    grupo = models.ForeignKey(
-        Grupo,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        db_column='grupo_id'
-    )
+    @property
+    def grupo_actual(self):
+        """Obtiene el grupo del ciclo escolar activo."""
+        inscripcion = self.inscripciones.filter(ciclo_escolar__activo=True).select_related('grupo').first()
+        return inscripcion.grupo if inscripcion else None
+
+    @property
+    def grado_actual(self):
+        """Obtiene el grado del ciclo escolar activo."""
+        grupo = self.grupo_actual
+        return grupo.grado if grupo else None
     
     def __str__(self):
         return f"{self.matricula} - {self.nombre} {self.apellido_paterno}"
@@ -329,7 +334,6 @@ class Estudiante(models.Model):
         db_table = 'estudiantes'
         indexes = [
             models.Index(fields=['matricula'], name='idx_estudiante_matricula'),
-            models.Index(fields=['grupo'], name='idx_estudiante_grupo'),
             models.Index(
                 fields=['apellido_paterno', 'apellido_materno', 'nombre'],
                 name='idx_estudiante_nombre_completo'
@@ -794,11 +798,10 @@ class Inscripcion(models.Model):
         on_delete=models.PROTECT,
         related_name='inscripciones'
     )
-    ciclo_escolar = models.ForeignKey(
-        CicloEscolar, 
-        on_delete=models.PROTECT,
-        related_name='inscripciones'
-    )
+    @property
+    def ciclo_escolar(self):
+        """Acceso al ciclo a través del grupo"""
+        return self.grupo.ciclo_escolar if self.grupo else None
     
     estatus = models.CharField(
         max_length=50, 
@@ -817,12 +820,14 @@ class Inscripcion(models.Model):
         verbose_name = "Inscripción"
         verbose_name_plural = "Inscripciones"
         db_table = 'inscripciones'
-        unique_together = [['estudiante', 'ciclo_escolar']] # Un estudiante solo puede estar en un grupo por ciclo
+        unique_together = [['estudiante', 'grupo']] 
         indexes = [
             models.Index(fields=['estudiante'], name='idx_inscripcion_estudiante'),
-            models.Index(fields=['ciclo_escolar'], name='idx_inscripcion_ciclo'),
             models.Index(fields=['estatus'], name='idx_inscripcion_estatus'),
         ]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.estudiante} - {self.grupo} ({self.estatus})"

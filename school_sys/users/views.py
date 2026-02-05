@@ -85,7 +85,7 @@ def admin_student_list(request):
     students = Estudiante.objects.prefetch_related(
         models.Prefetch(
             'inscripciones',
-            queryset=Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'ciclo_escolar'),
+            queryset=Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'grupo__ciclo_escolar'),
             to_attr='active_enrollment'
         )
     ).order_by('matricula')
@@ -138,7 +138,7 @@ def admin_student_detail(request, matricula):
         student = Estudiante.objects.select_related('usuario').prefetch_related(
             models.Prefetch(
                 'inscripciones',
-                queryset=Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'ciclo_escolar'),
+                queryset=Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'grupo__ciclo_escolar'),
                 to_attr='active_enrollment'
             )
         ).get(matricula=matricula)
@@ -1187,7 +1187,7 @@ def admin_estadisticas_academicas(request):
     ).distinct().count()
     
     # Inscritos en ciclo actual
-    inscritos_ciclo_actual = Inscripcion.objects.filter(ciclo_escolar__activo=True).count()
+    inscritos_ciclo_actual = Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).count()
     
     # 2. Bajas (en el último año o ciclo activo)
     bajas_totales = HistorialEstadosEstudiante.objects.filter(
@@ -1197,14 +1197,14 @@ def admin_estadisticas_academicas(request):
     # 3. Reinscripciones (Simple: total activos - nuevos ingreso)
     # Definición aproximada: Inscripciones en ciclo actual que tienen inscripciones previas
     reinscritos = 0
-    inscripciones_actuales = Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('estudiante')
+    inscripciones_actuales = Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).select_related('estudiante')
     if inscripciones_actuales.exists():
         # Tomamos una muestra o lo hacemos query
         # Estudiantes en ciclo actual que tienen una inscripción en un ciclo DIFERENTE (y anterior)
         estudiantes_ids = inscripciones_actuales.values_list('estudiante_id', flat=True)
         reinscritos = Inscripcion.objects.filter(
             estudiante_id__in=estudiantes_ids
-        ).exclude(ciclo_escolar__activo=True).values('estudiante').distinct().count()
+        ).exclude(grupo__ciclo_escolar__activo=True).values('estudiante').distinct().count()
             
     return Response({
         "inscritos_ciclo_actual": inscritos_ciclo_actual,
@@ -1227,7 +1227,7 @@ def admin_exportar_estudiantes(request):
     queryset = Estudiante.objects.select_related('usuario').prefetch_related(
         models.Prefetch(
             'inscripciones',
-            queryset=Inscripcion.objects.filter(ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo'),
+            queryset=Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo'),
             to_attr='active_enrollment'
         )
     ).all().order_by('matricula')

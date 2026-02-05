@@ -291,7 +291,7 @@ def create_estudio_socioeconomico_view(request):
         
         response_data = {
             "message": "Evaluación socioeconómica registrada correctamente.",
-            "estrato_sugerido": estrato_sugerido.nombre,
+            "estrato_asignado": estrato_sugerido.nombre,
             "requiere_aprobacion_especial": requiere_aprobacion_especial,
         }
         

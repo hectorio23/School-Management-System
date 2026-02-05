@@ -671,7 +671,7 @@ def migrate_aspirante_to_student(request, folio):
     ).order_by('nombre')
     
     for grupo in grupos_disponibles:
-        estudiantes_en_grupo = Estudiante.objects.filter(grupo=grupo).count()
+        estudiantes_en_grupo = Inscripcion.objects.filter(grupo=grupo, grupo__ciclo_escolar=ciclo_activo).count()
         if estudiantes_en_grupo < 30:  # Máximo 30 estudiantes por grupo
             grupo_asignado = grupo
             break
@@ -722,12 +722,17 @@ def migrate_aspirante_to_student(request, folio):
                 fecha_nacimiento=aspirante.fecha_nacimiento,
                 sexo=aspirante.sexo,
                 telefono=aspirante.telefono,
-                escuela_procedencia=aspirante.escuela_procedencia,
-                grupo=grupo_asignado
+                escuela_procedencia=aspirante.escuela_procedencia
             )
             
-            # 8. Crear historial de estado inicial
-            HistorialEstado.objects.create(
+            Inscripcion.objects.create(
+                estudiante=estudiante,
+                grupo=grupo_asignado,
+                estatus='activo'
+            )
+            
+            # 9. Crear historial de estado inicial
+            HistorialEstadosEstudiante.objects.create(
                 estudiante=estudiante,
                 estado=estado_activo,
                 justificacion='Inscripción por admisión'

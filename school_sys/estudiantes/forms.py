@@ -63,13 +63,13 @@ class EstudianteCreationForm(forms.ModelForm):
             )
             
             self.instance.usuario = user
+            estudiante = super().save(commit=commit)
             
-            def save_academic_data():
+            if commit:
                 # 2. Inscripcion
                 Inscripcion.objects.create(
-                    estudiante=self.instance,
+                    estudiante=estudiante,
                     grupo=self.cleaned_data['grupo'],
-                    ciclo_escolar=self.cleaned_data['ciclo_escolar'],
                     estatus='activo'
                 )
                 
@@ -77,19 +77,27 @@ class EstudianteCreationForm(forms.ModelForm):
                 estado_activo = EstadoEstudiante.objects.filter(nombre__iexact='ACTIVO').first()
                 if estado_activo:
                     HistorialEstadosEstudiante.objects.create(
-                        estudiante=self.instance,
+                        estudiante=estudiante,
                         estado=estado_activo,
                         justificacion="Alta automatica"
                     )
-
-            if commit:
-                estudiante = super().save(commit=True)
-                save_academic_data()
             else:
-                estudiante = super().save(commit=False)
-                self.save_m2m = save_academic_data
+                # Si commit=False, guardamos una función para completar la inscripción luego
+                original_save_m2m = self.save_m2m
+                def save_everything():
+                    original_save_m2m()
+                    Inscripcion.objects.create(
+                        estudiante=estudiante,
+                        grupo=self.cleaned_data['grupo'],
+                        estatus='activo'
+                    )
+                    estado_activo = EstadoEstudiante.objects.filter(nombre__iexact='ACTIVO').first()
+                    if estado_activo:
+                        HistorialEstadosEstudiante.objects.create(
+                            estudiante=estudiante,
+                            estado=estado_activo,
+                            justificacion="Alta automatica"
+                        )
+                self.save_m2m = save_everything
                 
         return estudiante
-
-
-

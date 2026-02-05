@@ -40,9 +40,9 @@ def calcular_siguiente_grado(inscripcion_actual):
 def generar_adeudos_reinscripcion(ciclo_anterior):
     """Genera adeudos de reinscripcion para alumnos activos"""
     inscripciones_activas = Inscripcion.objects.filter(
-        ciclo_escolar=ciclo_anterior,
+        grupo__ciclo_escolar=ciclo_anterior,
         estatus='activo'
-    ).select_related('grupo__grado__nivel_educativo', 'estudiante')
+    ).select_related('grupo__grado__nivel_educativo', 'estudiante', 'grupo__ciclo_escolar')
     
     # TODO: Cambiar los valores por una variable de entorno
     # o crear una tabla con esta info
@@ -122,7 +122,8 @@ def procesar_reinscripcion_automatica(obj):
     if not dest or dest == "EGRESADO": return False
     
     ciclo_n = CicloEscolar.objects.filter(activo=True).first()
-    if not ciclo_n or ciclo_n == last.ciclo_escolar: return False
+    if not ciclo_n or ciclo_n == last.ciclo_escolar:
+        return False
     
     # Buscar grupo destino
     letra = last.grupo.nombre
@@ -133,8 +134,8 @@ def procesar_reinscripcion_automatica(obj):
         g_dest = Grupo.objects.create(nombre=letra or "A", grado=dest, ciclo_escolar=ciclo_n)
         
     nueva, created = Inscripcion.objects.get_or_create(
-        estudiante=est, ciclo_escolar=ciclo_n,
-        defaults={'grupo': g_dest, 'estatus': 'activo'}
+        estudiante=est, grupo=g_dest,
+        defaults={'estatus': 'activo'}
     )
     
     if not created:
