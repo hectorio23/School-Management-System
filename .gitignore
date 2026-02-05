@@ -57,3 +57,7 @@ school_sys/pagos/migrations/*
 school_sys/users/migrations/*
 school_sys/comedor/migrations/*
 school_sys/school_sys/migrations/*
+
+
+school_sys/estudiantes/documents/
+school_sys/media/

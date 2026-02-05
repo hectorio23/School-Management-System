@@ -5,6 +5,10 @@ from django.db.models import Q
 from .models import CicloEscolar, Inscripcion, Estudiante, Grupo, Grado, BecaEstudiante
 from pagos.models import Adeudo, ConceptoPago, Pago
 from .models import NivelEducativo
+import os
+from django.conf import settings
+from .utils_pdf import generar_carta_reinscripcion
+from .utils_security import generate_matricula_hash
 
 def calcular_siguiente_grado(inscripcion_actual):
     """Calcula el siguiente grado o nivel educativo"""
@@ -143,8 +147,26 @@ def procesar_reinscripcion_automatica(obj):
         nueva.grupo = g_dest
         nueva.save()
 
-    if last.estatus != 'completado':
         last.estatus = 'completado'
         last.save()
         
+    # --- GENERACIÓN DE CARTA DE REINSCRIPCIÓN ---
+    try:
+        matricula_hash = generate_matricula_hash(est.matricula)
+        dest_dir = os.path.join(settings.MEDIA_ROOT, 'estudiantes', 'documents', matricula_hash)
+        os.makedirs(dest_dir, exist_ok=True)
+        
+        letter_buffer = generar_carta_reinscripcion(est)
+        # Sanitizar nombre del ciclo para el nombre del archivo
+        ciclo_nombre_clean = ciclo_n.nombre.replace(' ', '_').replace('-', '_')
+        letter_filename = f"carta_reinscripcion_{ciclo_nombre_clean}.pdf"
+        letter_path = os.path.join(dest_dir, letter_filename)
+        
+        with open(letter_path, 'wb') as f:
+            f.write(letter_buffer.read())
+            
+    except Exception as e:
+        # No bloqueamos el proceso principal si falla la generación del PDF
+        print(f"Error al generar/guardar carta de reinscripción para {est.matricula}: {str(e)}")
+
     return True
