@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'comedor',
     'pagos',
     'admissions',
+    'academico',
     'corsheaders',
 ]
 

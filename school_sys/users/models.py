@@ -36,6 +36,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("finanzas_admin", "Administrador de Finanzas"),
         ("comedor_admin", "Administrador de Comedor"),
         ("admisiones_admin", "Administrador de Admisiones"),
+        ("maestro", "Maestro"),
+        ("admin_escolar", "Administrador Escolar"),
         # ("contador", "Contador"),
         # ("cafeteria", "Cafetería"),
         # ("bibliotecario", "Bibliotecario"),
