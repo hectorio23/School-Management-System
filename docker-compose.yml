@@ -1,11 +1,11 @@
 services:
   school_sys:
     build: .
+    container_name: sms-school_sys-1
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      # Permite que el entorno de trabajo sea la ruta que en dode ejecutó
-      # el << docker-compose up --build >>
       - .:/app
     environment:
       - PYTHONUNBUFFERED=1
