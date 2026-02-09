@@ -4,7 +4,7 @@ school_sys/admissions/check_backup.sh
 school_sys/data_massive_insert.py
 test_login.http
 school_sys/users/fron*
-docs/*
+docs/Enti*
 dudas.txt
 verify_admin_endpoints.py
 school_sys/test_tutors_update.sh
@@ -21,7 +21,6 @@ school_sys/admissions/documents
 school_sys/admissions/check.sh
 school_sys/test_doc.pdf
 school_sys/test_img.jpg
-.env
 verify_full_system.py
 venv
 school_sys/test_endpoints_admin.sh
