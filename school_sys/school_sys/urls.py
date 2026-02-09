@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path("students/", include("estudiantes.urls")),
+    path("academico/", include("academico.urls")),
     path("api/admin/", include("users.urls")),
     path("api/admission/", include("admissions.urls")),
     path("api/comedor/", include("comedor.urls")),
