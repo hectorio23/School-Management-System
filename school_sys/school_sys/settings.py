@@ -54,13 +54,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework_simplejwt',
-    'estudiantes',
     'rest_framework',
+    'estudiantes',
     'comedor',
     'pagos',
     'admissions',
     'academico',
     'corsheaders',
+    'biblioteca',
 ]
 
 JAZZMIN_SETTINGS = {
