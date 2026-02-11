@@ -38,9 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("admisiones_admin", "Administrador de Admisiones"),
         ("maestro", "Maestro"),
         ("admin_escolar", "Administrador Escolar"),
-        # ("contador", "Contador"),
-        # ("cafeteria", "Cafetería"),
-        # ("bibliotecario", "Bibliotecario"),
+        ("bibliotecario", "Administrador de Biblioteca"),
     )
 
     # Roles que tienen privilegios administrativos
