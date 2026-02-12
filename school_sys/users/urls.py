@@ -143,6 +143,7 @@ urlpatterns = [
 
         # --- ADMIN PANEL ---
     path('dashboard/', views.dashboard),
+    path('me/', views.me_view, name='user_me'),
 
     # --- ESTUDIANTES ---
     path('students/', views.admin_student_list, name='admin_student_list'),

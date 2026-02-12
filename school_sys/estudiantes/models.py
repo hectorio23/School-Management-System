@@ -225,7 +225,7 @@ class Estudiante(models.Model):
     @property
     def grupo_actual(self):
         """Obtiene el grupo del ciclo escolar activo."""
-        inscripcion = self.inscripciones.filter(ciclo_escolar__activo=True).select_related('grupo').first()
+        inscripcion = self.inscripciones.filter(grupo__ciclo_escolar__activo=True).select_related('grupo').first()
         return inscripcion.grupo if inscripcion else None
 
     @property
@@ -234,8 +234,12 @@ class Estudiante(models.Model):
         grupo = self.grupo_actual
         return grupo.grado if grupo else None
     
+    @property
+    def nombre_completo(self):
+        return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
+
     def __str__(self):
-        return f"{self.matricula} - {self.nombre} {self.apellido_paterno}"
+        return f"{self.matricula} - {self.nombre_completo}"
     
     def save(self, *args, **kwargs):
         # Autogenerar matrícula solo para nuevos estudiantes

@@ -215,7 +215,7 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
     Serializer completo de información del estudiante.
     Incluye todas las relaciones anidadas de solo lectura.
     """
-    inscripcion_activa = serializers.SerializerMethodField()
+    grupo = serializers.SerializerMethodField()
     estado_actual = serializers.SerializerMethodField()
     evaluacion_socioeconomica = serializers.SerializerMethodField()
     tutores = serializers.SerializerMethodField()
@@ -231,7 +231,7 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
             "apellido_paterno",
             "apellido_materno",
             "direccion",
-            "inscripcion_activa",
+            "grupo",
             "estado_actual",
             "evaluacion_socioeconomica",
             "tutores",
@@ -252,11 +252,11 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
         return None
 
     
-    def get_inscripcion_activa(self, obj):
-        """Obtiene la inscripción del ciclo actual activo"""
+    def get_grupo(self, obj):
+        """Obtiene la información del grupo del ciclo actual activo"""
         inscripcion = obj.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
-        if inscripcion:
-            return InscripcionSerializer(inscripcion).data
+        if inscripcion and inscripcion.grupo:
+            return GrupoSerializer(inscripcion.grupo).data
         return None
     
     def get_estado_actual(self, obj):

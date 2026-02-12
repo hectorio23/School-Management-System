@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
     'estudiantes',
     'comedor',
@@ -96,6 +97,7 @@ MIDDLEWARE = [
 # Solo para desarrollo  
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
+    "http://localhost:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True

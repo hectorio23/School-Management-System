@@ -63,8 +63,8 @@ def generar_excel_estudiantes(queryset):
         inscripcion = None
         if hasattr(est, 'active_enrollment') and est.active_enrollment:
              inscripcion = est.active_enrollment[0]
-        elif est.inscripciones.filter(ciclo_escolar__activo=True).exists():
-             inscripcion = est.inscripciones.filter(ciclo_escolar__activo=True).first()
+        elif est.inscripciones.filter(grupo__ciclo_escolar__activo=True).exists():
+             inscripcion = est.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
              
         if inscripcion and inscripcion.grupo:
             grupo_str = inscripcion.grupo.nombre
@@ -133,8 +133,8 @@ def generar_pdf_estudiantes(queryset):
         inscripcion = None
         if hasattr(est, 'active_enrollment') and est.active_enrollment:
              inscripcion = est.active_enrollment[0]
-        elif est.inscripciones.filter(ciclo_escolar__activo=True).exists():
-             inscripcion = est.inscripciones.filter(ciclo_escolar__activo=True).first()
+        elif est.inscripciones.filter(grupo__ciclo_escolar__activo=True).exists():
+             inscripcion = est.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
 
         if inscripcion and inscripcion.grupo:
              g = inscripcion.grupo

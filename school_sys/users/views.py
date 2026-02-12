@@ -52,6 +52,37 @@ def dashboard(request):
     return render(request, "./dashboard_admin.html")
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """
+    GET /api/admin/me/
+    Retorna la información del usuario autenticado y su rol.
+    """
+    user = request.user
+    data = {
+        "id": user.id,
+        "email": user.email,
+        "nombre": user.nombre or user.email,
+        "role": user.role,
+        "is_staff": user.is_staff,
+    }
+
+    # Si es un estudiante, agregar info de matrícula
+    if user.role == 'estudiante':
+        try:
+            estudiante = getattr(user, 'perfil_estudiante', None)
+            if not estudiante:
+                estudiante = Estudiante.objects.get(usuario=user)
+            
+            data["matricula"] = estudiante.matricula
+            data["nombre"] = f"{estudiante.nombre} {estudiante.apellido_paterno}"
+        except Exception:
+            pass
+
+    return Response(data)
+
+
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
 
@@ -436,7 +467,7 @@ def _generar_adeudos_masivos(data, concepto):
     else:
         # Filtrar por inscripciones activas
         inscripciones_path = 'inscripciones'
-        filtros_inscripcion = {'inscripciones__ciclo_escolar__activo': True}
+        filtros_inscripcion = {'inscripciones__grupo__ciclo_escolar__activo': True}
         
         if nivel:
             filtros_inscripcion['inscripciones__grupo__grado__nivel_educativo__nombre__icontains'] = nivel
