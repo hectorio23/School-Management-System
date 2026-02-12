@@ -135,8 +135,12 @@ class Maestro(models.Model):
             models.Index(fields=['activo'], name='idx_maestro_activo'),
         ]
 
+    @property
+    def nombre_completo(self):
+        return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
+
     def __str__(self):
-        return f"{self.nombre} {self.apellido_paterno}"
+        return self.nombre_completo
 
 
 class AdministradorEscolar(models.Model):

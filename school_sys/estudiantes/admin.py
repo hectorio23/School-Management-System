@@ -54,7 +54,7 @@ class EstudianteTutorInlineForTutor(admin.TabularInline):
     
     def get_grado_grupo(self, obj):
         if obj.estudiante:
-            inscripcion = obj.estudiante.inscripciones.filter(ciclo_escolar__activo=True).first()
+            inscripcion = obj.estudiante.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
             if inscripcion and inscripcion.grupo:
                 return f"{inscripcion.grupo.grado} - {inscripcion.grupo.nombre}"
         return "-"
@@ -101,7 +101,7 @@ class BecaEstudianteInlineForBeca(admin.TabularInline):
     
     def get_grado_grupo(self, obj):
         if obj.estudiante:
-            inscripcion = obj.estudiante.inscripciones.filter(ciclo_escolar__activo=True).first()
+            inscripcion = obj.estudiante.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
             if inscripcion and inscripcion.grupo:
                 return f"{inscripcion.grupo.grado} - {inscripcion.grupo.nombre}"
         return "-"
@@ -161,14 +161,14 @@ class EstudianteAdmin(admin.ModelAdmin):
     get_nombre_completo.short_description = "Nombre Completo"
     
     def get_grado_grupo(self, obj):
-        inscripcion = obj.inscripciones.filter(ciclo_escolar__activo=True).first()
+        inscripcion = obj.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
         if inscripcion and inscripcion.grupo:
             return str(inscripcion.grupo)
         return "-"
     get_grado_grupo.short_description = "Ciclo Activo"
 
     def get_estado_actual(self, obj):
-        inscripcion = obj.inscripciones.filter(ciclo_escolar__activo=True).first()
+        inscripcion = obj.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
         if inscripcion:
             return inscripcion.get_estatus_display()
         return "NO INSCRITO"

@@ -208,6 +208,7 @@ class CalificacionSerializer(serializers.ModelSerializer):
     
     periodo_nombre = serializers.CharField(source='periodo_evaluacion.nombre', read_only=True)
     asignacion_materia = serializers.CharField(source='asignacion_maestro.materia.nombre', read_only=True)
+    capturada_por_nombre = serializers.CharField(source='capturada_por.nombre_completo', read_only=True)
 
     class Meta:
         model = Calificacion
@@ -216,7 +217,7 @@ class CalificacionSerializer(serializers.ModelSerializer):
             'estudiante', 'estudiante_id', 
             'asignacion_maestro', 'asignacion_materia',
             'periodo_evaluacion', 'periodo_nombre',
-            'capturada_por', 'modificada_por', 'autorizada_por'
+            'capturada_por', 'capturada_por_nombre', 'modificada_por', 'autorizada_por'
         ]
         read_only_fields = ['fecha_captura', 'capturada_por', 'modificada_por', 'autorizada_por']
 
