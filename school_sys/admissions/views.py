@@ -81,6 +81,8 @@ from .serializers import (
     AspiranteLoginSerializer
 )
 
+from rest_framework.permissions import IsAuthenticated
+
 # --- ENDPOINTS DE AUTENTICACIÓN ---
 
 @api_view(['POST'])
@@ -928,3 +930,64 @@ def migrate_all_accepted(request):
         "detalle": resultados
     }, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+@permission_classes([CanManageAdmisiones])
+def admin_aspirante_documents_list(request, folio):
+    """
+    GET /api/admission/admin/aspirante/<folio>/documents/
+    Retorna la lista de documentos cargados por un aspirante y sus tutores.
+    Cada item incluye etiqueta y URL de descarga segura.
+    """
+    aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    
+    docs = []
+    
+    # Estudiante docs
+    student_fields = [
+        ('curp_pdf', 'CURP Aspirante'),
+        ('acta_nacimiento', 'Acta de Nacimiento Aspirante'),
+        ('foto_credencial', 'Foto Credencial'),
+        ('boleta_ciclo_anterior', 'Boleta Ciclo Anterior'),
+        ('boleta_ciclo_actual', 'Boleta Ciclo Actual')
+    ]
+    
+    for field, label in student_fields:
+        file_field = getattr(aspirante, field, None)
+        if file_field:
+            docs.append({
+                "entity": "aspirante",
+                "field": field,
+                "label": label,
+                "url": f"/api/admission/admin/aspirante/{folio}/document/{field}/"
+            })
+            
+    # Tutor docs
+    tutor_rels = AdmissionTutorAspirante.objects.filter(aspirante=aspirante)
+    tutor_fields = [
+        ('acta_nacimiento', 'Acta de Nacimiento Tutor'),
+        ('curp_pdf', 'CURP Tutor'),
+        ('comprobante_domicilio', 'Comprobante de Domicilio'),
+        ('foto_fachada_domicilio', 'Foto Fachada Domicilio'),
+        ('comprobante_ingresos', 'Comprobante de Ingresos'),
+        ('carta_ingresos', 'Carta de Ingresos (Firmada)'),
+        ('ine_tutor', 'INE Tutor'),
+        ('contrato_arrendamiento_predial', 'Contrato Arrendamiento / Predial'),
+        ('carta_bajo_protesta', 'Carta Bajo Protesta')
+    ]
+    
+    for rel in tutor_rels:
+        tutor = rel.tutor
+        for field, label in tutor_fields:
+            file_field = getattr(tutor, field, None)
+            if file_field:
+                docs.append({
+                    "entity": f"tutor_{tutor.id}",
+                    "tutor_id": tutor.id,
+                    "tutor_nombre": tutor.nombre,
+                    "field": field,
+                    "label": f"{label} ({tutor.nombre})",
+                    "url": f"/api/admission/admin/tutor/{tutor.id}/document/{field}/"
+                })
+                
+    return Response({"folio": folio, "documentos": docs})

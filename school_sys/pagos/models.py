@@ -322,6 +322,16 @@ class Pago(models.Model):
     """
     Pagos realizados contra adeudos.
     """
+    METODO_PAGO_CHOICES = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('transferencia', 'Transferencia Bancaria'),
+        ('deposito', 'Depósito Bancario'),
+        ('cheque', 'Cheque'),
+        ('beca', 'Aplicación de Beca/Subsidio'),
+        ('otro', 'Otro'),
+    ]
+
     adeudo = models.ForeignKey(
         Adeudo,
         on_delete=models.CASCADE,
@@ -331,7 +341,9 @@ class Pago(models.Model):
     fecha_pago = models.DateTimeField(auto_now_add=True)
     metodo_pago = models.CharField(
         max_length=100,
-        help_text='Efectivo, Tarjeta, Transferencia, Cheque'
+        choices=METODO_PAGO_CHOICES,
+        default='efectivo',
+        help_text='Método utilizado para el pago'
     )
     numero_referencia = models.CharField(
         max_length=255,

@@ -28,7 +28,7 @@ class PeriodoEvaluacionAdmin(admin.ModelAdmin):
 class MaestroAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'apellido_paterno', 'nivel_educativo', 'activo')
     list_filter = ('nivel_educativo', 'activo')
-    search_fields = ('nombre', 'apellido_paterno', 'email')
+    search_fields = ('nombre', 'apellido_paterno', 'usuario__email')
 
 @admin.register(AdministradorEscolar)
 class AdministradorEscolarAdmin(admin.ModelAdmin):
@@ -41,6 +41,7 @@ class AsignacionMaestroAdmin(admin.ModelAdmin):
     list_display = ('maestro', 'grupo', 'materia', 'ciclo_escolar', 'activa')
     list_filter = ('ciclo_escolar', 'activa')
     search_fields = ('maestro__nombre', 'grupo__nombre', 'materia__nombre')
+    autocomplete_fields = ['maestro', 'grupo', 'materia', 'ciclo_escolar']
 
 @admin.register(Calificacion)
 class CalificacionAdmin(admin.ModelAdmin):

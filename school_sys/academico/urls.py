@@ -18,7 +18,12 @@ urlpatterns = [
     path('api/maestro/estudiantes/', views.maestro_estudiantes_list, name='maestro-estudiantes-list'),
     path('api/maestro/calificaciones/', views.maestro_calificaciones_list_create, name='maestro-calificaciones-list'),
     path('api/maestro/calificaciones/<int:pk>/solicitar-cambio/', views.maestro_solicitar_cambio, name='maestro-solicitar-cambio'),
+    path('api/maestro/calificaciones/grupo/<int:asignacion_id>/', views.maestro_calificaciones_grupo, name='maestro-calificaciones-grupo'),
+    path('api/maestro/calificaciones/bulk/', views.maestro_calificaciones_bulk, name='maestro-calificaciones-bulk'),
 
     # Estudiante
     path('api/estudiante/historial/', views.estudiante_historial_view, name='estudiante-historial'),
+    path('api/estudiante/historial/completo/', views.estudiante_historial_completo, name='estudiante-historial-completo'),
+    path('api/estudiante/historial/pdf/', views.estudiante_calificaciones_pdf, name='estudiante-calificaciones-pdf'),
+    path('api/academico/calendario/', views.calendario_eventos, name='calendario-eventos'),
 ]

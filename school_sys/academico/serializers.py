@@ -47,7 +47,7 @@ class MateriaSerializer(serializers.ModelSerializer):
         model = Materia
         fields = [
             'id', 'nombre', 'clave', 'descripcion', 'creditos', 'orden',
-            'fecha_inicio', 'fecha_fin', 'activa', 'created_at', 'updated_at',
+            'activa', 'created_at', 'updated_at',
             'grado', 'grado_id', 'programa_educativo', 'programa_educativo_id',
             'num_asignaciones'
         ]
@@ -77,7 +77,7 @@ class MaestroSerializer(serializers.ModelSerializer):
         model = Maestro
         fields = [
             'id', 'nombre', 'apellido_paterno', 'apellido_materno', 'nombre_completo',
-            'email', 'telefono', 'fecha_contratacion', 'activo', 
+            'telefono', 'fecha_contratacion', 'activo', 
             'usuario', 'usuario_email', 'nivel_educativo', 
             'num_asignaciones', 'materias_imparte'
         ]

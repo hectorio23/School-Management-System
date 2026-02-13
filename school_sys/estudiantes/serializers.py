@@ -148,6 +148,21 @@ class TutorUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El correo no puede estar vacío.")
         return value.strip()
 
+class TutorCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer para crear un nuevo tutor y vincularlo al estudiante.
+    Incluye el campo parentesco que se guardará en EstudianteTutor.
+    """
+    parentesco = serializers.CharField(write_only=True, required=True)
+    
+    class Meta:
+        model = Tutor
+        fields = ["nombre", "apellido_paterno", "apellido_materno", "telefono", "correo", "parentesco"]
+
+    def validate_parentesco(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El parentesco es obligatorio.")
+        return value.strip()
 
 class EstadoActualSerializer(serializers.ModelSerializer):
     """Estado actual del estudiante (solo el más reciente)"""

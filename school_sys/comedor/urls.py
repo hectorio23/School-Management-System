@@ -13,4 +13,8 @@ urlpatterns = [
     # Menús
     path('admin/menus/', views.admin_menus_list, name='admin_menus_list'),
     path('admin/menu-semanal/', views.admin_menu_semanal, name='admin_menu_semanal'),
+
+    # Estudiantes
+    path('estudiante/asistencias/', views.estudiante_asistencias, name='estudiante_asistencias'),
+    path('estudiante/menu-actual/', views.estudiante_menu_actual, name='estudiante_menu_actual'),
 ]
