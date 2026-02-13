@@ -10,6 +10,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
+from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -17,9 +18,29 @@ from rest_framework.permissions import IsAuthenticated
 from pagos.models import Adeudo, Pago
 from .models import Estudiante, Tutor, EstudianteTutor, EvaluacionSocioeconomica, Estrato
 from .permissions import IsEstudiante
-from .utils_pdf import generar_carta_reinscripcion, generar_carta_baja
+from .utils_pdf import generar_carta_reinscripcion, generar_carta_baja, generar_estado_cuenta_pdf
+
+# ... (keep existing lines)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsEstudiante])
+def student_payments_pdf(request):
+    """
+    GET /students/pagos/historial/pdf/
+    Descarga el estado de cuenta en formato PDF.
+    """
+    try:
+        estudiante = request.user.perfil_estudiante
+    except Estudiante.DoesNotExist:
+        return Response({"error": "Perfil de estudiante no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+    buffer = generar_estado_cuenta_pdf(estudiante)
+    
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="estado_cuenta_{estudiante.matricula}.pdf"'
+    return response
 from .serializers import (
-    EstudianteInfoSerializer, TutorUpdateSerializer, 
+    EstudianteInfoSerializer, TutorUpdateSerializer, TutorCreateSerializer,
     EstudioSocioeconomicoCreateSerializer, EstudianteAdeudoDetalleSerializer
 )
 
@@ -61,108 +82,96 @@ def estudiante_info_view(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['PUT'])
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated, IsEstudiante])
-def tutores_update_view(request):
+def tutores_view(request):
     """
-    PUT /students/tutores/
+    CRUD completo de tutores para el estudiante autenticado.
     
-    Actualiza la información de todos los tutores del estudiante autenticado.
-    Recibe un array de tutores con su información actualizada.
-    Solo puede actualizar tutores que pertenezcan al estudiante.
+    GET: Lista los tutores vinculados.
+    POST: Crea un nuevo tutor y lo vincula.
+    PUT: Actualización masiva (mantiene compatibilidad).
+    DELETE: Desvincula un tutor (activo=False).
     """
     try:
         estudiante = request.user.perfil_estudiante
     except Estudiante.DoesNotExist:
         return Response(
-            {"error": "No se encontró el perfil de estudiante asociado a este usuario."},
+            {"error": "Perfil de estudiante no encontrado."},
             status=status.HTTP_404_NOT_FOUND
         )
-    
-    tutores_data = request.data.get('tutores', [])
 
-    for tutor in tutores_data:
-        if not all(tutor):
-            return Response(
-                { "error": "Campos incompletos." },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
-    if not isinstance(tutores_data, list):
-        return Response(
-            {"error": "Se esperaba un array de tutores en el campo 'tutores'."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    if not tutores_data:
-        return Response(
-            {"error": "Debe proporcionar al menos un tutor para actualizar."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    # Obtener IDs de tutores que pertenecen al estudiante
-    tutores_permitidos = set(
-        EstudianteTutor.objects.filter(
-            estudiante=estudiante,
-            activo=True
-        ).values_list('tutor_id', flat=True)
-    )
-    
-    errores = []
-    tutores_actualizados = []
-    
-    for idx, tutor_data in enumerate(tutores_data):
-        tutor_id = tutor_data.get('tutor_id') or tutor_data.get('id')
-        
-        if not tutor_id:
-            errores.append({
-                "index": idx,
-                "error": "Falta el campo 'tutor_id'."
+    if request.method == 'GET':
+        relaciones = EstudianteTutor.objects.filter(estudiante=estudiante, activo=True).select_related('tutor')
+        data = []
+        for rel in relaciones:
+            data.append({
+                "id": rel.tutor.id,
+                "nombre": rel.tutor.nombre,
+                "apellido_paterno": rel.tutor.apellido_paterno,
+                "apellido_materno": rel.tutor.apellido_materno,
+                "telefono": rel.tutor.telefono,
+                "correo": rel.tutor.correo,
+                "parentesco": rel.parentesco
             })
-            continue
-        
-        # Verificar que el tutor pertenezca al estudiante
-        if tutor_id not in tutores_permitidos:
-            errores.append({
-                "index": idx,
-                "tutor_id": tutor_id,
-                "error": "No tienes permiso para actualizar este tutor."
-            })
-            continue
-        
-        try:
-            tutor = Tutor.objects.get(id=tutor_id)
-        except Tutor.DoesNotExist:
-            errores.append({
-                "index": idx,
-                "tutor_id": tutor_id,
-                "error": "Tutor no encontrado."
-            })
-            continue
-        
-        serializer = TutorUpdateSerializer(tutor, data=tutor_data, partial=False)
-        
+        return Response(data)
+
+    elif request.method == 'POST':
+        serializer = TutorCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            tutores_actualizados.append(serializer.data)
-        else:
-            errores.append({
-                "index": idx,
-                "tutor_id": tutor_id,
-                "errors": serializer.errors
-            })
-    
-    if errores:
-        return Response({
-            "message": "Algunos tutores no pudieron ser actualizados por información incompleta.",
-            "actualizados": tutores_actualizados,
-            "errores": errores
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    return Response({
-        "message": "Todos los tutores proporcionados fueron actualizados correctamente.",
-        "tutores": tutores_actualizados
-    }, status=status.HTTP_200_OK)
+            with transaction.atomic():
+                parentesco = serializer.validated_data.pop('parentesco')
+                # Buscar si ya existe por correo para no duplicar datos maestros
+                tutor, created = Tutor.objects.get_or_create(
+                    correo=serializer.validated_data['correo'],
+                    defaults=serializer.validated_data
+                )
+                # Crear vínculo
+                EstudianteTutor.objects.update_or_create(
+                    estudiante=estudiante,
+                    tutor=tutor,
+                    defaults={'parentesco': parentesco, 'activo': True}
+                )
+                return Response({"message": "Tutor agregado correctamente"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'PUT':
+        # Lógica original de actualización masiva
+        tutores_data = request.data.get('tutores', [])
+        if not isinstance(tutores_data, list) or not tutores_data:
+            return Response({"error": "Se esperaba un array 'tutores'."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        tutores_permitidos = set(EstudianteTutor.objects.filter(estudiante=estudiante, activo=True).values_list('tutor_id', flat=True))
+        errores, actualizados = [], []
+        
+        for idx, tutor_data in enumerate(tutores_data):
+            t_id = tutor_data.get('id') or tutor_data.get('tutor_id')
+            if not t_id or t_id not in tutores_permitidos:
+                errores.append({"index": idx, "error": "ID inválido o sin permiso."})
+                continue
+            
+            tutor = Tutor.objects.get(id=t_id)
+            ser = TutorUpdateSerializer(tutor, data=tutor_data, partial=True)
+            if ser.is_valid():
+                ser.save()
+                # Actualizar parentesco si viene
+                if 'parentesco' in tutor_data:
+                    EstudianteTutor.objects.filter(estudiante=estudiante, tutor=tutor).update(parentesco=tutor_data['parentesco'])
+                actualizados.append(ser.data)
+            else:
+                errores.append({"index": idx, "errors": ser.errors})
+        
+        return Response({"actualizados": actualizados, "errores": errores}, status=status.HTTP_200_OK if not errores else status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        tutor_id = request.data.get('tutor_id')
+        if not tutor_id:
+            return Response({"error": "Falta tutor_id"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        rows = EstudianteTutor.objects.filter(estudiante=estudiante, tutor_id=tutor_id, activo=True).update(activo=False)
+        if rows > 0:
+            return Response({"message": "Tutor desvinculado correctamente"})
+        return Response({"error": "No se encontró el vínculo activo"}, status=status.HTTP_404_NOT_FOUND)
 
 
 def guardar_documentos_extra(estudiante, files):

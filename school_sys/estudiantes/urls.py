@@ -16,7 +16,7 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name="estudiante_dashboard"),
 
     # Management
-    path("tutores/", views.tutores_update_view, name="estudiante_tutores_update"),
+    path("tutores/", views.tutores_view, name="estudiante_tutores"),
     path("estudio-socioeconomico/", views.create_estudio_socioeconomico_view, name="estudiante_socioeconomico_create"),
     
     # Documents
@@ -25,6 +25,7 @@ urlpatterns = [
     
     # Financial
     path("pagos/historial/", views.student_payments_history, name="estudiante_pagos_historial"),
+    path("pagos/historial/pdf/", views.student_payments_pdf, name="estudiante_pagos_historial_pdf"),
     path("pagos/simular/", views.student_payment_simulator, name="estudiante_pagos_simular"),
     
     # Academic (Consolidated)

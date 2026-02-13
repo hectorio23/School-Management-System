@@ -5,6 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
 
 from .models import (
     Maestro, Grupo, Materia, AsignacionMaestro, PeriodoEvaluacion,
@@ -53,7 +54,7 @@ def admin_maestros_list(request):
         queryset = queryset.filter(
             Q(nombre__icontains=search) | 
             Q(apellido_paterno__icontains=search) | 
-            Q(email__icontains=search)
+            Q(usuario__email__icontains=search)
         )
     
     return paginate_queryset(queryset, request, MaestroSerializer)
@@ -115,7 +116,6 @@ def admin_materia_desactivar(request, pk):
              status=status.HTTP_400_BAD_REQUEST
          )
     materia.activa = False
-    materia.fecha_fin = timezone.now().date()
     materia.save()
     return Response({"status": "success", "message": "Materia desactivada"})
 
@@ -325,3 +325,460 @@ def estudiante_historial_view(request):
     ).select_related('asignacion_maestro__materia', 'periodo_evaluacion', 'asignacion_maestro__maestro')
     
     return paginate_queryset(queryset, request, CalificacionSerializer)
+
+
+# =============================================================================
+# VISTAS NUEVAS: CAPTURA MASIVA DE CALIFICACIONES POR GRUPO
+# =============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsMaestro])
+def maestro_calificaciones_grupo(request, asignacion_id):
+    """
+    Retorna la lista de estudiantes de un grupo para captura de calificaciones.
+    Los estudiantes ya calificados aparecen deshabilitados con su calificación.
+    """
+    maestro = request.user.maestro_perfil
+    asignacion = get_object_or_404(AsignacionMaestro, pk=asignacion_id)
+
+    if asignacion.maestro != maestro:
+        return Response({"status": "error", "message": "No tiene permiso sobre esta asignación"}, status=403)
+
+    # Obtener período de evaluación activo
+    periodos = PeriodoEvaluacion.objects.filter(
+        programa_educativo__nivel_educativo=asignacion.grupo.grado.nivel_educativo,
+        ciclo_escolar=asignacion.ciclo_escolar
+    ).order_by('numero_periodo')
+
+    today = timezone.now().date()
+    periodo_activo = None
+    for periodo in periodos:
+        if periodo.fecha_inicio_captura <= today <= periodo.fecha_fin_captura:
+            periodo_activo = periodo
+            break
+
+    # Obtener estudiantes del grupo
+    from estudiantes.models import Inscripcion
+    inscripciones = Inscripcion.objects.filter(
+        grupo=asignacion.grupo,
+        estatus='activo'
+    ).select_related('estudiante', 'estudiante__usuario')
+
+    estudiantes_data = []
+    for insc in inscripciones:
+        est = insc.estudiante
+        calificacion_existente = None
+        puede_capturar = False
+
+        if periodo_activo:
+            cal = Calificacion.objects.filter(
+                estudiante=est,
+                asignacion_maestro=asignacion,
+                periodo_evaluacion=periodo_activo
+            ).first()
+            if cal:
+                calificacion_existente = {
+                    'id': cal.id,
+                    'calificacion': float(cal.calificacion),
+                    'puede_modificar': cal.puede_modificar,
+                }
+            else:
+                puede_capturar = True
+
+        estudiantes_data.append({
+            'matricula': est.matricula,
+            'nombre': est.nombre,
+            'apellido_paterno': est.apellido_paterno,
+            'apellido_materno': est.apellido_materno,
+            'nombre_completo': f"{est.nombre} {est.apellido_paterno} {est.apellido_materno}",
+            'calificacion_existente': calificacion_existente,
+            'puede_capturar': puede_capturar,
+        })
+
+    return Response({
+        "status": "success",
+        "asignacion": {
+            "id": asignacion.id,
+            "grupo": asignacion.grupo.nombre,
+            "materia": asignacion.materia.nombre,
+            "ciclo_escolar": asignacion.ciclo_escolar.nombre,
+        },
+        "periodo_activo": {
+            "id": periodo_activo.id,
+            "nombre": periodo_activo.nombre,
+            "numero_periodo": periodo_activo.numero_periodo,
+            "fecha_inicio_captura": periodo_activo.fecha_inicio_captura,
+            "fecha_fin_captura": periodo_activo.fecha_fin_captura,
+        } if periodo_activo else None,
+        "en_periodo_captura": periodo_activo is not None,
+        "estudiantes": estudiantes_data,
+        "total_estudiantes": len(estudiantes_data),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsMaestro])
+def maestro_calificaciones_bulk(request):
+    """
+    Subida masiva de calificaciones por grupo.
+    Recibe: { asignacion_id, periodo_evaluacion_id, calificaciones: [{matricula, calificacion}] }
+    """
+    maestro = request.user.maestro_perfil
+    asignacion_id = request.data.get('asignacion_id')
+    periodo_id = request.data.get('periodo_evaluacion_id')
+    calificaciones_data = request.data.get('calificaciones', [])
+
+    if not all([asignacion_id, periodo_id, calificaciones_data]):
+        return Response(
+            {"status": "error", "message": "Faltan campos requeridos: asignacion_id, periodo_evaluacion_id, calificaciones"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Validar asignación
+    asignacion = get_object_or_404(AsignacionMaestro, pk=asignacion_id)
+    if asignacion.maestro != maestro:
+        return Response({"status": "error", "message": "No tiene permiso sobre esta asignación"}, status=403)
+
+    # Validar período de captura
+    periodo = get_object_or_404(PeriodoEvaluacion, pk=periodo_id)
+    today = timezone.now().date()
+    if not (periodo.fecha_inicio_captura <= today <= periodo.fecha_fin_captura):
+        return Response(
+            {"status": "error", "message": f"Fuera de ventana de captura ({periodo.fecha_inicio_captura} - {periodo.fecha_fin_captura})"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Procesar calificaciones
+    creadas = 0
+    errores = []
+
+    for item in calificaciones_data:
+        matricula = item.get('matricula')
+        valor = item.get('calificacion')
+
+        if not matricula or valor is None:
+            errores.append({"matricula": matricula, "error": "Datos incompletos"})
+            continue
+
+        try:
+            from decimal import Decimal
+            valor_decimal = Decimal(str(valor))
+            if valor_decimal < 0 or valor_decimal > 10:
+                errores.append({"matricula": matricula, "error": "Calificación debe estar entre 0 y 10"})
+                continue
+
+            estudiante = get_object_or_404(Estudiante, matricula=matricula)
+
+            # Verificar que no exista calificación duplicada
+            if Calificacion.objects.filter(
+                estudiante=estudiante,
+                asignacion_maestro=asignacion,
+                periodo_evaluacion=periodo
+            ).exists():
+                errores.append({"matricula": matricula, "error": "Ya tiene calificación para este período"})
+                continue
+
+            Calificacion.objects.create(
+                estudiante=estudiante,
+                asignacion_maestro=asignacion,
+                periodo_evaluacion=periodo,
+                calificacion=valor_decimal,
+                capturada_por=maestro
+            )
+            creadas += 1
+
+        except Estudiante.DoesNotExist:
+            errores.append({"matricula": matricula, "error": "Estudiante no encontrado"})
+        except Exception as e:
+            errores.append({"matricula": matricula, "error": str(e)})
+
+    return Response({
+        "status": "success",
+        "calificaciones_creadas": creadas,
+        "errores": errores,
+        "total_enviadas": len(calificaciones_data),
+    }, status=status.HTTP_201_CREATED if creadas > 0 else status.HTTP_400_BAD_REQUEST)
+
+
+# =============================================================================
+# HISTORIAL ACADÉMICO COMPLETO DEL ESTUDIANTE
+# =============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsEstudiante])
+def estudiante_historial_completo(request):
+    """
+    Retorna el historial académico completo del estudiante, formateado para la tabla:
+    Agrupa por ciclo escolar → grupo → materias con P1..PN, EF, CF, ES.
+    """
+    estudiante = request.user.perfil_estudiante
+
+    from estudiantes.models import Inscripcion
+    from collections import OrderedDict
+
+    inscripciones = Inscripcion.objects.filter(
+        estudiante=estudiante
+    ).select_related(
+        'grupo', 'grupo__grado', 'grupo__grado__nivel_educativo', 'grupo__ciclo_escolar'
+    ).order_by('-grupo__ciclo_escolar__fecha_inicio')
+
+    historial = []
+
+    for insc in inscripciones:
+        grupo = insc.grupo
+        ciclo = grupo.ciclo_escolar
+        grado = grupo.grado
+        nivel = grado.nivel_educativo
+
+        # Obtener programa educativo activo del nivel
+        from academico.models import ProgramaEducativo
+        programa = ProgramaEducativo.objects.filter(
+            nivel_educativo=nivel, activo=True
+        ).first()
+
+        # Obtener períodos de evaluación para este ciclo y programa
+        periodos = list(PeriodoEvaluacion.objects.filter(
+            ciclo_escolar=ciclo,
+            programa_educativo=programa
+        ).order_by('numero_periodo')) if programa else []
+
+        # Obtener asignaciones del grupo
+        asignaciones = AsignacionMaestro.objects.filter(
+            grupo=grupo, activa=True
+        ).select_related('materia').order_by('materia__orden')
+
+        materias_data = []
+        numero = 1
+
+        for asig in asignaciones:
+            materia = asig.materia
+            calificaciones_periodos = {}
+
+            for periodo in periodos:
+                cal = Calificacion.objects.filter(
+                    estudiante=estudiante,
+                    asignacion_maestro=asig,
+                    periodo_evaluacion=periodo
+                ).first()
+                calificaciones_periodos[f"P{periodo.numero_periodo}"] = float(cal.calificacion) if cal else None
+
+            # Calificación final
+            cal_final = CalificacionFinal.objects.filter(
+                estudiante=estudiante,
+                materia=materia,
+                ciclo_escolar=ciclo
+            ).first()
+
+            # Determinar estatus
+            if cal_final:
+                cf = float(cal_final.calificacion_final)
+                estatus = cal_final.estatus
+                estatus_display = 'AO' if estatus == 'AO' else 'RP'
+            else:
+                # Calcular promedio parcial si hay calificaciones
+                vals = [v for v in calificaciones_periodos.values() if v is not None]
+                cf = round(sum(vals) / len(vals), 2) if vals else None
+                estatus_display = 'CU'  # En Curso
+
+            materias_data.append({
+                'numero': numero,
+                'materia': materia.nombre,
+                'calificaciones': calificaciones_periodos,
+                'calificacion_final': cf,
+                'estatus': estatus_display,
+            })
+            numero += 1
+
+        # Calcular promedio general
+        promedios = [m['calificacion_final'] for m in materias_data if m['calificacion_final'] is not None]
+        promedio_general = round(sum(promedios) / len(promedios), 2) if promedios else None
+
+        historial.append({
+            'ciclo_escolar': ciclo.nombre,
+            'grupo': grupo.nombre,
+            'grado': grado.nombre,
+            'nivel_educativo': nivel.nombre,
+            'programa_educativo': programa.nombre if programa else 'Sin programa',
+            'periodos': [{'numero': p.numero_periodo, 'nombre': p.nombre} for p in periodos],
+            'materias': materias_data,
+            'promedio_general': promedio_general,
+            'promedio_final_inscripcion': float(insc.promedio_final) if insc.promedio_final else None,
+        })
+
+    return Response({
+        "status": "success",
+        "estudiante": {
+            "matricula": estudiante.matricula,
+            "nombre": f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}",
+        },
+        "historial": historial,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsEstudiante])
+def estudiante_calificaciones_pdf(request):
+    """Genera un PDF con el historial de calificaciones del estudiante."""
+    import io
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+    estudiante = request.user.perfil_estudiante
+
+    # Reutilizar la lógica del historial completo
+    from estudiantes.models import Inscripcion
+    inscripciones = Inscripcion.objects.filter(
+        estudiante=estudiante
+    ).select_related(
+        'grupo', 'grupo__grado', 'grupo__grado__nivel_educativo', 'grupo__ciclo_escolar'
+    ).order_by('-grupo__ciclo_escolar__fecha_inicio')
+
+    # Generar PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.5*inch, bottomMargin=0.5*inch)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Título
+    titulo_style = ParagraphStyle('Titulo', parent=styles['Heading1'], fontSize=16, alignment=1)
+    elements.append(Paragraph(f"Historial Académico", titulo_style))
+    elements.append(Spacer(1, 8))
+
+    subtitulo_style = ParagraphStyle('Subtitulo', parent=styles['Heading2'], fontSize=12, alignment=1)
+    nombre_completo = f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}"
+    elements.append(Paragraph(f"{nombre_completo} - Matrícula: {estudiante.matricula}", subtitulo_style))
+    elements.append(Spacer(1, 16))
+
+    for insc in inscripciones:
+        grupo = insc.grupo
+        ciclo = grupo.ciclo_escolar
+        grado = grupo.grado
+        nivel = grado.nivel_educativo
+
+        from academico.models import ProgramaEducativo
+        programa = ProgramaEducativo.objects.filter(nivel_educativo=nivel, activo=True).first()
+
+        periodos = list(PeriodoEvaluacion.objects.filter(
+            ciclo_escolar=ciclo, programa_educativo=programa
+        ).order_by('numero_periodo')) if programa else []
+
+        asignaciones = AsignacionMaestro.objects.filter(
+            grupo=grupo, activa=True
+        ).select_related('materia').order_by('materia__orden')
+
+        # Encabezado del ciclo
+        seccion_style = ParagraphStyle('Seccion', parent=styles['Heading3'], fontSize=11)
+        elements.append(Paragraph(
+            f"Ciclo Escolar: {ciclo.nombre} | Grupo: {grupo.nombre} | Plan: {programa.nombre if programa else 'N/A'}",
+            seccion_style
+        ))
+        elements.append(Spacer(1, 6))
+
+        # Construir tabla
+        headers = ['N', 'Materia'] + [f'P{p.numero_periodo}' for p in periodos] + ['CF', 'ES']
+        table_data = [headers]
+
+        numero = 1
+        for asig in asignaciones:
+            materia = asig.materia
+            row = [str(numero), materia.nombre]
+
+            for periodo in periodos:
+                cal = Calificacion.objects.filter(
+                    estudiante=estudiante, asignacion_maestro=asig, periodo_evaluacion=periodo
+                ).first()
+                row.append(str(float(cal.calificacion)) if cal else '')
+
+            cal_final = CalificacionFinal.objects.filter(
+                estudiante=estudiante, materia=materia, ciclo_escolar=ciclo
+            ).first()
+
+            if cal_final:
+                row.append(str(float(cal_final.calificacion_final)))
+                row.append('AO' if cal_final.estatus == 'AO' else 'RP')
+            else:
+                row.append('')
+                row.append('CU')
+
+            table_data.append(row)
+            numero += 1
+
+        # Crear tabla con estilo
+        col_widths = [25, 220] + [45] * len(periodos) + [45, 35]
+        table = Table(table_data, colWidths=col_widths)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#ecf0f1')]),
+        ]))
+        elements.append(table)
+
+        # Promedio
+        if insc.promedio_final:
+            elements.append(Spacer(1, 4))
+            elements.append(Paragraph(f"Promedio: {insc.promedio_final}", styles['Normal']))
+
+        elements.append(Spacer(1, 16))
+
+    # Leyenda
+    elements.append(Paragraph("CF = Calificación Final | ES = Estatus | AO = Aprobado Ordinario | RP = Reprobado | CU = Cursando", styles['Normal']))
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="calificaciones_{estudiante.matricula}.pdf"'
+    return response
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def calendario_eventos(request):
+    """
+    GET /api/academico/calendario/
+    Retorna los eventos del calendario filtrados por nivel educativo o globales.
+    """
+    from django.db.models import Q
+    from .models import EventoCalendario
+    
+    if request.user.role == 'estudiante':
+        try:
+            estudiante = getattr(request.user, 'perfil_estudiante', None)
+            if not estudiante:
+                estudiante = Estudiante.objects.get(usuario=request.user)
+            
+            inscripcion = estudiante.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
+            nivel = inscripcion.grupo.grado.nivel_educativo if inscripcion else None
+            
+            eventos = EventoCalendario.objects.filter(
+                Q(es_global=True) | Q(nivel_educativo=nivel)
+            )
+        except Exception:
+             eventos = EventoCalendario.objects.filter(es_global=True)
+    else:
+        # Para otros roles, mostrar todos (o filtrar según necesidades)
+        eventos = EventoCalendario.objects.all()
+
+    data = []
+    for e in eventos:
+        data.append({
+            "id": e.id,
+            "title": e.titulo,
+            "description": e.descripcion,
+            "start": e.fecha_inicio.isoformat(),
+            "end": e.fecha_fin.isoformat(),
+            "type": e.tipo_evento,
+            "color": e.color,
+            "allDay": e.fecha_inicio.time() == e.fecha_fin.time() == timezone.datetime.min.time()
+        })
+    
+    return Response(data)

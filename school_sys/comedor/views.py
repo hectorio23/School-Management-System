@@ -226,3 +226,41 @@ def admin_menu_semanal(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def estudiante_asistencias(request):
+    """Retorna las últimas 10 asistencias del estudiante autenticado."""
+    if request.user.role != 'estudiante':
+        return Response({"error": "Solo estudiantes pueden acceder a este recurso"}, status=403)
+    
+    try:
+        estudiante = getattr(request.user, 'perfil_estudiante', None)
+        if not estudiante:
+            estudiante = Estudiante.objects.get(usuario=request.user)
+    except Estudiante.DoesNotExist:
+        return Response({"error": "Perfil de estudiante no encontrado"}, status=404)
+        
+    asistencias = AsistenciaCafeteria.objects.filter(estudiante=estudiante).order_by('-fecha_asistencia')[:10]
+    serializer = AsistenciaCafeteriaSerializer(asistencias, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def estudiante_menu_actual(request):
+    """Retorna el menú semanal activo."""
+    hoy = timezone.now().date()
+    menu_semanal = MenuSemanal.objects.filter(
+        semana_inicio__lte=hoy, 
+        semana_fin__gte=hoy, 
+        activo=True
+    ).first()
+    
+    if not menu_semanal:
+        menu_semanal = MenuSemanal.objects.filter(activo=True).order_by('-semana_inicio').first()
+
+    if not menu_semanal:
+        return Response({"detail": "No hay menú disponible"}, status=200, data=[])
+        
+    serializer = MenuSemanalSerializer(menu_semanal)
+    return Response(serializer.data)

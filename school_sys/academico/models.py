@@ -52,8 +52,6 @@ class Materia(models.Model):
     clave = models.CharField(max_length=20, unique=True)
     descripcion = models.TextField(null=True, blank=True)
     creditos = models.DecimalField(max_digits=4, decimal_places=2, default=0)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField(null=True, blank=True)
     activa = models.BooleanField(default=True)
     orden = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -120,7 +118,6 @@ class Maestro(models.Model):
     nombre = models.CharField(max_length=255)
     apellido_paterno = models.CharField(max_length=255)
     apellido_materno = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     fecha_contratacion = models.DateField()
     activo = models.BooleanField(default=True)
@@ -324,3 +321,29 @@ class ModificacionManualCalificacion(models.Model):
 
     def __str__(self):
         return f"Modificación {self.id} - {self.calificacion_final}"
+
+class EventoCalendario(models.Model):
+    TIPO_EVENTO_CHOICES = [
+        ('FESTIVO', 'Día Festivo'),
+        ('EVALUACION', 'Periodo de Evaluación'),
+        ('EVENTO', 'Evento Escolar'),
+        ('PAGO', 'Fecha Límite de Pago'),
+        ('OTRO', 'Otro'),
+    ]
+
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField(null=True, blank=True)
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
+    tipo_evento = models.CharField(max_length=20, choices=TIPO_EVENTO_CHOICES, default='EVENTO')
+    color = models.CharField(max_length=7, default='#3b82f6', help_text="Color en formato hexadecimal")
+    
+    nivel_educativo = models.ForeignKey(NivelEducativo, on_delete=models.SET_NULL, null=True, blank=True, related_name='eventos')
+    es_global = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'eventos_calendario'
+        ordering = ['fecha_inicio']
+
+    def __str__(self):
+        return f"{self.titulo} ({self.fecha_inicio.date()})"
