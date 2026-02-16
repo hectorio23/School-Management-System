@@ -29,15 +29,9 @@ school_sys/test_endpoints_comedor.sh
 school_sys/test_endpoints_estudiante.sh
 school_sys/create_test_admin.py
 school_sys/create_test_student.py
-school_sys/cron_adeudos_vencidos.py
-school_sys/cron_recordatorio_socioeconomico.py
-school_sys/cron_reinscripcion.py
 school_sys/menus/
 
-school_sys/admissions/utils_pdf.py
-school_sys/cron_recordatorios_pagos.py
-school_sys/estudiantes/utils_pdf.py
-school_sys/get_code.py
+
 school_sys/setup_reset_user.py
 school_sys/test_password_reset.sh
 school_sys/verify_financial_features.py
