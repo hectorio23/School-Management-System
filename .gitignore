@@ -44,12 +44,6 @@ school_sys/users/__pycache__/*
 school_sys/comedor/__pycache__/*
 school_sys/school_sys/__pycache__/*
 
-school_sys/admissions/migrations/*
-school_sys/estudiantes/migrations/*
-school_sys/pagos/migrations/*
-school_sys/users/migrations/*
-school_sys/comedor/migrations/*
-school_sys/school_sys/migrations/*
 
 
 school_sys/estudiantes/documents/
