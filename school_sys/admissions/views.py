@@ -78,7 +78,8 @@ from .serializers import (
     AspiranteConfirmationSerializer,
     AspirantePhase1Serializer,
     AspirantePhase3Serializer,
-    AspiranteLoginSerializer
+    AspiranteLoginSerializer,
+    AspiranteAdminListSerializer
 )
 
 from rest_framework.permissions import IsAuthenticated
@@ -104,11 +105,18 @@ def register_initiate(request):
         if AdmissionUser.objects.filter(email=email).exists():
             return Response({"error": "El correo ya está registrado"}, status=status.HTTP_400_BAD_REQUEST)
             
-        # Almacenamos credenciales temporales en JSON
-        data_json = json.dumps(serializer.validated_data)
+        # Cifrar contraseña antes de guardar en temporal por seguridad
+        data = serializer.validated_data.copy()
+        data['password'] = make_password(data['password'])
+        data_json = json.dumps(data)
+        
         v_serializer = VerificationCodeSerializer(data={"email": email})
         if v_serializer.is_valid():
             verification = v_serializer.save(data_json=data_json)
+            
+            # Simulación: Mostrar código en la terminal para el usuario
+            print(f"\n[SIMULACIÓN REGISTRO] Código para {email}: {verification.code}\n")
+            
             return Response({
                 "message": f"Código enviado a { email }",
                 "expired_at": timezone.now() + timedelta(minutes=10), 
@@ -140,7 +148,7 @@ def register_confirm(request):
         with transaction.atomic():
             user = AdmissionUser.objects.create(
                 email=credentials['email'],
-                password=make_password(credentials['password']),
+                password=credentials['password'], # Ya viene cifrada del Paso 1
                 is_verified=True
             )
             Aspirante.objects.create(
@@ -180,14 +188,6 @@ def aspirante_dashboard(request, folio):
 
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
     
-    # El usuario solicita restringir la información detallada hasta la fase 4
-    if aspirante.fase_actual < 4:
-        return Response({
-            "fase_actual": aspirante.fase_actual,
-            "status": aspirante.status,
-            "message": "Complete las fases anteriores para ver más información."
-        })
-
     # Datos base (Aspirante + Tutores)
     serializer = AspirantePhase1Serializer(aspirante)
     data = serializer.data
@@ -199,7 +199,13 @@ def aspirante_dashboard(request, folio):
         'direccion': aspirante.direccion,
         'curp': aspirante.curp,
         'nivel_ingreso': aspirante.nivel_ingreso,
+        'telefono': aspirante.telefono,
+        'email': aspirante.user.email
     })
+
+    # Si es fase < 4, añadimos un mensaje informativo pero no bloqueamos el resto
+    if aspirante.fase_actual < 4:
+        data["message"] = "Favor de completar la fase actual para avanzar en su proceso."
 
     # Lógica de Notificaciones Dinámicas
     now = timezone.now()
@@ -286,7 +292,7 @@ def aspirante_phase1(request, folio):
         return Response({"error": "No tienes permiso para modificar esta información"}, status=status.HTTP_403_FORBIDDEN)
 
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
-    serializer = AspirantePhase1Serializer(aspirante, data=request.data, partial=True)
+    serializer = AspirantePhase1Serializer(aspirante, data=request.data, partial=True, context={'request': request})
     if serializer.is_valid():
         serializer.save()
         return Response({
@@ -342,56 +348,15 @@ def aspirante_phase3(request, folio):
                 # 1. Documentos del aspirante (Aspirante model)
                 student_docs = [
                     'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
-                    'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+                    'boleta_ciclo_anterior', 'boleta_ciclo_actual',
+                    'foto_fachada_domicilio'
                 ]
                 for field in student_docs:
                     if field in request.FILES:
                         setattr(aspirante, field, request.FILES[field])
                 
-                # 2. Documentos de los tutores (AdmissionTutor model)
-                tutor_rels = AdmissionTutorAspirante.objects.filter(aspirante=aspirante)
-                if not tutor_rels.exists():
-                     return Response({"error": "Debe registrar al menos un tutor en la Fase 1"}, status=status.HTTP_400_BAD_REQUEST)
-
-                tutor_file_map = {
-                    'acta_nacimiento_tutor': 'acta_nacimiento',
-                    'comprobante_domicilio_tutor': 'comprobante_domicilio',
-                    'foto_fachada_domicilio': 'foto_fachada_domicilio',
-                    'comprobante_ingresos': 'comprobante_ingresos',
-                    'carta_ingresos': 'carta_ingresos',
-                    'ine_tutor': 'ine_tutor',
-                    'contrato_arrendamiento_predial': 'contrato_arrendamiento_predial',
-                    'carta_bajo_protesta': 'carta_bajo_protesta',
-                    'curp_pdf_tutor': 'curp_pdf'
-                }
-
-                for rel in tutor_rels:
-                    tutor = rel.tutor
-                    tutor_updated = False
-                    
-                    for req_field, model_field in tutor_file_map.items():
-                        # Buscamos archivos específicos o genéricos
-                        specific_field = f"tutor_{tutor.id}_{req_field}"
-                        file_obj = None
-                        
-                        if specific_field in request.FILES:
-                            file_obj = request.FILES[specific_field]
-                        elif req_field in request.FILES and tutor_rels.count() == 1:
-                            file_obj = request.FILES[req_field]
-                        
-                        if file_obj:
-                            setattr(tutor, model_field, file_obj)
-                            tutor_updated = True
-                        else:
-                            # Verificar si ya existe el archivo en el modelo (si es una actualización parcial)
-                            existing_file = getattr(tutor, model_field)
-                            if not existing_file:
-                                return Response({
-                                    "error": f"El documento '{req_field}' es obligatorio para el tutor {tutor.nombre}"
-                                }, status=status.HTTP_400_BAD_REQUEST)
-                    
-                    if tutor_updated:
-                        tutor.save()
+                # 2. Guardar serializer (acuerdos legales)
+                serializer.save()
 
                 serializer.save()
                 
@@ -991,3 +956,17 @@ def admin_aspirante_documents_list(request, folio):
                 })
                 
     return Response({"folio": folio, "documentos": docs})
+
+@api_view(['GET'])
+@permission_classes([CanManageAdmisiones])
+def list_aspirantes(request):
+    """Listado administrativo de todos los aspirantes."""
+    aspirantes = Aspirante.objects.select_related('user').all().order_by('-user__folio')
+    
+    # Optional filtering
+    status_filter = request.GET.get('status')
+    if status_filter:
+        aspirantes = aspirantes.filter(status=status_filter)
+        
+    serializer = AspiranteAdminListSerializer(aspirantes, many=True)
+    return Response(serializer.data)
