@@ -143,19 +143,52 @@ class AdmissionTutorSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AdmissionTutor
-        fields = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'numero_telefono', 'curp', 'parentesco']
+        fields = [
+            'id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 
+            'numero_telefono', 'curp', 'parentesco',
+            'acta_nacimiento', 'curp_pdf', 'comprobante_domicilio', 
+            'comprobante_ingresos', 'carta_ingresos', 
+            'ine_tutor', 'contrato_arrendamiento_predial', 'carta_bajo_protesta'
+        ]
+        read_only_fields = ['id']
+
+class AdmissionTutorPhase1Serializer(serializers.ModelSerializer):
+    """Versión simplificada para Fase 1 (evita validación de archivos en JSON)."""
+    parentesco = serializers.CharField(required=False, default="Tutor")
+    
+    class Meta:
+        model = AdmissionTutor
+        fields = [
+            'id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 
+            'numero_telefono', 'curp', 'parentesco'
+        ]
+        read_only_fields = ['id']
 
 class AspirantePhase1Serializer(serializers.ModelSerializer):
     """Fase 1: Datos personales extendidos y tutores."""
-    tutores = AdmissionTutorSerializer(many=True, required=False)
+    tutores = AdmissionTutorPhase1Serializer(many=True, required=False)
     
     class Meta:
         model = Aspirante
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno', 'curp', 
             'fecha_nacimiento', 'sexo', 'direccion', 'telefono', 
-            'escuela_procedencia', 'promedio_anterior', 'nivel_ingreso', 'tutores'
+            'escuela_procedencia', 'promedio_anterior', 'nivel_ingreso', 
+            'foto_fachada_domicilio', 'tutores'
         ]
+
+    def to_internal_value(self, data):
+        # Support stringified JSON for 'tutores' when using multipart/form-data
+        if 'tutores' in data and isinstance(data.get('tutores'), str):
+            import json
+            try:
+                # Need to convert QueryDict to a mutable dict to update it
+                mutable_data = data.dict() if hasattr(data, 'dict') else data.copy()
+                mutable_data['tutores'] = json.loads(data.get('tutores'))
+                return super().to_internal_value(mutable_data)
+            except (ValueError, TypeError) as e:
+                pass
+        return super().to_internal_value(data)
 
     def validate_curp(self, value):
         return validate_curp_logic(value) if value else value
@@ -175,12 +208,42 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
             
             # Sincronización de tutores
             if tutores_data:
-                for t_data in tutores_data:
+                # Obtenemos archivos del request si están disponibles (vía context)
+                request = self.context.get('request')
+                files = request.FILES if request else {}
+
+                for i, t_data in enumerate(tutores_data):
                     parentesco = t_data.pop('parentesco', 'Tutor')
-                    tutor, _ = AdmissionTutor.objects.get_or_create(
-                        email=t_data.get('email'),
+                    email = t_data.get('email')
+                    
+                    if not email: continue
+
+                    tutor, created = AdmissionTutor.objects.get_or_create(
+                        email=email,
                         defaults=t_data
                     )
+                    
+                    # Si no fue creado, actualizamos datos básicos
+                    if not created:
+                        for attr, value in t_data.items():
+                            setattr(tutor, attr, value)
+                    
+                    # Manejo de archivos específicos para este tutor: tutor_0_ine_tutor, tutor_1_ine_tutor...
+                    tutor_file_fields = [
+                        'acta_nacimiento', 'curp_pdf', 'comprobante_domicilio', 
+                        'comprobante_ingresos', 'carta_ingresos', 
+                        'ine_tutor', 'contrato_arrendamiento_predial', 'carta_bajo_protesta'
+                    ]
+                    for field in tutor_file_fields:
+                        specific_key = f'tutor_{i}_{field}'
+                        if specific_key in files:
+                            setattr(tutor, field, files[specific_key])
+                        elif field in files and len(tutores_data) == 1:
+                            # Si solo hay uno, permitimos nombres de campo genéricos
+                            setattr(tutor, field, files[field])
+
+                    tutor.save()
+                    
                     AdmissionTutorAspirante.objects.update_or_create(
                         aspirante=instance,
                         tutor=tutor,
@@ -194,13 +257,8 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
         model = Aspirante
         fields = [
             'curp_pdf', 'acta_nacimiento', 'foto_credencial',
-            'boleta_ciclo_anterior', 'boleta_ciclo_actual',
+            'foto_fachada_domicilio', 'boleta_ciclo_anterior', 'boleta_ciclo_actual',
             'aceptacion_reglamento', 'autorizacion_imagen',
-            # Campos virtuales (se procesan en la vista pero el serializer los permite)
-            'acta_nacimiento_tutor', 'comprobante_domicilio_tutor', 
-            'foto_fachada_domicilio', 'comprobante_ingresos', 
-            'carta_ingresos', 'ine_tutor', 'contrato_arrendamiento_predial',
-            'carta_bajo_protesta', 'curp_pdf_tutor'
         ]
         extra_kwargs = {
             'curp_pdf': {'required': True},
@@ -210,16 +268,7 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
             'boleta_ciclo_actual': {'required': False},
         }
 
-    # Declaramos los campos del tutor como FileFields opcionales no ligados al modelo Aspirante
-    acta_nacimiento_tutor = serializers.FileField(required=False)
-    comprobante_domicilio_tutor = serializers.FileField(required=False)
-    foto_fachada_domicilio = serializers.FileField(required=False)
-    comprobante_ingresos = serializers.FileField(required=False)
-    carta_ingresos = serializers.FileField(required=False)
-    ine_tutor = serializers.FileField(required=False)
-    contrato_arrendamiento_predial = serializers.FileField(required=False)
-    carta_bajo_protesta = serializers.FileField(required=False)
-    curp_pdf_tutor = serializers.FileField(required=False)
+
 
     def validate(self, data):
         """Valida que los acuerdos legales estén aceptados al finalizar fase."""
@@ -283,4 +332,18 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
     
     def validate_curp_pdf_tutor(self, value):
         return validate_document_file(value)
+
+class AspiranteAdminListSerializer(serializers.ModelSerializer):
+    """Serializer para listado administrativo de aspirantes."""
+    folio = serializers.IntegerField(source='user.folio', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = Aspirante
+        fields = [
+            'folio', 'nombre', 'apellido_paterno', 'apellido_materno', 
+            'email', 'status', 'fase_actual', 'nivel_ingreso', 'curp',
+            'telefono', 'fecha_pago', 'monto', 'metodo_pago',
+            'pagado_status'
+        ]
 

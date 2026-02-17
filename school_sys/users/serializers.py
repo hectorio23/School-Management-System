@@ -134,5 +134,9 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "expired_at": timezone.now() + timedelta(minutes=2)
             }
 
+        # Bloquear aspirantes del login principal
+        if user.role == 'aspirante':
+            raise serializers.ValidationError("Los aspirantes deben iniciar sesión en el Portal de Aspirantes.")
+
         # Flujo normal
         return data

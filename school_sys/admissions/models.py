@@ -113,7 +113,6 @@ class AdmissionTutor(models.Model):
     
     # Nuevos documentos del tutor
     comprobante_domicilio = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
-    foto_fachada_domicilio = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
     comprobante_ingresos = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
     carta_ingresos = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
     ine_tutor = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
@@ -123,7 +122,7 @@ class AdmissionTutor(models.Model):
     def save(self, *args, **kwargs):
         """Encripta archivos del tutor antes de persistirlos en disco."""
         tutor_files = [
-            'acta_nacimiento', 'curp_pdf', 'comprobante_domicilio', 'foto_fachada_domicilio',
+            'acta_nacimiento', 'curp_pdf', 'comprobante_domicilio',
             'comprobante_ingresos', 'carta_ingresos', 'ine_tutor', 
             'contrato_arrendamiento_predial', 'carta_bajo_protesta'
         ]
@@ -203,6 +202,7 @@ class Aspirante(models.Model):
     curp_pdf = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     acta_nacimiento = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     foto_credencial = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
+    foto_fachada_domicilio = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     boleta_ciclo_anterior = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     boleta_ciclo_actual = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     
