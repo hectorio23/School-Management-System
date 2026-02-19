@@ -416,6 +416,10 @@ class EstudianteTutor(models.Model):
         default=True,
         help_text='Para dar de baja sin eliminar'
     )
+    es_principal = models.BooleanField(
+        default=False,
+        help_text='Indica si este es el tutor principal para trámites y pagos'
+    )
 
     class Meta:
         verbose_name = "Estudiante-Tutor"

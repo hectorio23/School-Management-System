@@ -6,22 +6,28 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
+from academico.models import Materia
+from academico.models import ProgramaEducativo
 
-from .models import (
-    Maestro, Grupo, Materia, AsignacionMaestro, PeriodoEvaluacion,
-    Calificacion, AutorizacionCambioCalificacion
-)
-from estudiantes.models import Estudiante, CicloEscolar
-from .serializers import (
-    MaestroSerializer, GrupoSerializer, MateriaSerializer,
-    AsignacionMaestroSerializer, PeriodoEvaluacionSerializer,
-    CalificacionSerializer, EstudianteSimpleSerializer
-)
 from .permissions import (
     IsAdministradorEscolar, IsMaestro, IsEstudiante
     # Nota: Los object permissions IsAdminEscolarDelMismoNivel y IsMaestroDelMismoNivel 
     # se aplicarán manualmente dentro de las funciones ya que son FBV.
 )
+from .models import (
+    Maestro, Grupo, Materia, AsignacionMaestro, PeriodoEvaluacion,
+    Calificacion, AutorizacionCambioCalificacion, ProgramaEducativo,
+    CalificacionFinal, EventoCalendario
+)
+from estudiantes.models import Estudiante, CicloEscolar, Inscripcion
+from collections import OrderedDict
+import io
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 # Helper para paginación
 def paginate_queryset(queryset, request, serializer_class, context=None):
@@ -358,7 +364,6 @@ def maestro_calificaciones_grupo(request, asignacion_id):
             break
 
     # Obtener estudiantes del grupo
-    from estudiantes.models import Inscripcion
     inscripciones = Inscripcion.objects.filter(
         grupo=asignacion.grupo,
         estatus='activo'
@@ -461,7 +466,6 @@ def maestro_calificaciones_bulk(request):
             continue
 
         try:
-            from decimal import Decimal
             valor_decimal = Decimal(str(valor))
             if valor_decimal < 0 or valor_decimal > 10:
                 errores.append({"matricula": matricula, "error": "Calificación debe estar entre 0 y 10"})
@@ -513,54 +517,124 @@ def estudiante_historial_completo(request):
     """
     estudiante = request.user.perfil_estudiante
 
-    from estudiantes.models import Inscripcion
-    from collections import OrderedDict
-
-    inscripciones = Inscripcion.objects.filter(
-        estudiante=estudiante
-    ).select_related(
-        'grupo', 'grupo__grado', 'grupo__grado__nivel_educativo', 'grupo__ciclo_escolar'
-    ).order_by('-grupo__ciclo_escolar__fecha_inicio')
+    # Identificar todos los ciclos donde el estudiante tiene inscripciones o calificaciones
+    ciclos_insc = set(Inscripcion.objects.filter(estudiante=estudiante).values_list('grupo__ciclo_escolar_id', flat=True))
+    ciclos_calif = set(Calificacion.objects.filter(estudiante=estudiante).values_list('asignacion_maestro__grupo__ciclo_escolar_id', flat=True))
+    ciclos_final = set(CalificacionFinal.objects.filter(estudiante=estudiante).values_list('ciclo_escolar_id', flat=True))
+    
+    todos_ciclos_ids = ciclos_insc | ciclos_calif | ciclos_final
+    
+    ciclos = CicloEscolar.objects.filter(id__in=todos_ciclos_ids).order_by('-fecha_inicio')
 
     historial = []
 
-    for insc in inscripciones:
-        grupo = insc.grupo
-        ciclo = grupo.ciclo_escolar
-        grado = grupo.grado
-        nivel = grado.nivel_educativo
+    for ciclo in ciclos:
+        # Intentar obtener inscripción para este ciclo
+        insc = Inscripcion.objects.filter(estudiante=estudiante, grupo__ciclo_escolar=ciclo).first()
+        
+        if insc:
+            grupo = insc.grupo
+            grado = grupo.grado
+            nivel = grado.nivel_educativo
+            promedio_insc = float(insc.promedio_final) if insc.promedio_final else None
+        else:
+            # Si no hay inscripción, intentamos inferir grupo/grado de las calificaciones
+            cal_ref = Calificacion.objects.filter(estudiante=estudiante, asignacion_maestro__grupo__ciclo_escolar=ciclo).first()
+            if not cal_ref:
+                cal_ref = CalificacionFinal.objects.filter(estudiante=estudiante, ciclo_escolar=ciclo).first()
+            
+            if cal_ref:
+                # Si es CalificacionFinal, la materia tiene grado
+                if hasattr(cal_ref, 'materia'):
+                    grado = cal_ref.materia.grado
+                    # El grupo es difícil de determinar sin inscripción o asignación, buscamos alguna asignación
+                    asig_ref = AsignacionMaestro.objects.filter(calificaciones__estudiante=estudiante, grupo__ciclo_escolar=ciclo).first()
+                    grupo = asig_ref.grupo if asig_ref else None
+                else:
+                    # Si es Calificacion, viene de una asignación que tiene grupo/grado
+                    grupo = cal_ref.asignacion_maestro.grupo
+                    grado = grupo.grado
+                
+                nivel = grado.nivel_educativo if grado else None
+                promedio_insc = None
+            else:
+                continue # No debería pasar por el filtro inicial
 
-        # Obtener programa educativo activo del nivel
-        from academico.models import ProgramaEducativo
-        programa = ProgramaEducativo.objects.filter(
-            nivel_educativo=nivel, activo=True
-        ).first()
+        # Obtener programa educativo del ciclo o el activo del nivel
+        # Buscamos si hay periodos definidos para este ciclo y nivel
+        periodo_ref = PeriodoEvaluacion.objects.filter(ciclo_escolar=ciclo, programa_educativo__nivel_educativo=nivel).first()
+        if periodo_ref:
+            programa = periodo_ref.programa_educativo
+        else:
+            programa = ProgramaEducativo.objects.filter(nivel_educativo=nivel, activo=True).first()
 
-        # Obtener períodos de evaluación para este ciclo y programa
-        periodos = list(PeriodoEvaluacion.objects.filter(
+        # Obtener períodos de evaluación configurados (mostrarlos aunque no existan en DB)
+        num_periodos = programa.numero_periodos_evaluacion if programa else 0
+        periodos_db = {p.numero_periodo: p for p in PeriodoEvaluacion.objects.filter(
             ciclo_escolar=ciclo,
             programa_educativo=programa
-        ).order_by('numero_periodo')) if programa else []
+        )} if programa else {}
 
-        # Obtener asignaciones del grupo
-        asignaciones = AsignacionMaestro.objects.filter(
-            grupo=grupo, activa=True
-        ).select_related('materia').order_by('materia__orden')
+        periodos_data = []
+        for i in range(1, num_periodos + 1):
+            p_db = periodos_db.get(i)
+            periodos_data.append({
+                'numero_periodo': i,
+                'nombre': p_db.nombre if p_db else f'Periodo {i}',
+                'id': p_db.id if p_db else None
+            })
+
+        # Determinar materias según el plan de estudios del grado (mostramos historicas)
+        materias_plan = list(Materia.objects.filter(
+            grado=grado,
+            programa_educativo=programa,
+        ).order_by('orden'))
+
+        # TAMBIÉN incluimos cualquier materia que tenga calificaciones registradas para este alumno/ciclo
+        # (por si hubo error de captura o cambio de plan interno)
+        materias_con_calif = Materia.objects.filter(
+            asignaciones__calificaciones__estudiante=estudiante,
+            asignaciones__grupo=grupo
+        ).distinct()
+        
+        materias_con_final = Materia.objects.filter(
+            calificaciones_finales__estudiante=estudiante,
+            calificaciones_finales__ciclo_escolar=ciclo
+        ).distinct()
+
+        # Unimos y quitamos duplicados manteniendo el orden del plan
+        id_materias_plan = {m.id for m in materias_plan}
+        all_materias = materias_plan
+        for m in materias_con_calif:
+            if m.id not in id_materias_plan:
+                all_materias.append(m)
+                id_materias_plan.add(m.id)
+        for m in materias_con_final:
+            if m.id not in id_materias_plan:
+                all_materias.append(m)
+                id_materias_plan.add(m.id)
 
         materias_data = []
         numero = 1
 
-        for asig in asignaciones:
-            materia = asig.materia
+        for materia in all_materias:
             calificaciones_periodos = {}
+            
+            # Intentar encontrar asignación para este grupo y materia (incluyendo inactivas)
+            asig = AsignacionMaestro.objects.filter(
+                grupo=grupo, 
+                materia=materia, 
+            ).first()
 
-            for periodo in periodos:
-                cal = Calificacion.objects.filter(
-                    estudiante=estudiante,
-                    asignacion_maestro=asig,
-                    periodo_evaluacion=periodo
-                ).first()
-                calificaciones_periodos[f"P{periodo.numero_periodo}"] = float(cal.calificacion) if cal else None
+            for p_data in periodos_data:
+                cal = None
+                if asig:
+                    cal = Calificacion.objects.filter(
+                        estudiante=estudiante,
+                        asignacion_maestro=asig,
+                        periodo_evaluacion__numero_periodo=p_data['numero_periodo']
+                    ).first()
+                calificaciones_periodos[f"P{p_data['numero_periodo']}"] = float(cal.calificacion) if cal else None
 
             # Calificación final
             cal_final = CalificacionFinal.objects.filter(
@@ -572,13 +646,16 @@ def estudiante_historial_completo(request):
             # Determinar estatus
             if cal_final:
                 cf = float(cal_final.calificacion_final)
-                estatus = cal_final.estatus
-                estatus_display = 'AO' if estatus == 'AO' else 'RP'
+                estatus_display = cal_final.estatus
             else:
                 # Calcular promedio parcial si hay calificaciones
                 vals = [v for v in calificaciones_periodos.values() if v is not None]
-                cf = round(sum(vals) / len(vals), 2) if vals else None
-                estatus_display = 'CU'  # En Curso
+                if vals:
+                    cf = round(sum(vals) / len(vals), 2)
+                    estatus_display = 'CU' # En Curso
+                else:
+                    cf = None
+                    estatus_display = 'CU' # En Curso / Sin capturar
 
             materias_data.append({
                 'numero': numero,
@@ -599,10 +676,10 @@ def estudiante_historial_completo(request):
             'grado': grado.nombre,
             'nivel_educativo': nivel.nombre,
             'programa_educativo': programa.nombre if programa else 'Sin programa',
-            'periodos': [{'numero': p.numero_periodo, 'nombre': p.nombre} for p in periodos],
+            'periodos': [{'numero': p['numero_periodo'], 'nombre': p['nombre']} for p in periodos_data],
             'materias': materias_data,
             'promedio_general': promedio_general,
-            'promedio_final_inscripcion': float(insc.promedio_final) if insc.promedio_final else None,
+            'promedio_final_inscripcion': promedio_insc,
         })
 
     return Response({
@@ -619,18 +696,9 @@ def estudiante_historial_completo(request):
 @permission_classes([IsEstudiante])
 def estudiante_calificaciones_pdf(request):
     """Genera un PDF con el historial de calificaciones del estudiante."""
-    import io
-    from django.http import HttpResponse
-    from reportlab.lib.pagesizes import letter, landscape
-    from reportlab.lib import colors
-    from reportlab.lib.units import inch
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-
     estudiante = request.user.perfil_estudiante
 
     # Reutilizar la lógica del historial completo
-    from estudiantes.models import Inscripcion
     inscripciones = Inscripcion.objects.filter(
         estudiante=estudiante
     ).select_related(
@@ -653,22 +721,79 @@ def estudiante_calificaciones_pdf(request):
     elements.append(Paragraph(f"{nombre_completo} - Matrícula: {estudiante.matricula}", subtitulo_style))
     elements.append(Spacer(1, 16))
 
-    for insc in inscripciones:
-        grupo = insc.grupo
-        ciclo = grupo.ciclo_escolar
-        grado = grupo.grado
-        nivel = grado.nivel_educativo
+    # Identificar ciclos
+    ciclos_insc = set(Inscripcion.objects.filter(estudiante=estudiante).values_list('grupo__ciclo_escolar_id', flat=True))
+    ciclos_calif = set(Calificacion.objects.filter(estudiante=estudiante).values_list('asignacion_maestro__grupo__ciclo_escolar_id', flat=True))
+    ciclos_final = set(CalificacionFinal.objects.filter(estudiante=estudiante).values_list('ciclo_escolar_id', flat=True))
+    todos_ciclos_ids = ciclos_insc | ciclos_calif | ciclos_final
+    ciclos = CicloEscolar.objects.filter(id__in=todos_ciclos_ids).order_by('-fecha_inicio')
 
-        from academico.models import ProgramaEducativo
-        programa = ProgramaEducativo.objects.filter(nivel_educativo=nivel, activo=True).first()
+    for ciclo in ciclos:
+        insc = Inscripcion.objects.filter(estudiante=estudiante, grupo__ciclo_escolar=ciclo).first()
+        if insc:
+            grupo = insc.grupo
+            grado = grupo.grado
+            nivel = grado.nivel_educativo
+        else:
+            cal_ref = Calificacion.objects.filter(estudiante=estudiante, asignacion_maestro__grupo__ciclo_escolar=ciclo).first()
+            if not cal_ref: cal_ref = CalificacionFinal.objects.filter(estudiante=estudiante, ciclo_escolar=ciclo).first()
+            if cal_ref:
+                if hasattr(cal_ref, 'materia'):
+                    grado = cal_ref.materia.grado
+                    asig_ref = AsignacionMaestro.objects.filter(calificaciones__estudiante=estudiante, grupo__ciclo_escolar=ciclo).first()
+                    grupo = asig_ref.grupo if asig_ref else None
+                else:
+                    grupo = cal_ref.asignacion_maestro.grupo
+                    grado = grupo.grado
+                nivel = grado.nivel_educativo
+            else: continue
 
-        periodos = list(PeriodoEvaluacion.objects.filter(
-            ciclo_escolar=ciclo, programa_educativo=programa
-        ).order_by('numero_periodo')) if programa else []
+        # Obtener programa educativo del ciclo o el activo del nivel
+        periodo_ref = PeriodoEvaluacion.objects.filter(ciclo_escolar=ciclo, programa_educativo__nivel_educativo=nivel).first()
+        programa = periodo_ref.programa_educativo if periodo_ref else ProgramaEducativo.objects.filter(nivel_educativo=nivel, activo=True).first()
 
-        asignaciones = AsignacionMaestro.objects.filter(
-            grupo=grupo, activa=True
-        ).select_related('materia').order_by('materia__orden')
+        num_periodos = programa.numero_periodos_evaluacion if programa else 0
+        periodos_db = {p.numero_periodo: p for p in PeriodoEvaluacion.objects.filter(
+            ciclo_escolar=ciclo,
+            programa_educativo=programa
+        )} if programa else {}
+
+        periodos_data = []
+        for i in range(1, num_periodos + 1):
+            p_db = periodos_db.get(i)
+            periodos_data.append({
+                'numero_periodo': i,
+                'nombre': p_db.nombre if p_db else f'P{i}',
+                'id': p_db.id if p_db else None
+            })
+
+
+        # Materias del plan + materias con calificaciones
+        materias_plan = list(Materia.objects.filter(
+            grado=grado,
+            programa_educativo=programa,
+        ).order_by('orden'))
+
+        materias_con_calif = Materia.objects.filter(
+            asignaciones__calificaciones__estudiante=estudiante,
+            asignaciones__grupo=grupo
+        ).distinct()
+        
+        materias_con_final = Materia.objects.filter(
+            calificaciones_finales__estudiante=estudiante,
+            calificaciones_finales__ciclo_escolar=ciclo
+        ).distinct()
+
+        id_materias_plan = {m.id for m in materias_plan}
+        all_materias = materias_plan
+        for m in materias_con_calif:
+            if m.id not in id_materias_plan:
+                all_materias.append(m)
+                id_materias_plan.add(m.id)
+        for m in materias_con_final:
+            if m.id not in id_materias_plan:
+                all_materias.append(m)
+                id_materias_plan.add(m.id)
 
         # Encabezado del ciclo
         seccion_style = ParagraphStyle('Seccion', parent=styles['Heading3'], fontSize=11)
@@ -679,18 +804,27 @@ def estudiante_calificaciones_pdf(request):
         elements.append(Spacer(1, 6))
 
         # Construir tabla
-        headers = ['N', 'Materia'] + [f'P{p.numero_periodo}' for p in periodos] + ['CF', 'ES']
+        headers = ['N', 'Materia'] + [f'P{i}' for i in range(1, num_periodos + 1)] + ['CF', 'ES']
         table_data = [headers]
 
         numero = 1
-        for asig in asignaciones:
-            materia = asig.materia
+        for materia in all_materias:
             row = [str(numero), materia.nombre]
 
-            for periodo in periodos:
-                cal = Calificacion.objects.filter(
-                    estudiante=estudiante, asignacion_maestro=asig, periodo_evaluacion=periodo
-                ).first()
+            # Intentar encontrar asignación para este grupo y materia (incluyendo inactivas)
+            asig = AsignacionMaestro.objects.filter(
+                grupo=grupo, 
+                materia=materia, 
+            ).first()
+
+            for p_data in periodos_data:
+                cal = None
+                if asig:
+                    cal = Calificacion.objects.filter(
+                        estudiante=estudiante, 
+                        asignacion_maestro=asig, 
+                        periodo_evaluacion__numero_periodo=p_data['numero_periodo']
+                    ).first()
                 row.append(str(float(cal.calificacion)) if cal else '')
 
             cal_final = CalificacionFinal.objects.filter(
@@ -699,16 +833,34 @@ def estudiante_calificaciones_pdf(request):
 
             if cal_final:
                 row.append(str(float(cal_final.calificacion_final)))
-                row.append('AO' if cal_final.estatus == 'AO' else 'RP')
+                row.append(cal_final.estatus)
             else:
-                row.append('')
+                # Calcular promedio parcial si hay calificaciones
+                vals = []
+                # Re-check period grades for average if no final grade
+                for p_data in periodos_data:
+                    cal_p = None
+                    if asig:
+                        cal_p = Calificacion.objects.filter(
+                            estudiante=estudiante, 
+                            asignacion_maestro=asig, 
+                            periodo_evaluacion__numero_periodo=p_data['numero_periodo']
+                        ).first()
+                    if cal_p:
+                        vals.append(float(cal_p.calificacion))
+                
+                if vals:
+                    avg = round(sum(vals) / len(vals), 2)
+                    row.append(str(avg))
+                else:
+                    row.append('')
                 row.append('CU')
 
             table_data.append(row)
             numero += 1
 
         # Crear tabla con estilo
-        col_widths = [25, 220] + [45] * len(periodos) + [45, 35]
+        col_widths = [25, 220] + [45] * num_periodos + [45, 35]
         table = Table(table_data, colWidths=col_widths)
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
@@ -747,9 +899,6 @@ def calendario_eventos(request):
     GET /api/academico/calendario/
     Retorna los eventos del calendario filtrados por nivel educativo o globales.
     """
-    from django.db.models import Q
-    from .models import EventoCalendario
-    
     if request.user.role == 'estudiante':
         try:
             estudiante = getattr(request.user, 'perfil_estudiante', None)
