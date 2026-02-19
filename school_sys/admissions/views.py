@@ -79,7 +79,8 @@ from .serializers import (
     AspirantePhase1Serializer,
     AspirantePhase3Serializer,
     AspiranteLoginSerializer,
-    AspiranteAdminListSerializer
+    AspiranteAdminListSerializer,
+    AspiranteDetailSerializer
 )
 
 from rest_framework.permissions import IsAuthenticated
@@ -456,15 +457,16 @@ def admin_view_document(request, folio, field_name):
         return Response({"error": "No hay archivo cargado"}, status=status.HTTP_404_NOT_FOUND)
     
     try:
-        
         decrypted_content = decrypt_data(file_field.read())
         
-        # Intentamos determinar el tipo MIME real basado en el nombre del archivo
         content_type, _ = mimetypes.guess_type(file_field.name)
         if not content_type:
             content_type = "application/octet-stream"
             
-        return HttpResponse(decrypted_content, content_type=content_type)
+        response = HttpResponse(decrypted_content, content_type=content_type)
+        # Cambiamos a 'inline' para permitir previsualización en el navegador
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_field.name)}"'
+        return response
     except Exception as e:
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -500,7 +502,9 @@ def admin_view_aspirante_document(request, folio, field_name):
         content_type, _ = mimetypes.guess_type(file_field.name)
         if not content_type:
             content_type = "application/octet-stream"
-        return HttpResponse(decrypted_content, content_type=content_type)
+        response = HttpResponse(decrypted_content, content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_field.name)}"'
+        return response
     except Exception as e:
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -538,7 +542,9 @@ def admin_view_tutor_document(request, tutor_id, field_name):
         content_type, _ = mimetypes.guess_type(file_field.name)
         if not content_type:
             content_type = "application/octet-stream"
-        return HttpResponse(decrypted_content, content_type=content_type)
+        response = HttpResponse(decrypted_content, content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_field.name)}"'
+        return response
     except Exception as e:
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -717,8 +723,8 @@ def migrate_aspirante_to_student(request, folio):
                 
                 # Buscar tutor existente por email
                 tutor_existente = None
-                if tutor_adm.correo:
-                    tutor_existente = Tutor.objects.filter(correo=tutor_adm.correo).first()
+                if tutor_adm.email:
+                    tutor_existente = Tutor.objects.filter(correo=tutor_adm.email).first()
                 
                 if tutor_existente:
                     tutor = tutor_existente
@@ -728,9 +734,8 @@ def migrate_aspirante_to_student(request, folio):
                         nombre=tutor_adm.nombre.upper(),
                         apellido_paterno=tutor_adm.apellido_paterno.upper(),
                         apellido_materno=tutor_adm.apellido_materno.upper() if tutor_adm.apellido_materno else '',
-                        telefono=tutor_adm.telefono or '',
-                        correo=tutor_adm.correo or '',
-                        parentesco=rel.parentesco
+                        telefono=tutor_adm.numero_telefono or '',
+                        correo=tutor_adm.email or ''
                     )
                 
                 # Vincular tutor con estudiante
@@ -970,3 +975,30 @@ def list_aspirantes(request):
         
     serializer = AspiranteAdminListSerializer(aspirantes, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([CanManageAdmisiones])
+def admin_aspirante_detail(request, folio):
+    """Retorna el expediente completo de un aspirante."""
+    aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    serializer = AspiranteDetailSerializer(aspirante)
+    return Response(serializer.data)
+
+@api_view(['PATCH'])
+@permission_classes([CanManageAdmisiones])
+def admin_update_status(request, folio):
+    """Actualiza el estatus del aspirante."""
+    aspirante = get_object_or_404(Aspirante, user__folio=folio)
+    new_status = request.data.get('status')
+    
+    # Mapeo de "pendiente" a "ASPIRANTE" si es necesario
+    valid_statuses = [s[0] for s in Aspirante.STATUS_CHOICES]
+    if new_status == 'PENDIENTE':
+        new_status = 'ASPIRANTE'
+        
+    if new_status not in valid_statuses:
+        return Response({"error": "Estatus no válido"}, status=status.HTTP_400_BAD_REQUEST)
+        
+    aspirante.status = new_status
+    aspirante.save()
+    return Response({"message": f"Estatus actualizado a {new_status}", "status": new_status})

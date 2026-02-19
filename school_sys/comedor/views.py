@@ -260,7 +260,7 @@ def estudiante_menu_actual(request):
         menu_semanal = MenuSemanal.objects.filter(activo=True).order_by('-semana_inicio').first()
 
     if not menu_semanal:
-        return Response({"detail": "No hay menú disponible"}, status=200, data=[])
+        return Response({"detail": "No hay menú disponible", "data": []}, status=200)
         
     serializer = MenuSemanalSerializer(menu_semanal)
     return Response(serializer.data)

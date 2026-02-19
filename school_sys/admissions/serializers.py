@@ -164,6 +164,83 @@ class AdmissionTutorPhase1Serializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+class AdmissionTutorDetailSerializer(serializers.ModelSerializer):
+    """Información completa del tutor para vista administrativa."""
+    class Meta:
+        model = AdmissionTutor
+        fields = '__all__'
+
+class AspiranteDetailSerializer(serializers.ModelSerializer):
+    """Serializer detallado para el expediente completo del aspirante."""
+    folio = serializers.IntegerField(source='user.folio', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    tutores = serializers.SerializerMethodField()
+    documentos = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Aspirante
+        fields = '__all__'
+
+    def get_tutores(self, obj):
+        rels = AdmissionTutorAspirante.objects.filter(aspirante=obj)
+        data = []
+        for rel in rels:
+            tutor_data = AdmissionTutorDetailSerializer(rel.tutor).data
+            tutor_data['parentesco'] = rel.parentesco
+            data.append(tutor_data)
+        return data
+
+    def get_documentos(self, obj):
+        # Generar lista de URLs de documentos dinámicamente
+        docs = []
+        folio = obj.user.folio
+        
+        # Docs Aspirante
+        student_fields = [
+            ('curp_pdf', 'CURP Aspirante'),
+            ('acta_nacimiento', 'Acta de Nacimiento Aspirante'),
+            ('foto_credencial', 'Foto Credencial'),
+            ('boleta_ciclo_anterior', 'Boleta Ciclo Anterior'),
+            ('boleta_ciclo_actual', 'Boleta Ciclo Actual'),
+            ('foto_fachada_domicilio', 'Foto Fachada Domicilio')
+        ]
+        
+        for field, label in student_fields:
+            if getattr(obj, field, None):
+                docs.append({
+                    "entity": "aspirante",
+                    "field": field,
+                    "label": label,
+                    "url": f"/api/admission/admin/aspirante/{folio}/document/{field}/"
+                })
+        
+        # Docs Tutores
+        rels = AdmissionTutorAspirante.objects.filter(aspirante=obj)
+        tutor_fields = [
+            ('acta_nacimiento', 'Acta de Nacimiento'),
+            ('curp_pdf', 'CURP'),
+            ('comprobante_domicilio', 'Comprobante Domicilio'),
+            ('comprobante_ingresos', 'Comprobante Ingresos'),
+            ('carta_ingresos', 'Carta Ingresos'),
+            ('ine_tutor', 'INE'),
+            ('contrato_arrendamiento_predial', 'Contrato/Predial'),
+            ('carta_bajo_protesta', 'Carta Bajo Protesta')
+        ]
+        
+        for rel in rels:
+            tutor = rel.tutor
+            for field, label in tutor_fields:
+                if getattr(tutor, field, None):
+                    docs.append({
+                        "entity": f"tutor_{tutor.id}",
+                        "tutor_id": tutor.id,
+                        "tutor_nombre": tutor.nombre,
+                        "field": field,
+                        "label": f"{label} ({tutor.nombre})",
+                        "url": f"/api/admission/admin/tutor/{tutor.id}/document/{field}/"
+                    })
+        return docs
+
 class AspirantePhase1Serializer(serializers.ModelSerializer):
     """Fase 1: Datos personales extendidos y tutores."""
     tutores = AdmissionTutorPhase1Serializer(many=True, required=False)

@@ -15,7 +15,8 @@ urlpatterns = [
     # Admin
     path('admin/list/', views.list_aspirantes, name='admin_list_aspirantes'),
     path('status/<int:folio>/', views.aspirante_dashboard, name='aspirante_status'), # Fix duplicate or similar
-    path('admin/aspirante/<int:folio>/documents/', views.admin_aspirante_documents_list, name='admin_aspirante_documents_list'),
+    path('admin/aspirante/<int:folio>/', views.admin_aspirante_detail, name='admin_aspirante_detail'),
+    path('admin/aspirante/<int:folio>/status/', views.admin_update_status, name='admin_update_status'),
     path('admin/document/<int:folio>/<str:field_name>/', views.admin_view_document, name='admin_view_document'),
     path('admin/aspirante/<int:folio>/document/<str:field_name>/', views.admin_view_aspirante_document, name='admin_view_aspirante_document'),
     path('admin/tutor/<int:tutor_id>/document/<str:field_name>/', views.admin_view_tutor_document, name='admin_view_tutor_document'),
