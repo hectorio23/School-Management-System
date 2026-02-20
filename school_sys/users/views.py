@@ -60,11 +60,15 @@ def me_view(request):
     Retorna la información del usuario autenticado y su rol.
     """
     user = request.user
+    role = user.role
+    if role and role.startswith('admin_escolar'):
+        role = 'admin_escolar'
+        
     data = {
         "id": user.id,
         "email": user.email,
         "nombre": user.nombre or user.email,
-        "role": user.role,
+        "role": role,
         "is_staff": user.is_staff,
     }
 

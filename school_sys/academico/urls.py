@@ -3,10 +3,16 @@ from . import views
 
 urlpatterns = [
     # Admin Escolar
-    path('api/admin-escolar/maestros/', views.admin_maestros_list, name='admin-maestros-list'),
-    path('api/admin-escolar/grupos/', views.admin_grupos_list, name='admin-grupos-list'),
+    path('api/admin-escolar/maestros/', views.admin_maestros_list_create, name='admin-maestros-list'),
+    path('api/admin-escolar/maestros/<int:pk>/', views.admin_maestro_detail, name='admin-maestro-detail'),
+    path('api/admin-escolar/grupos/', views.admin_grupos_list_create, name='admin-grupos-list'),
+    path('api/admin-escolar/grupos/<int:pk>/', views.admin_grupo_detail, name='admin-grupo-detail'),
+    path('api/admin-escolar/grupos/<int:pk>/estudiantes/', views.admin_grupo_estudiantes, name='admin-grupo-estudiantes'),
+    path('api/admin-escolar/grados/', views.admin_grados_list, name='admin-grados-list'),
     path('api/admin-escolar/materias/', views.admin_materias_list_create, name='admin-materias-list'),
-    path('api/admin-escolar/materias/<int:pk>/desactivar/', views.admin_materia_desactivar, name='admin-materia-desactivar'),
+    path('api/admin-escolar/materias/<int:pk>/', views.admin_materia_detail, name='admin-materia-detail'),
+    path('api/admin-escolar/programas/', views.admin_programas_list, name='admin-programas-list'),
+    # path('api/admin-escolar/materias/<int:pk>/desactivar/', views.admin_materia_desactivar, name='admin-materia-desactivar'), # Replaced by detail DELETE
     path('api/admin-escolar/asignaciones/', views.admin_asignaciones_list_create, name='admin-asignaciones-list'),
     path('api/admin-escolar/asignaciones/materias-disponibles/', views.admin_materias_disponibles, name='admin-materias-disponibles'),
     path('api/admin-escolar/calificaciones/', views.admin_calificaciones_list, name='admin-calificaciones-list'),
@@ -16,6 +22,7 @@ urlpatterns = [
     # Maestro
     path('api/maestro/asignaciones/', views.maestro_asignaciones_list, name='maestro-asignaciones-list'),
     path('api/maestro/estudiantes/', views.maestro_estudiantes_list, name='maestro-estudiantes-list'),
+    path('api/maestro/estudiantes/grupos/', views.maestro_estudiantes_grupos, name='maestro-estudiantes-grupos'),
     path('api/maestro/calificaciones/', views.maestro_calificaciones_list_create, name='maestro-calificaciones-list'),
     path('api/maestro/calificaciones/<int:pk>/solicitar-cambio/', views.maestro_solicitar_cambio, name='maestro-solicitar-cambio'),
     path('api/maestro/calificaciones/grupo/<int:asignacion_id>/', views.maestro_calificaciones_grupo, name='maestro-calificaciones-grupo'),

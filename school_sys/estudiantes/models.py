@@ -141,9 +141,16 @@ class Grupo(models.Model):
         ]
 
     def __str__(self):
-        grado_str = self.grado.nombre if self.grado else "S/G"
+        grado_label = self.grado.nombre if self.grado else "S/G"
+        nivel_label = self.grado.nivel_educativo.nombre if self.grado and self.grado.nivel_educativo else ""
+        
+        # Si es el ciclo activo, omitimos el ciclo en el nombre del grupo
+        if self.ciclo_escolar and self.ciclo_escolar.activo:
+            return f"{grado_label}{self.nombre} {nivel_label}".strip()
+        
+        # Para ciclos pasados, mantenemos la referencia para evitar confusiones
         ciclo_str = self.ciclo_escolar.nombre if self.ciclo_escolar else "S/C"
-        return f"{grado_str}{self.nombre} ({ciclo_str})"
+        return f"{grado_label}{self.nombre} {nivel_label} ({ciclo_str})".strip()
 
 
 
@@ -804,7 +811,8 @@ class Inscripcion(models.Model):
     grupo = models.ForeignKey(
         Grupo, 
         on_delete=models.PROTECT,
-        related_name='inscripciones'
+        related_name='inscripciones',
+        limit_choices_to={'ciclo_escolar__activo': True}
     )
     @property
     def ciclo_escolar(self):

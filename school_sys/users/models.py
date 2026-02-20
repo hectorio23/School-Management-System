@@ -37,7 +37,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("comedor_admin", "Administrador de Comedor"),
         ("admisiones_admin", "Administrador de Admisiones"),
         ("maestro", "Maestro"),
-        ("admin_escolar", "Administrador Escolar"),
+        ("admin_escolar", "Administrador Escolar (General)"),
+        ("admin_escolar_preescolar", "Administrador Escolar (Preescolar)"),
+        ("admin_escolar_primaria", "Administrador Escolar (Primaria)"),
+        ("admin_escolar_secundaria", "Administrador Escolar (Secundaria)"),
         ("bibliotecario", "Administrador de Biblioteca"),
     )
 
@@ -47,7 +50,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
     nombre = models.CharField(max_length=200)
-    role = models.CharField(max_length=20, default="estudiante", choices=ROLE_CHOICES)
+    role = models.CharField(max_length=50, default="estudiante", choices=ROLE_CHOICES)
 
     activo = models.BooleanField(default=True)
 
@@ -75,6 +78,43 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["username", "role"]
 
     objects = UserManager()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        
+        # Sincronizar perfil de administrador escolar si el rol es uno de los especializados
+        if self.role and self.role.startswith('admin_escolar'):
+            from academico.models import AdministradorEscolar
+            from estudiantes.models import NivelEducativo
+            
+            profile, created = AdministradorEscolar.objects.get_or_create(usuario=self)
+            
+            # Mapeo de rol a nivel educativo
+            role_to_nivel = {
+                'admin_escolar_preescolar': 'Preescolar',
+                'admin_escolar_primaria': 'Primaria',
+                'admin_escolar_secundaria': 'Secundaria',
+            }
+            
+            nivel_nombre = role_to_nivel.get(self.role)
+            if nivel_nombre:
+                nivel = NivelEducativo.objects.filter(nombre=nivel_nombre).first()
+                if nivel:
+                    profile.nivel_educativo = nivel
+                    
+            # Sincronizar datos básicos si no están presentes
+            if not profile.nombre:
+                partes = (self.nombre or "").split(' ', 2)
+                profile.nombre = partes[0] or "Admin"
+                if len(partes) > 1:
+                    profile.apellido_paterno = partes[1]
+                if len(partes) > 2:
+                    profile.apellido_materno = partes[2]
+            
+            if not profile.email:
+                profile.email = self.email
+                
+            profile.save()
 
     def __str__(self):
         return f"{self.email} ({self.role})"

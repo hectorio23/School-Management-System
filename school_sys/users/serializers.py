@@ -139,4 +139,14 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError("Los aspirantes deben iniciar sesión en el Portal de Aspirantes.")
 
         # Flujo normal
+        user_role = user.role
+        if user_role and user_role.startswith('admin_escolar'):
+            user_role = 'admin_escolar'
+            
+        data.update({
+            'role': user_role,
+            'nombre': user.nombre,
+            'email': user.email,
+            'id': user.id
+        })
         return data

@@ -20,7 +20,15 @@ from .models import (
     CalificacionFinal, EventoCalendario
 )
 from estudiantes.models import Estudiante, CicloEscolar, Inscripcion
+from .serializers import (
+    MaestroSerializer, GrupoSerializer, MateriaSerializer,
+    AsignacionMaestroSerializer, CalificacionSerializer,
+    PeriodoEvaluacionSerializer, EstudianteSimpleSerializer,
+    AsignacionWithStudentsSerializer
+)
+from .views_admin import *
 from collections import OrderedDict
+from decimal import Decimal
 import io
 from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter, landscape
@@ -63,21 +71,10 @@ def admin_maestros_list(request):
             Q(usuario__email__icontains=search)
         )
     
-    return paginate_queryset(queryset, request, MaestroSerializer)
+    serializer = MaestroSerializer(queryset, many=True)
+    return Response(serializer.data)
 
-@api_view(['GET'])
-@permission_classes([IsAdministradorEscolar])
-def admin_grupos_list(request):
-    """Listar grupos del nivel del administrador."""
-    admin = request.user.admin_escolar_perfil
-    queryset = Grupo.objects.filter(
-        grado__nivel_educativo=admin.nivel_educativo
-    ).annotate(
-        num_estudiantes=Count('inscripciones', filter=Q(inscripciones__estatus='activo')), 
-        num_materias=Count('asignaciones_maestro', filter=Q(asignaciones_maestro__activa=True))
-    ).select_related('grado', 'ciclo_escolar').order_by('-ciclo_escolar__fecha_inicio', 'grado__orden_global', 'nombre')
-    
-    return paginate_queryset(queryset, request, GrupoSerializer)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAdministradorEscolar])
@@ -96,7 +93,8 @@ def admin_materias_list_create(request):
         if search:
             queryset = queryset.filter(Q(nombre__icontains=search) | Q(clave__icontains=search))
             
-        return paginate_queryset(queryset, request, MateriaSerializer)
+        serializer = MateriaSerializer(queryset, many=True)
+        return Response(serializer.data)
     
     elif request.method == 'POST':
         serializer = MateriaSerializer(data=request.data, context={'request': request})
@@ -139,7 +137,8 @@ def admin_asignaciones_list_create(request):
         ).annotate(
             num_calificaciones=Count('calificaciones')
         )
-        return paginate_queryset(queryset, request, AsignacionMaestroSerializer)
+        serializer = AsignacionMaestroSerializer(queryset, many=True)
+        return Response(serializer.data)
     
     elif request.method == 'POST':
         serializer = AsignacionMaestroSerializer(data=request.data)
@@ -192,7 +191,8 @@ def admin_calificaciones_list(request):
         estudiante__inscripciones__grupo__grado__nivel_educativo=admin.nivel_educativo
     ).distinct().select_related('estudiante', 'asignacion_maestro__materia', 'periodo_evaluacion')
     
-    return paginate_queryset(queryset, request, CalificacionSerializer)
+    serializer = CalificacionSerializer(queryset, many=True)
+    return Response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([IsAdministradorEscolar])
@@ -229,7 +229,8 @@ def admin_periodos_list_create(request):
         queryset = PeriodoEvaluacion.objects.filter(
             programa_educativo__nivel_educativo=admin.nivel_educativo
         )
-        return paginate_queryset(queryset, request, PeriodoEvaluacionSerializer)
+        serializer = PeriodoEvaluacionSerializer(queryset, many=True)
+        return Response(serializer.data)
     
     elif request.method == 'POST':
         serializer = PeriodoEvaluacionSerializer(data=request.data)
@@ -250,7 +251,8 @@ def maestro_asignaciones_list(request):
     queryset = AsignacionMaestro.objects.filter(
         maestro=maestro, activa=True, ciclo_escolar__activo=True
     )
-    return paginate_queryset(queryset, request, AsignacionMaestroSerializer)
+    serializer = AsignacionMaestroSerializer(queryset, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsMaestro])
@@ -266,7 +268,20 @@ def maestro_estudiantes_list(request):
         inscripciones__estatus='activo'
     ).distinct()
     
-    return paginate_queryset(queryset, request, EstudianteSimpleSerializer)
+    serializer = EstudianteSimpleSerializer(queryset, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsMaestro])
+def maestro_estudiantes_grupos(request):
+    """Listar asignaciones del maestro incluyendo sus estudiantes del ciclo activo."""
+    maestro = request.user.maestro_perfil
+    queryset = AsignacionMaestro.objects.filter(
+        maestro=maestro, activa=True, ciclo_escolar__activo=True
+    ).select_related('grupo', 'grupo__grado', 'materia', 'ciclo_escolar')
+    
+    serializer = AsignacionWithStudentsSerializer(queryset, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsMaestro])
@@ -278,7 +293,8 @@ def maestro_calificaciones_list_create(request):
         queryset = Calificacion.objects.filter(
             asignacion_maestro__maestro=maestro
         ).select_related('estudiante', 'asignacion_maestro__materia', 'periodo_evaluacion')
-        return paginate_queryset(queryset, request, CalificacionSerializer)
+        serializer = CalificacionSerializer(queryset, many=True)
+        return Response(serializer.data)
         
     elif request.method == 'POST':
         # Validar ventana de captura
@@ -330,7 +346,8 @@ def estudiante_historial_view(request):
         estudiante=estudiante
     ).select_related('asignacion_maestro__materia', 'periodo_evaluacion', 'asignacion_maestro__maestro')
     
-    return paginate_queryset(queryset, request, CalificacionSerializer)
+    serializer = CalificacionSerializer(queryset, many=True)
+    return Response(serializer.data)
 
 
 # =============================================================================
@@ -350,9 +367,12 @@ def maestro_calificaciones_grupo(request, asignacion_id):
     if asignacion.maestro != maestro:
         return Response({"status": "error", "message": "No tiene permiso sobre esta asignación"}, status=403)
 
+    # Resolver el grupo (en caso de inconsistencia de ciclos)
+    grupo_resuelto = asignacion.get_resolved_group()
+
     # Obtener período de evaluación activo
     periodos = PeriodoEvaluacion.objects.filter(
-        programa_educativo__nivel_educativo=asignacion.grupo.grado.nivel_educativo,
+        programa_educativo__nivel_educativo=grupo_resuelto.grado.nivel_educativo,
         ciclo_escolar=asignacion.ciclo_escolar
     ).order_by('numero_periodo')
 
@@ -363,9 +383,9 @@ def maestro_calificaciones_grupo(request, asignacion_id):
             periodo_activo = periodo
             break
 
-    # Obtener estudiantes del grupo
+    # Obtener estudiantes del grupo resuelto
     inscripciones = Inscripcion.objects.filter(
-        grupo=asignacion.grupo,
+        grupo=grupo_resuelto,
         estatus='activo'
     ).select_related('estudiante', 'estudiante__usuario')
 

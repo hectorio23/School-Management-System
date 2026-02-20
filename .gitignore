@@ -51,3 +51,10 @@ school_sys/media/
 
 SMS-Frontend/
 instrucc*
+
+school_sys/fix*
+school_sys/simulate*
+school_sys/repair*
+school_sys/check*
+school_sys/debug*
+

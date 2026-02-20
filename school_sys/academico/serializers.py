@@ -148,11 +148,36 @@ class AsignacionMaestroSerializer(serializers.ModelSerializer):
         except Exception:
              return 0.0
 
+class EstudianteSimpleSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Estudiante
+        fields = ['matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 'nombre_completo', 'curp']
+        
+    def get_nombre_completo(self, obj):
+        return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}"
+
+class AsignacionWithStudentsSerializer(AsignacionMaestroSerializer):
+    estudiantes = serializers.SerializerMethodField()
+
+    class Meta(AsignacionMaestroSerializer.Meta):
+        fields = AsignacionMaestroSerializer.Meta.fields + ['estudiantes']
+
+    def get_estudiantes(self, obj):
+        group = obj.get_resolved_group()
+        # Obtener inscripciones activas para el grupo final
+        inscripciones = group.inscripciones.filter(estatus='activo').select_related('estudiante')
+        estudiantes = [insc.estudiante for insc in inscripciones]
+        return EstudianteSimpleSerializer(estudiantes, many=True).data
+
 # --- Grupos Completo ---
 
 class GrupoSerializer(serializers.ModelSerializer):
     grado = GradoSerializer(read_only=True)
     ciclo_escolar = CicloEscolarSerializer(read_only=True)
+    ciclo_nombre = serializers.CharField(source='ciclo_escolar.nombre', read_only=True)
+    grado_nombre = serializers.CharField(source='grado.nombre', read_only=True)
     num_estudiantes = serializers.IntegerField(read_only=True)
     num_materias = serializers.IntegerField(read_only=True)
     asignaciones = serializers.SerializerMethodField()
@@ -161,7 +186,7 @@ class GrupoSerializer(serializers.ModelSerializer):
         model = Grupo
         fields = [
             'id', 'nombre', 'descripcion', 'capacidad_maxima', 'fecha_creacion',
-            'grado', 'ciclo_escolar', 'generacion',
+            'grado', 'grado_nombre', 'ciclo_escolar', 'ciclo_nombre', 'generacion',
             'num_estudiantes', 'num_materias', 'asignaciones'
         ]
 
@@ -192,15 +217,6 @@ class PeriodoEvaluacionSerializer(serializers.ModelSerializer):
 
 # --- Calificaciones ---
 
-class EstudianteSimpleSerializer(serializers.ModelSerializer):
-    nombre_completo = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Estudiante
-        fields = ['matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 'nombre_completo', 'curp']
-        
-    def get_nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}"
 
 class CalificacionSerializer(serializers.ModelSerializer):
     estudiante = EstudianteSimpleSerializer(read_only=True)
