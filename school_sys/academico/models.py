@@ -145,7 +145,7 @@ class AdministradorEscolar(models.Model):
     Administradores por nivel educativo.
     """
     usuario = models.OneToOneField(User, on_delete=models.PROTECT, related_name='admin_escolar_perfil')
-    nivel_educativo = models.ForeignKey(NivelEducativo, on_delete=models.PROTECT, related_name='administradores_escolares')
+    nivel_educativo = models.ForeignKey(NivelEducativo, on_delete=models.PROTECT, related_name='administradores_escolares', null=True, blank=True)
     nombre = models.CharField(max_length=255)
     apellido_paterno = models.CharField(max_length=255)
     apellido_materno = models.CharField(max_length=255)
@@ -172,7 +172,12 @@ class AsignacionMaestro(models.Model):
     Asigna maestros a grupos/materias por ciclo escolar.
     """
     maestro = models.ForeignKey(Maestro, on_delete=models.PROTECT, related_name='asignaciones')
-    grupo = models.ForeignKey(Grupo, on_delete=models.PROTECT, related_name='asignaciones_maestro')
+    grupo = models.ForeignKey(
+        Grupo, 
+        on_delete=models.PROTECT, 
+        related_name='asignaciones_maestro',
+        limit_choices_to={'ciclo_escolar__activo': True}
+    )
     materia = models.ForeignKey(Materia, on_delete=models.PROTECT, related_name='asignaciones')
     ciclo_escolar = models.ForeignKey(CicloEscolar, on_delete=models.PROTECT, related_name='asignaciones_maestro')
     fecha_asignacion = models.DateField(auto_now_add=True)
@@ -193,6 +198,24 @@ class AsignacionMaestro(models.Model):
 
     def __str__(self):
         return f"{self.maestro} - {self.materia} ({self.grupo})"
+
+    def get_resolved_group(self):
+        """
+        Retorna el grupo asociado a la asignación. Resuelve el grupo equivalente
+        en el ciclo activo si hay una discrepancia de ciclos.
+        """
+        group = self.grupo
+        if self.ciclo_escolar and self.ciclo_escolar.activo:
+            if group.ciclo_escolar and not group.ciclo_escolar.activo:
+                from estudiantes.models import Grupo
+                equivalent_group = Grupo.objects.filter(
+                    nombre=group.nombre,
+                    grado=group.grado,
+                    ciclo_escolar=self.ciclo_escolar
+                ).first()
+                if equivalent_group:
+                    return equivalent_group
+        return group
 
 
 class Calificacion(models.Model):

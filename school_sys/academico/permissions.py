@@ -6,7 +6,7 @@ class IsAdministradorEscolar(permissions.BasePermission):
     Permite acceso solo a usuarios con rol 'admin_escolar'.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'admin_escolar'
+        return request.user.is_authenticated and request.user.role and request.user.role.startswith('admin_escolar')
 
 class IsMaestro(permissions.BasePermission):
     """
@@ -28,7 +28,7 @@ class IsAdminEscolarDelMismoNivel(permissions.BasePermission):
     Asume que el objeto tiene un atributo 'nivel_educativo' o una relación a él.
     """
     def has_object_permission(self, request, view, obj):
-        if not (request.user.is_authenticated and request.user.role == 'admin_escolar'):
+        if not (request.user.is_authenticated and request.user.role and request.user.role.startswith('admin_escolar')):
             return False
             
         try:
