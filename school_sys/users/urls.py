@@ -141,9 +141,20 @@ from . import views
 
 urlpatterns = [
 
-        # --- ADMIN PANEL ---
+    # --- DASHBOARD ---
     path('dashboard/', views.dashboard),
     path('me/', views.me_view, name='user_me'),
+    path('ping/', views.ping_view, name='admin_ping'),
+
+    # --- REPORTES Y EXPORTACIONES ---
+    path('reportes/financieros/completo/', views.admin_reporte_financiero_completo, name='admin_reporte_financiero_completo'),
+    path('test-report/', views.admin_reporte_financiero_completo, name='admin_test_report'),
+    path('reportes/financieros/ingresos-estrato/', views.admin_reporte_ingresos_estrato, name='admin_reporte_ingresos_estrato'),
+    path('reportes/financieros/recaudacion/', views.admin_reporte_recaudacion, name='admin_reporte_recaudacion'),
+    path('reportes/financieros/adeudos-vencidos/', views.admin_estudiantes_adeudos_vencidos, name='admin_estudiantes_adeudos_vencidos'),
+    path('reportes/academicos/estadisticas/', views.admin_estadisticas_academicas, name='admin_estadisticas_academicas'),
+    path('exportar/estudiantes/', views.admin_exportar_estudiantes, name='admin_exportar_estudiantes'),
+    path('exportar/aspirantes/', views.admin_exportar_aspirantes, name='admin_exportar_aspirantes'),
 
     # --- ESTUDIANTES ---
     path('students/', views.admin_student_list, name='admin_student_list'),
@@ -202,13 +213,5 @@ urlpatterns = [
     path('pagos/', views.admin_pagos_list, name='admin_pagos_list'),
     path('pagos/<int:pk>/', views.admin_pagos_detail, name='admin_pagos_detail'),
 
-    # --- REPORTES FINANCIEROS ---
-    path('reportes/financieros/ingresos-estrato/', views.admin_reporte_ingresos_estrato, name='admin_reporte_ingresos_estrato'),
-    path('reportes/financieros/recaudacion/', views.admin_reporte_recaudacion, name='admin_reporte_recaudacion'),
-    path('reportes/financieros/adeudos-vencidos/', views.admin_estudiantes_adeudos_vencidos, name='admin_estudiantes_adeudos_vencidos'),
-
-    # --- REPORTES ACADEMICOS ---
-    path('reportes/academicos/estadisticas/', views.admin_estadisticas_academicas, name='admin_estadisticas_academicas'),
-    path('exportar/estudiantes/', views.admin_exportar_estudiantes, name='admin_exportar_estudiantes'),
-    path('exportar/aspirantes/', views.admin_exportar_aspirantes, name='admin_exportar_aspirantes'),
+    # --- FIN URLS ---
 ]

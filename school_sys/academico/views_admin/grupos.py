@@ -23,8 +23,8 @@ def admin_grupos_list_create(request):
             grado__nivel_educativo=admin.nivel_educativo,
             ciclo_escolar__activo=True
         ).annotate(
-            num_estudiantes=Count('inscripciones', filter=Q(inscripciones__estatus='activo')),
-            num_materias=Count('asignaciones_maestro', filter=Q(asignaciones_maestro__activa=True))
+            num_estudiantes=Count('inscripciones', filter=Q(inscripciones__estatus='activo'), distinct=True),
+            num_materias=Count('asignaciones_maestro', filter=Q(asignaciones_maestro__activa=True), distinct=True)
         ).select_related('grado', 'ciclo_escolar').order_by('grado__numero_grado', 'nombre')
         serializer = GrupoSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -64,14 +64,14 @@ def admin_grupo_estudiantes(request, pk):
     from django.db.models import Sum
     
     inscripciones = grupo.inscripciones.select_related('estudiante').annotate(
-        adeudo_total=Sum('estudiante__adeudos__monto_pendiente', filter=Q(estudiante__adeudos__estatus='pendiente'))
+        adeudo_total=Sum('estudiante__adeudo__monto_total', filter=Q(estudiante__adeudo__estatus='pendiente'))
     )
     
     data = []
     for insc in inscripciones:
         est = insc.estudiante
         data.append({
-            "id": est.id,
+            "id": est.pk,
             "matricula": est.matricula,
             "nombre_completo": f"{est.nombre} {est.apellido_paterno} {est.apellido_materno}",
             "estatus": insc.estatus,

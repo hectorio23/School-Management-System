@@ -238,3 +238,83 @@ def generar_excel_aspirantes(queryset):
     workbook.save(output)
     output.seek(0)
     return output
+
+
+def generar_pdf_reporte_financiero(data):
+    """
+    Genera un reporte financiero completo en PDF.
+    data: dict con 'resumen', 'por_concepto', 'por_nivel', 'por_estrato', 'becas'.
+    """
+    if not SimpleDocTemplate:
+        return None
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = styles['Title']
+    h2_style = ParagraphStyle('h2', parent=styles['Heading2'], spaceAfter=10)
+    normal_style = styles['Normal']
+    
+    # 1. Título y Encabezado
+    elements.append(Paragraph("Reporte del Estado Financiero Institucional", title_style))
+    elements.append(Paragraph(f"Fecha de emisión: {timezone.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
+    elements.append(Spacer(1, 0.3 * inch))
+    
+    # 2. Resumen Ejecutivo
+    resumen = data.get('resumen', {})
+    elements.append(Paragraph("Resumen Ejecutivo", h2_style))
+    resumen_data = [
+        ["Total Recaudado (Pagos)", f"${resumen.get('total_recaudado', '0.00'):,.2f}"],
+        ["Total Deuda Pendiente", f"${resumen.get('total_deuda', '0.00'):,.2f}"],
+        ["Alumnos con Beca", f"{resumen.get('becados_pct', '0')}% ({resumen.get('becados_count', '0')} alumnos)"]
+    ]
+    res_table = Table(resumen_data, colWidths=[3*inch, 2.5*inch])
+    res_table.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ('PADDING', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(res_table)
+    elements.append(Spacer(1, 0.4 * inch))
+    
+    # 3. Recaudación por Tipo de Concepto
+    elements.append(Paragraph("Recaudación por Tipo de Concepto", h2_style))
+    conc_data = [["Tipo de Concepto", "Monto Recaudado"]]
+    for item in data.get('por_concepto', []):
+        conc_data.append([item['tipo'].capitalize(), f"${item['monto']:,.2f}"])
+    
+    conc_table = Table(conc_data, colWidths=[3.5*inch, 2*inch])
+    conc_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.navy),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('ALIGN', (1,1), (1,-1), 'RIGHT'),
+    ]))
+    elements.append(conc_table)
+    elements.append(Spacer(1, 0.4 * inch))
+    
+    # 4. Deuda por Nivel Educativo
+    elements.append(Paragraph("Deuda Pendiente por Nivel Educativo", h2_style))
+    lvl_data = [["Nivel Educativo", "Monto de Adeudo"]]
+    for item in data.get('por_nivel', []):
+        lvl_data.append([item['nivel'], f"${item['monto']:,.2f}"])
+    
+    lvl_table = Table(lvl_data, colWidths=[3.5*inch, 2*inch])
+    lvl_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkred),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('ALIGN', (1,1), (1,-1), 'RIGHT'),
+    ]))
+    elements.append(lvl_table)
+    elements.append(Spacer(1, 0.4 * inch))
+    
+    # Finalizar
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer

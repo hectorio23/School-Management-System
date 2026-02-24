@@ -319,6 +319,34 @@ class AutorizacionCambioCalificacion(models.Model):
         return f"Autorización {self.id} - {self.calificacion}"
 
 
+class SolicitudCambioCalificacion(models.Model):
+    """
+    Solicitudes de maestros para modificar una calificación ya bloqueada.
+    """
+    ESTATUS_CHOICES = [
+        ('PENDIENTE', 'Pendiente'),
+        ('APROBADA', 'Aprobada'),
+        ('RECHAZADA', 'Rechazada'),
+    ]
+
+    calificacion = models.ForeignKey(Calificacion, on_delete=models.CASCADE, related_name='solicitudes_cambio')
+    maestro = models.ForeignKey(Maestro, on_delete=models.CASCADE, related_name='solicitudes_cambio')
+    motivo = models.TextField()
+    estatus = models.CharField(max_length=20, choices=ESTATUS_CHOICES, default='PENDIENTE')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    
+    # Datos de resolución
+    resuelto_por = models.ForeignKey(AdministradorEscolar, on_delete=models.SET_NULL, null=True, blank=True, related_name='solicitudes_resueltas')
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    comentario_admin = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'solicitudes_cambio_calificacion'
+        ordering = ['-fecha_solicitud']
+
+    def __str__(self):
+        return f"Solicitud {self.id} - {self.calificacion}"
+
 class ModificacionManualCalificacion(models.Model):
     """
     Historial de modificaciones manuales de calificaciones finales por el administrador.

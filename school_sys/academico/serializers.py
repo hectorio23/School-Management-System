@@ -3,7 +3,7 @@ from estudiantes.models import NivelEducativo, Grado, CicloEscolar, Grupo, Estud
 from .models import (
     ProgramaEducativo, Materia, PeriodoEvaluacion, Maestro, 
     AdministradorEscolar, AsignacionMaestro, Calificacion, 
-    CalificacionFinal, AutorizacionCambioCalificacion
+    CalificacionFinal, AutorizacionCambioCalificacion, SolicitudCambioCalificacion
 )
 from users.models import User
 
@@ -67,26 +67,28 @@ class MateriaSerializer(serializers.ModelSerializer):
 # --- Maestros ---
 
 class MaestroSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.ReadOnlyField()
     usuario_email = serializers.EmailField(source='usuario.email', read_only=True)
     nivel_educativo = NivelEducativoSerializer(read_only=True)
     num_asignaciones = serializers.IntegerField(read_only=True)
-    nombre_completo = serializers.SerializerMethodField()
     materias_imparte = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = Maestro
         fields = [
-            'id', 'nombre', 'apellido_paterno', 'apellido_materno', 'nombre_completo',
-            'telefono', 'fecha_contratacion', 'activo', 
-            'usuario', 'usuario_email', 'nivel_educativo', 
+            'id', 'nombre', 'apellido_paterno', 'apellido_materno', 
+            'nombre_completo', 'telefono', 'fecha_contratacion', 
+            'activo', 'usuario', 'usuario_email', 'nivel_educativo',
             'num_asignaciones', 'materias_imparte'
         ]
 
-    def get_nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellido_paterno} {obj.apellido_materno}"
-
     def get_materias_imparte(self, obj):
         return list(obj.asignaciones.filter(activa=True).values_list('materia__nombre', flat=True).distinct())
+
+class MaestroSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Maestro
+        fields = ['id', 'nombre_completo', 'nivel_educativo']
 
 # --- Grupos Simple ---
 
@@ -244,3 +246,17 @@ class AutorizacionCambioSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutorizacionCambioCalificacion
         fields = '__all__'
+
+class SolicitudCambioCalificacionSerializer(serializers.ModelSerializer):
+    maestro = MaestroSimpleSerializer(read_only=True)
+    calificacion_detalle = CalificacionSerializer(source='calificacion', read_only=True)
+    resuelto_por_nombre = serializers.CharField(source='resuelto_por.nombre', read_only=True)
+    
+    class Meta:
+        model = SolicitudCambioCalificacion
+        fields = [
+            'id', 'calificacion', 'calificacion_detalle', 'maestro', 
+            'motivo', 'estatus', 'fecha_solicitud', 
+            'resuelto_por', 'resuelto_por_nombre', 'fecha_resolucion', 'comentario_admin'
+        ]
+        read_only_fields = ['fecha_solicitud', 'resuelto_por', 'fecha_resolucion']

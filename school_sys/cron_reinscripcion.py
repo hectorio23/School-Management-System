@@ -140,7 +140,7 @@ def generar_adeudos_reinscripcion():
                     ),
                     estatus='pendiente',
                     generado_automaticamente=True,
-                    justificacion_manual=f'Reinscripción automática - Ciclo {ciclo_activo.nombre}'
+                    justificacion_manual=f'Reinscripción Ciclo {ciclo_activo.nombre}'
                 )
                 
                 # Cambiar status a "No Reinscrito"

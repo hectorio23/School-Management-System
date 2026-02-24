@@ -58,3 +58,6 @@ school_sys/repair*
 school_sys/check*
 school_sys/debug*
 
+school_sys/auto_assign_teachers.py
+school_sys/create_admins.py
+school_sys/populate_educational_data.py
