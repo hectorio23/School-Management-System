@@ -17,14 +17,14 @@ from .permissions import (
 from .models import (
     Maestro, Grupo, Materia, AsignacionMaestro, PeriodoEvaluacion,
     Calificacion, AutorizacionCambioCalificacion, ProgramaEducativo,
-    CalificacionFinal, EventoCalendario
+    CalificacionFinal, EventoCalendario, SolicitudCambioCalificacion
 )
 from estudiantes.models import Estudiante, CicloEscolar, Inscripcion
 from .serializers import (
     MaestroSerializer, GrupoSerializer, MateriaSerializer,
     AsignacionMaestroSerializer, CalificacionSerializer,
     PeriodoEvaluacionSerializer, EstudianteSimpleSerializer,
-    AsignacionWithStudentsSerializer
+    AsignacionWithStudentsSerializer, SolicitudCambioCalificacionSerializer
 )
 from .views_admin import *
 from collections import OrderedDict
@@ -36,6 +36,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 
 # Helper para paginación
 def paginate_queryset(queryset, request, serializer_class, context=None):
@@ -141,7 +143,22 @@ def admin_asignaciones_list_create(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        serializer = AsignacionMaestroSerializer(data=request.data)
+        data = request.data.copy()
+        
+        # Mapear los nombres antiguos del frontend si vienen
+        if 'maestro' in data and 'maestro_id' not in data:
+             data['maestro_id'] = data['maestro']
+        if 'grupo' in data and 'grupo_id' not in data:
+             data['grupo_id'] = data['grupo']
+        if 'materia' in data and 'materia_id' not in data:
+             data['materia_id'] = data['materia']
+             
+        # Agregar el ciclo escolar activo
+        ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
+        if ciclo_activo:
+             data['ciclo_escolar_id'] = ciclo_activo.id
+             
+        serializer = AsignacionMaestroSerializer(data=data)
         if serializer.is_valid():
             # Validar que los objetos pertenecen al nivel del admin
             grupo = serializer.validated_data['grupo']
@@ -151,6 +168,49 @@ def admin_asignaciones_list_create(request):
             serializer.save()
             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAdministradorEscolar])
+def admin_asignacion_detail(request, pk):
+    """Obtener, modificar o eliminar una asignación específica."""
+    admin = request.user.admin_escolar_perfil
+    asignacion = get_object_or_404(AsignacionMaestro, pk=pk)
+    
+    if asignacion.grupo.grado.nivel_educativo != admin.nivel_educativo:
+        return Response({"status": "error", "message": "No tiene acceso a esta asignación"}, status=403)
+        
+    if request.method == 'GET':
+        serializer = AsignacionMaestroSerializer(asignacion)
+        return Response(serializer.data)
+        
+    elif request.method == 'PUT':
+        data = request.data.copy()
+        if 'maestro' in data and 'maestro_id' not in data:
+             data['maestro_id'] = data['maestro']
+        if 'grupo' in data and 'grupo_id' not in data:
+             data['grupo_id'] = data['grupo']
+        if 'materia' in data and 'materia_id' not in data:
+             data['materia_id'] = data['materia']
+             
+        serializer = AsignacionMaestroSerializer(asignacion, data=data, partial=True)
+        if serializer.is_valid():
+            if 'grupo' in serializer.validated_data:
+                grupo = serializer.validated_data['grupo']
+                if grupo.grado.nivel_educativo != admin.nivel_educativo:
+                    return Response({"status": "error", "message": "El grupo no pertenece a su nivel"}, status=403)
+            serializer.save()
+            return Response({"status": "success", "data": serializer.data})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    elif request.method == 'DELETE':
+        if asignacion.calificaciones.exists():
+            return Response(
+                 {"status": "error", "message": "No se puede eliminar porque ya tiene calificaciones capturadas."}, 
+                 status=400
+            )
+        asignacion.delete()
+        return Response({"status": "success", "message": "Asignación eliminada"}, status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(['GET'])
 @permission_classes([IsAdministradorEscolar])
@@ -185,14 +245,25 @@ def admin_materias_disponibles(request):
 @api_view(['GET'])
 @permission_classes([IsAdministradorEscolar])
 def admin_calificaciones_list(request):
-    """Listar todas las calificaciones registradas en el nivel."""
+    """Listar todas las calificaciones registradas en el nivel con filtros."""
     admin = request.user.admin_escolar_perfil
     queryset = Calificacion.objects.filter(
         estudiante__inscripciones__grupo__grado__nivel_educativo=admin.nivel_educativo
-    ).distinct().select_related('estudiante', 'asignacion_maestro__materia', 'periodo_evaluacion')
+    ).distinct().select_related('estudiante', 'asignacion_maestro__materia', 'periodo_evaluacion', 'asignacion_maestro__grupo')
     
-    serializer = CalificacionSerializer(queryset, many=True)
-    return Response(serializer.data)
+    # Filtros
+    grupo_id = request.query_params.get('grupo_id')
+    matricula = request.query_params.get('matricula')
+    periodo_id = request.query_params.get('periodo_id')
+    
+    if grupo_id:
+        queryset = queryset.filter(asignacion_maestro__grupo_id=grupo_id)
+    if matricula:
+        queryset = queryset.filter(estudiante__matricula=matricula)
+    if periodo_id:
+        queryset = queryset.filter(periodo_evaluacion_id=periodo_id)
+        
+    return paginate_queryset(queryset, request, CalificacionSerializer)
 
 @api_view(['POST'])
 @permission_classes([IsAdministradorEscolar])
@@ -222,22 +293,59 @@ def admin_calificacion_autorizar(request, pk):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAdministradorEscolar])
 def admin_periodos_list_create(request):
-    """Listar y gestionar periodos de evaluación."""
+    """Listar y gestionar periodos de evaluación del nivel y ciclo activo."""
     admin = request.user.admin_escolar_perfil
+    ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
     
     if request.method == 'GET':
         queryset = PeriodoEvaluacion.objects.filter(
-            programa_educativo__nivel_educativo=admin.nivel_educativo
+            programa_educativo__nivel_educativo=admin.nivel_educativo,
+            ciclo_escolar=ciclo_activo
         )
         serializer = PeriodoEvaluacionSerializer(queryset, many=True)
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        serializer = PeriodoEvaluacionSerializer(data=request.data)
+        data = request.data.copy()
+        if ciclo_activo:
+            data['ciclo_escolar'] = ciclo_activo.id
+            
+        serializer = PeriodoEvaluacionSerializer(data=data)
         if serializer.is_valid():
+            # Validar que el programa educativo pertenece al nivel del admin
+            if serializer.validated_data['programa_educativo'].nivel_educativo != admin.nivel_educativo:
+                 return Response({"status": "error", "message": "El programa educativo no pertenece a su nivel"}, status=403)
+            
             serializer.save()
             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAdministradorEscolar])
+def admin_periodo_detail(request, pk):
+    """Obtener, modificar o eliminar un periodo específico."""
+    admin = request.user.admin_escolar_perfil
+    periodo = get_object_or_404(PeriodoEvaluacion, pk=pk)
+    
+    if periodo.programa_educativo.nivel_educativo != admin.nivel_educativo:
+        return Response({"status": "error", "message": "No tiene acceso a este periodo"}, status=403)
+        
+    if request.method == 'GET':
+        serializer = PeriodoEvaluacionSerializer(periodo)
+        return Response(serializer.data)
+        
+    elif request.method == 'PUT':
+        serializer = PeriodoEvaluacionSerializer(periodo, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success", "data": serializer.data})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    elif request.method == 'DELETE':
+        if periodo.calificaciones.exists():
+            return Response({"status": "error", "message": "No se puede eliminar porque ya tiene calificaciones capturadas."}, status=400)
+        periodo.delete()
+        return Response({"status": "success", "message": "Periodo eliminado"}, status=status.HTTP_204_NO_CONTENT)
 
 # =============================================================================
 # VISTAS: MAESTRO
@@ -330,8 +438,74 @@ def maestro_solicitar_cambio(request, pk):
     if calificacion.asignacion_maestro.maestro != maestro:
         return Response({"status": "error", "message": "No tiene permiso sobre esta calificación"}, status=403)
         
-    # Aquí iría lógica de notificación real
-    return Response({"status": "success", "message": "Solicitud enviada al administrador"})
+    motivo = request.data.get('motivo')
+    if not motivo:
+        return Response({"status": "error", "message": "El motivo es obligatorio"}, status=400)
+        
+    solicitud = SolicitudCambioCalificacion.objects.create(
+        calificacion=calificacion,
+        maestro=maestro,
+        motivo=motivo
+    )
+    
+    return Response({
+        "status": "success", 
+        "message": "Solicitud enviada al administrador",
+        "solicitud_id": solicitud.id
+    })
+
+# --- Admin views for requests ---
+
+@api_view(['GET'])
+@permission_classes([IsAdministradorEscolar])
+def admin_solicitudes_list(request):
+    """Listar solicitudes de cambio de calificación pendientes para el nivel del admin."""
+    admin = request.user.admin_escolar_perfil
+    estatus = request.query_params.get('estatus', 'PENDIENTE')
+    
+    queryset = SolicitudCambioCalificacion.objects.filter(
+        calificacion__estudiante__inscripciones__grupo__grado__nivel_educativo=admin.nivel_educativo
+    ).distinct()
+    
+    if estatus:
+        queryset = queryset.filter(estatus=estatus)
+        
+    serializer = SolicitudCambioCalificacionSerializer(queryset, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAdministradorEscolar])
+def admin_solicitud_resolver(request, pk):
+    """Aprobar o rechazar una solicitud de cambio."""
+    admin = request.user.admin_escolar_perfil
+    solicitud = get_object_or_404(SolicitudCambioCalificacion, pk=pk)
+    
+    # Validar acceso
+    if solicitud.calificacion.estudiante.inscripciones.filter(grupo__grado__nivel_educativo=admin.nivel_educativo).exists() == False:
+         return Response({"status": "error", "message": "Sin permiso sobre esta solicitud"}, status=403)
+         
+    accion = request.data.get('accion') # 'APROBAR' o 'RECHAZAR'
+    comentario = request.data.get('comentario', '')
+    
+    if solicitud.estatus != 'PENDIENTE':
+        return Response({"status": "error", "message": "Esta solicitud ya ha sido resuelta"}, status=400)
+        
+    if accion == 'APROBAR':
+        solicitud.estatus = 'APROBADA'
+        # Habilitar la edición de la calificación
+        solicitud.calificacion.puede_modificar = True
+        solicitud.calificacion.save()
+    elif accion == 'RECHAZAR':
+        solicitud.estatus = 'RECHAZADA'
+    else:
+        return Response({"status": "error", "message": "Acción no válida"}, status=400)
+        
+    solicitud.resuelto_por = admin
+    solicitud.fecha_resolucion = timezone.now()
+    solicitud.comentario_admin = comentario
+    solicitud.save()
+    
+    return Response({"status": "success", "message": f"Solicitud {solicitud.estatus.lower()} exitosamente"})
 
 # =============================================================================
 # VISTAS: ESTUDIANTE
@@ -951,3 +1125,115 @@ def calendario_eventos(request):
         })
     
     return Response(data)
+
+@api_view(['GET'])
+@permission_classes([IsAdministradorEscolar])
+def admin_reporte_grupo_data(request):
+    """
+    Reporte avanzado de un grupo: promedios por materia y general.
+    Query params: grupo_id (obligatorio), format (pdf, excel, json)
+    """
+    admin = request.user.admin_escolar_perfil
+    grupo_id = request.query_params.get('grupo_id')
+    export_format = request.query_params.get('format', 'json')
+
+    if not grupo_id:
+        return Response({"status": "error", "message": "grupo_id es requerido"}, status=400)
+
+    grupo = get_object_or_404(Grupo, pk=grupo_id)
+    if grupo.grado.nivel_educativo != admin.nivel_educativo:
+        return Response({"status": "error", "message": "Sin permiso sobre este grupo"}, status=403)
+
+    # Obtener materias y estudiantes
+    materias = Materia.objects.filter(grado=grupo.grado, activa=True)
+    inscripciones = Inscripcion.objects.filter(grupo=grupo, estatus='activo').select_related('estudiante')
+    estudiantes = [i.estudiante for i in inscripciones]
+
+    if not materias.exists() or not inscripciones.exists():
+        return Response({"status": "error", "message": "No hay datos para generar el reporte"}, status=400)
+
+    # Calcular promedios
+    promedios_materias = {}
+
+    for materia in materias:
+        califs = Calificacion.objects.filter(
+            asignacion_maestro__grupo=grupo,
+            asignacion_maestro__materia=materia,
+            estudiante__in=estudiantes
+        ).values_list('calificacion', flat=True)
+        
+        avg = round(sum(califs) / len(califs), 2) if califs else 0
+        promedios_materias[materia.nombre] = float(avg)
+
+    promedio_general = round(sum(promedios_materias.values()) / len(promedios_materias), 2) if promedios_materias else 0
+
+    if export_format == 'json':
+        return Response({
+            "grupo": grupo.nombre,
+            "grado": grupo.grado.nombre,
+            "promedios_por_materia": promedios_materias,
+            "promedio_general": float(promedio_general),
+            "total_estudiantes": len(estudiantes)
+        })
+
+    # Exportación PDF
+    if export_format == 'pdf':
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph(f"Reporte de Aprovechamiento Escolar", styles['Heading1']))
+        elements.append(Paragraph(f"Grupo: {grupo.nombre} - {grupo.grado.nombre}", styles['Heading2']))
+        elements.append(Spacer(1, 12))
+
+        data = [["Materia", "Promedio"]]
+        for mat, avg in promedios_materias.items():
+            data.append([mat, str(avg)])
+        data.append(["PROMEDIO GENERAL", str(promedio_general)])
+
+        table = Table(data, colWidths=[300, 100])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(table)
+        doc.build(elements)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="reporte_grupo_{grupo.nombre}.pdf"'
+        return response
+
+    # Exportación Excel
+    if export_format == 'excel':
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Reporte de Grupo"
+
+        # Encabezados
+        ws.append(["Materia", "Promedio"])
+        ws['A1'].font = Font(bold=True)
+        ws['B1'].font = Font(bold=True)
+
+        for mat, avg in promedios_materias.items():
+            ws.append([mat, avg])
+
+        ws.append([])
+        ws.append(["PROMEDIO GENERAL", promedio_general])
+        ws.cell(row=ws.max_row, column=1).font = Font(bold=True)
+        ws.cell(row=ws.max_row, column=2).font = Font(bold=True)
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="reporte_grupo_{grupo.nombre}.xlsx"'
+        return response
+
+    return Response({"status": "error", "message": "Formato no soportado"}, status=400)

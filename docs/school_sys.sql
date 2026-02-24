@@ -77,7 +77,7 @@ CREATE TABLE `adeudos` (
   KEY `idx_adeudo_eststatus` (`estatus`),
   CONSTRAINT `adeudos_concepto_id_de3b7d87_fk_conceptos_pago_id` FOREIGN KEY (`concepto_id`) REFERENCES `conceptos_pago` (`id`),
   CONSTRAINT `adeudos_estudiante_id_83cfd3e8_fk_estudiantes_matricula` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`matricula`)
-) ENGINE=InnoDB AUTO_INCREMENT=366 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=369 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -87,31 +87,6 @@ CREATE TABLE `adeudos` (
 LOCK TABLES `adeudos` WRITE;
 /*!40000 ALTER TABLE `adeudos` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `adeudos` VALUES
-(342,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',1000,42,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(343,1500.00,900.00,0.00,600.00,'2026-02-12','2026-03-10','pendiente',1001,42,0.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(344,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240000,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(345,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240001,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(346,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240002,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(347,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240003,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(348,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240004,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(349,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240005,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(350,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240006,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(351,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240007,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(352,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240008,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(353,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pagado',20240009,43,1500.00,1,NULL,NULL,NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(354,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240000,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(355,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240001,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(356,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240002,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(357,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240003,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(358,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240004,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(359,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240005,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(360,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240006,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(361,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240007,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(362,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240008,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(363,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-10','pendiente',20240009,45,0.00,1,NULL,NULL,'2026-02-01',0,0,0,0,'CONCEPTO DE PAGO'),
-(364,1500.00,0.00,0.00,1500.00,'2026-02-12','2026-03-06','pendiente',1000,47,0.00,1,NULL,'Reinscripción automática - Ciclo CI-2024-2025',NULL,0,0,0,0,'CONCEPTO DE PAGO'),
-(365,1500.00,900.00,0.00,600.00,'2026-02-12','2026-03-06','pendiente',1001,47,0.00,1,NULL,'Reinscripción automática - Ciclo CI-2024-2025',NULL,0,0,0,0,'CONCEPTO DE PAGO');
 /*!40000 ALTER TABLE `adeudos` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -133,7 +108,7 @@ CREATE TABLE `administradores_escolares` (
   `activo` tinyint(1) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  `nivel_educativo_id` bigint(20) NOT NULL,
+  `nivel_educativo_id` bigint(20) DEFAULT NULL,
   `usuario_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
@@ -143,7 +118,7 @@ CREATE TABLE `administradores_escolares` (
   KEY `idx_adminesc_activo` (`activo`),
   CONSTRAINT `administradores_esco_nivel_educativo_id_5ec1c090_fk_niveles_e` FOREIGN KEY (`nivel_educativo_id`) REFERENCES `niveles_educativos` (`id`),
   CONSTRAINT `administradores_escolares_usuario_id_7f44c32b_fk_users_user_id` FOREIGN KEY (`usuario_id`) REFERENCES `users_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -185,7 +160,7 @@ CREATE TABLE `asignaciones_maestro` (
   CONSTRAINT `asignaciones_maestro_grupo_id_08ab5361_fk_grupos_id` FOREIGN KEY (`grupo_id`) REFERENCES `grupos` (`id`),
   CONSTRAINT `asignaciones_maestro_maestro_id_3813e65b_fk_maestros_id` FOREIGN KEY (`maestro_id`) REFERENCES `maestros` (`id`),
   CONSTRAINT `asignaciones_maestro_materia_id_1bd64a09_fk_materias_id` FOREIGN KEY (`materia_id`) REFERENCES `materias` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -195,9 +170,6 @@ CREATE TABLE `asignaciones_maestro` (
 LOCK TABLES `asignaciones_maestro` WRITE;
 /*!40000 ALTER TABLE `asignaciones_maestro` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `asignaciones_maestro` VALUES
-(2,'2026-02-12',1,'2026-02-12 18:57:09.342710','2026-02-12 18:57:23.819043',25,292,5,2),
-(3,'2026-02-12',1,'2026-02-13 04:35:26.061896','2026-02-13 04:35:26.061926',27,357,6,3);
 /*!40000 ALTER TABLE `asignaciones_maestro` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -259,7 +231,7 @@ CREATE TABLE `aspirante_tutor` (
   KEY `aspirante_tutor_tutor_id_ebc83d4a` (`tutor_id`),
   CONSTRAINT `aspirante_tutor_aspirante_id_5eee16ab_fk_aspirantes_id` FOREIGN KEY (`aspirante_id`) REFERENCES `aspirantes` (`id`),
   CONSTRAINT `aspirante_tutor_tutor_id_ebc83d4a_fk_tutor_temp_id` FOREIGN KEY (`tutor_id`) REFERENCES `tutor_temp` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -329,13 +301,14 @@ CREATE TABLE `aspirantes` (
   `fecha_examen_pedagogico` date DEFAULT NULL,
   `fecha_visita_domiciliaria` datetime(6) DEFAULT NULL,
   `nivel_ingreso` varchar(20) DEFAULT NULL,
+  `foto_fachada_domicilio` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `curp` (`curp`),
   KEY `idx_aspirante_curp` (`curp`),
   KEY `idx_aspirante_fase` (`fase_actual`),
   CONSTRAINT `aspirantes_user_id_7887eb14_fk_usuarios_aspirantes_folio` FOREIGN KEY (`user_id`) REFERENCES `usuarios_aspirantes` (`folio`)
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -420,7 +393,7 @@ CREATE TABLE `auth_permission` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `auth_permission_content_type_id_codename_01ab375a_uniq` (`content_type_id`,`codename`),
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=205 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -634,7 +607,11 @@ INSERT INTO `auth_permission` VALUES
 (201,'Can add Outstanding Token',51,'add_outstandingtoken'),
 (202,'Can change Outstanding Token',51,'change_outstandingtoken'),
 (203,'Can delete Outstanding Token',51,'delete_outstandingtoken'),
-(204,'Can view Outstanding Token',51,'view_outstandingtoken');
+(204,'Can view Outstanding Token',51,'view_outstandingtoken'),
+(205,'Can add evento calendario',52,'add_eventocalendario'),
+(206,'Can change evento calendario',52,'change_eventocalendario'),
+(207,'Can delete evento calendario',52,'delete_eventocalendario'),
+(208,'Can view evento calendario',52,'view_eventocalendario');
 /*!40000 ALTER TABLE `auth_permission` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -706,8 +683,6 @@ CREATE TABLE `becas` (
 LOCK TABLES `becas` WRITE;
 /*!40000 ALTER TABLE `becas` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `becas` VALUES
-(1,'Beca 10%','Esta es una beca que corresponde al 10% del descuento para el estudiante en todos los adeudos que se generen a partir de que se e asigno la beca.',10.00,'2026-01-19','2026-01-31',1,'2026-01-19 19:53:58.474599','2026-01-19 19:53:58.474642');
 /*!40000 ALTER TABLE `becas` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -744,8 +719,6 @@ CREATE TABLE `becas_estudiantes` (
 LOCK TABLES `becas_estudiantes` WRITE;
 /*!40000 ALTER TABLE `becas_estudiantes` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `becas_estudiantes` VALUES
-(13,'2026-02-12 18:05:34.136113',NULL,1,'',NULL,1,1000);
 /*!40000 ALTER TABLE `becas_estudiantes` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -915,7 +888,7 @@ CREATE TABLE `calificaciones` (
   CONSTRAINT `calificaciones_estudiante_id_db8aad9a_fk_estudiantes_matricula` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`matricula`),
   CONSTRAINT `calificaciones_modificada_por_id_414ce90e_fk_maestros_id` FOREIGN KEY (`modificada_por_id`) REFERENCES `maestros` (`id`),
   CONSTRAINT `calificaciones_periodo_evaluacion_i_c1c69a8b_fk_periodos_` FOREIGN KEY (`periodo_evaluacion_id`) REFERENCES `periodos_evaluacion` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -925,18 +898,6 @@ CREATE TABLE `calificaciones` (
 LOCK TABLES `calificaciones` WRITE;
 /*!40000 ALTER TABLE `calificaciones` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `calificaciones` VALUES
-(4,10.00,0,'2026-02-12 18:58:05.330396','2026-02-12 19:00:48.786590',2,NULL,1000,5,NULL,2),
-(5,9.00,0,'2026-02-13 04:35:26.074851','2026-02-13 04:39:23.129685',3,NULL,20240000,6,NULL,3),
-(6,7.00,0,'2026-02-13 04:35:26.080670','2026-02-13 04:39:23.143534',3,NULL,20240001,6,NULL,3),
-(7,6.00,0,'2026-02-13 04:35:26.086160','2026-02-13 04:39:23.149797',3,NULL,20240002,6,NULL,3),
-(8,10.00,0,'2026-02-13 04:35:26.092296','2026-02-13 04:39:23.156951',3,NULL,20240003,6,NULL,3),
-(9,10.00,0,'2026-02-13 04:35:26.098369','2026-02-13 04:39:23.161786',3,NULL,20240004,6,NULL,3),
-(10,8.00,0,'2026-02-13 04:35:26.104225','2026-02-13 04:39:23.166381',3,NULL,20240005,6,NULL,3),
-(11,9.00,0,'2026-02-13 04:35:26.110217','2026-02-13 04:39:23.172119',3,NULL,20240006,6,NULL,3),
-(12,7.00,0,'2026-02-13 04:35:26.116516','2026-02-13 04:39:23.176885',3,NULL,20240007,6,NULL,3),
-(13,8.00,0,'2026-02-13 04:35:26.122466','2026-02-13 04:39:23.180986',3,NULL,20240008,6,NULL,3),
-(14,6.00,0,'2026-02-13 04:35:26.128559','2026-02-13 04:39:23.187100',3,NULL,20240009,6,NULL,3);
 /*!40000 ALTER TABLE `calificaciones` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1001,7 +962,7 @@ CREATE TABLE `ciclos_escolares` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nombre` (`nombre`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1011,10 +972,6 @@ CREATE TABLE `ciclos_escolares` (
 LOCK TABLES `ciclos_escolares` WRITE;
 /*!40000 ALTER TABLE `ciclos_escolares` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `ciclos_escolares` VALUES
-(25,'2026-2027','2026-02-12','2027-02-12',0,'2026-02-12 17:47:16.737056','2026-02-12 17:47:16.737096'),
-(26,'2027-2028','2027-02-12','2028-02-12',0,'2026-02-12 19:03:03.706103','2026-02-12 19:03:03.706160'),
-(27,'CI-2024-2025','2024-08-01','2025-07-15',1,'2026-02-13 04:16:30.352718','2026-02-13 04:16:30.352746');
 /*!40000 ALTER TABLE `ciclos_escolares` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1037,7 +994,7 @@ CREATE TABLE `conceptos_pago` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `conceptos_pago_nombre_nivel_educativo_8f94b81a_uniq` (`nombre`,`nivel_educativo`),
   KEY `idx_concepto_activo` (`activo`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1047,13 +1004,6 @@ CREATE TABLE `conceptos_pago` (
 LOCK TABLES `conceptos_pago` WRITE;
 /*!40000 ALTER TABLE `conceptos_pago` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `conceptos_pago` VALUES
-(42,'Reinscripción Primaria Automática','',1500.00,'Primaria',1,'reinscripcion'),
-(43,'Mensualidad Septiembre','Pago de mensualidad de septiembre',1500.00,'PRIMARIA',1,'colegiatura'),
-(44,'Colegiatura Febrero 2026','Colegiatura mensual correspondiente a Febrero 2026',0.00,'Preescolar',1,'colegiatura'),
-(45,'Colegiatura Febrero 2026','Colegiatura mensual correspondiente a Febrero 2026',1500.00,'Primaria',1,'colegiatura'),
-(46,'Colegiatura Febrero 2026','Colegiatura mensual correspondiente a Febrero 2026',0.00,'Secundaria',1,'colegiatura'),
-(47,'Reinscripción CI-2024-2025','Pago de reinscripción para el ciclo CI-2024-2025',1500.00,'Todos',1,'reinscripcion');
 /*!40000 ALTER TABLE `conceptos_pago` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1141,7 +1091,7 @@ CREATE TABLE `django_admin_log` (
   KEY `django_admin_log_user_id_c564eba6_fk_users_user_id` (`user_id`),
   CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`),
   CONSTRAINT `django_admin_log_user_id_c564eba6_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1383 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1151,1203 +1101,6 @@ CREATE TABLE `django_admin_log` (
 LOCK TABLES `django_admin_log` WRITE;
 /*!40000 ALTER TABLE `django_admin_log` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `django_admin_log` VALUES
-(6,'2026-01-14 21:43:47.386261','2','DSGM - 2022-2026',1,'[{\"added\": {}}]',13,6),
-(7,'2026-01-14 21:44:24.556167','3','ROBERTA OLED JARAMILLO',1,'[{\"added\": {}}]',15,6),
-(8,'2026-01-14 21:45:02.978444','4','JASSIEL NUÑEZ PEDROZA',1,'[{\"added\": {}}]',15,6),
-(9,'2026-01-14 21:46:54.128029','1','B (20.00%)',2,'[]',8,6),
-(10,'2026-01-19 15:47:36.228580','220550','220550 - Maria Hernandez',2,'[{\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"220550 - Maria Hernandez -> ROBERTA OLED JARAMILLO (Madre)\"}}, {\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"220550 - Maria Hernandez -> JASSIEL NU\\u00d1EZ PEDROZA (Padre)\"}}]',9,6),
-(11,'2026-01-19 19:39:58.848070','7','Colegiatura ENERO - Todos',2,'[{\"changed\": {\"fields\": [\"Nombre\", \"Descripcion\"]}}]',18,6),
-(12,'2026-01-19 19:40:29.958642','193','220330 - MAURICER PANDILLA - Colegiatura ENERO - Todos ($500.00)',3,'',17,6),
-(13,'2026-01-19 19:40:29.958695','192','220330 - MAURICER PANDILLA - Colegiatura ENERO - Todos ($500.00)',3,'',17,6),
-(14,'2026-01-19 19:40:29.958719','191','220330 - MAURICER PANDILLA - Colegiatura ENERO - Todos ($500.00)',3,'',17,6),
-(15,'2026-01-19 19:40:29.958743','190','220330 - MAURICER PANDILLA - Colegiatura ENERO - Todos ($500.00)',3,'',17,6),
-(16,'2026-01-19 19:40:29.958765','189','220330 - MAURICER PANDILLA - Colegiatura ENERO - Todos ($500.00)',3,'',17,6),
-(17,'2026-01-19 19:40:29.958787','188','220609 - Luis Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(18,'2026-01-19 19:40:29.958809','187','220609 - Luis Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(19,'2026-01-19 19:40:29.958830','186','220609 - Luis Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(20,'2026-01-19 19:40:29.958850','185','220608 - Lucia Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(21,'2026-01-19 19:40:29.958870','184','220608 - Lucia Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(22,'2026-01-19 19:40:29.958890','183','220608 - Lucia Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(23,'2026-01-19 19:40:29.958911','182','220607 - Jorge Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(24,'2026-01-19 19:40:29.958947','181','220607 - Jorge Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(25,'2026-01-19 19:40:29.958967','180','220607 - Jorge Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(26,'2026-01-19 19:40:29.958987','179','220606 - Maria Garcia - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(27,'2026-01-19 19:40:29.959007','178','220606 - Maria Garcia - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(28,'2026-01-19 19:40:29.959027','177','220606 - Maria Garcia - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(29,'2026-01-19 19:40:29.959047','176','220605 - Lucia Lopez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(30,'2026-01-19 19:40:29.959067','175','220605 - Lucia Lopez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(31,'2026-01-19 19:40:29.959087','174','220605 - Lucia Lopez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(32,'2026-01-19 19:40:29.959107','173','220604 - Miguel Hernandez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(33,'2026-01-19 19:40:29.959126','172','220604 - Miguel Hernandez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(34,'2026-01-19 19:40:29.959147','171','220604 - Miguel Hernandez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(35,'2026-01-19 19:40:29.959166','170','220603 - Pedro Hernandez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(36,'2026-01-19 19:40:29.959185','169','220603 - Pedro Hernandez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(37,'2026-01-19 19:40:29.959206','168','220603 - Pedro Hernandez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(38,'2026-01-19 19:40:29.959226','167','220602 - Sofia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(39,'2026-01-19 19:40:29.959245','166','220602 - Sofia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(40,'2026-01-19 19:40:29.959265','165','220602 - Sofia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(41,'2026-01-19 19:40:29.959285','164','220601 - Maria Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(42,'2026-01-19 19:40:29.959304','163','220601 - Maria Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(43,'2026-01-19 19:40:29.959324','162','220601 - Maria Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(44,'2026-01-19 19:40:29.959343','161','220600 - Elena Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(45,'2026-01-19 19:40:29.959364','160','220600 - Elena Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(46,'2026-01-19 19:40:29.959383','159','220600 - Elena Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(47,'2026-01-19 19:40:29.959402','158','220599 - Carlos Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(48,'2026-01-19 19:40:29.959422','157','220599 - Carlos Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(49,'2026-01-19 19:40:29.959442','156','220599 - Carlos Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(50,'2026-01-19 19:40:29.959462','155','220598 - Maria Sanchez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(51,'2026-01-19 19:40:29.959481','154','220598 - Maria Sanchez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(52,'2026-01-19 19:40:29.959501','153','220598 - Maria Sanchez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(53,'2026-01-19 19:40:29.959521','152','220597 - Jorge Gonzalez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(54,'2026-01-19 19:40:29.959540','151','220597 - Jorge Gonzalez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(55,'2026-01-19 19:40:29.959560','150','220597 - Jorge Gonzalez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(56,'2026-01-19 19:40:29.959580','149','220596 - Elena Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(57,'2026-01-19 19:40:29.959600','148','220596 - Elena Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(58,'2026-01-19 19:40:29.959620','147','220596 - Elena Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(59,'2026-01-19 19:40:29.959639','146','220595 - Miguel Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(60,'2026-01-19 19:40:29.959658','145','220595 - Miguel Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(61,'2026-01-19 19:40:29.959677','144','220595 - Miguel Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(62,'2026-01-19 19:40:29.959697','143','220594 - Miguel Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(63,'2026-01-19 19:40:29.959717','142','220594 - Miguel Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(64,'2026-01-19 19:40:29.959738','141','220594 - Miguel Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(65,'2026-01-19 19:40:29.959758','140','220593 - Lucia Sanchez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(66,'2026-01-19 19:40:29.959777','139','220593 - Lucia Sanchez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(67,'2026-01-19 19:40:29.959797','138','220593 - Lucia Sanchez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(68,'2026-01-19 19:40:29.959816','137','220592 - Carlos Perez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(69,'2026-01-19 19:40:29.959835','136','220592 - Carlos Perez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(70,'2026-01-19 19:40:29.959853','135','220592 - Carlos Perez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(71,'2026-01-19 19:40:29.959873','134','220591 - Elena Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(72,'2026-01-19 19:40:29.959892','133','220591 - Elena Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(73,'2026-01-19 19:40:29.959910','132','220591 - Elena Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(74,'2026-01-19 19:40:29.959943','131','220590 - Sofia Lopez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(75,'2026-01-19 19:40:29.959962','130','220590 - Sofia Lopez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(76,'2026-01-19 19:40:29.959981','129','220590 - Sofia Lopez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(77,'2026-01-19 19:40:29.960000','128','220589 - Pedro Hernandez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(78,'2026-01-19 19:40:29.960019','127','220589 - Pedro Hernandez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(79,'2026-01-19 19:40:29.960038','126','220589 - Pedro Hernandez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(80,'2026-01-19 19:40:29.960059','125','220588 - Maria Perez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(81,'2026-01-19 19:40:29.960079','124','220588 - Maria Perez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(82,'2026-01-19 19:40:29.960097','123','220588 - Maria Perez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(83,'2026-01-19 19:40:29.960116','122','220587 - Lucia Gonzalez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(84,'2026-01-19 19:40:29.960134','121','220587 - Lucia Gonzalez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(85,'2026-01-19 19:40:29.960153','120','220587 - Lucia Gonzalez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(86,'2026-01-19 19:40:29.960172','119','220586 - Sofia Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(87,'2026-01-19 19:40:29.960191','118','220586 - Sofia Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(88,'2026-01-19 19:40:29.960209','117','220586 - Sofia Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(89,'2026-01-19 19:40:29.960229','116','220585 - Ana Perez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(90,'2026-01-19 19:40:29.960248','115','220585 - Ana Perez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(91,'2026-01-19 19:40:29.960266','114','220585 - Ana Perez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(92,'2026-01-19 19:40:29.960284','113','220584 - Jorge Rodriguez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(93,'2026-01-19 19:40:29.960304','112','220584 - Jorge Rodriguez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(94,'2026-01-19 19:40:29.960330','111','220584 - Jorge Rodriguez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(95,'2026-01-19 19:40:29.960349','110','220583 - Carlos Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(96,'2026-01-19 19:40:29.960368','109','220583 - Carlos Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(97,'2026-01-19 19:40:29.960386','108','220583 - Carlos Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(98,'2026-01-19 19:40:29.960404','107','220582 - Elena Rodriguez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(99,'2026-01-19 19:40:29.960423','106','220582 - Elena Rodriguez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(100,'2026-01-19 19:40:29.960442','105','220582 - Elena Rodriguez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(101,'2026-01-19 19:40:29.960460','104','220581 - Luis Hernandez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(102,'2026-01-19 19:40:29.960479','103','220581 - Luis Hernandez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(103,'2026-01-19 19:40:29.960497','102','220581 - Luis Hernandez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(104,'2026-01-19 19:40:29.960516','101','220580 - Jorge Lopez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(105,'2026-01-19 19:40:29.960535','100','220580 - Jorge Lopez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(106,'2026-01-19 19:40:29.960555','99','220580 - Jorge Lopez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(107,'2026-01-19 19:40:29.960574','98','220579 - Ana Rodriguez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(108,'2026-01-19 19:40:29.960593','97','220579 - Ana Rodriguez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(109,'2026-01-19 19:40:29.960612','96','220579 - Ana Rodriguez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(110,'2026-01-19 19:40:29.960631','95','220578 - Luis Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(111,'2026-01-19 19:40:29.960650','94','220578 - Luis Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(112,'2026-01-19 19:40:50.000186','93','220578 - Luis Martinez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(113,'2026-01-19 19:40:50.000260','92','220577 - Luis Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(114,'2026-01-19 19:40:50.000303','91','220577 - Luis Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(115,'2026-01-19 19:40:50.000344','90','220577 - Luis Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(116,'2026-01-19 19:40:50.000383','89','220576 - Jorge Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(117,'2026-01-19 19:40:50.000420','88','220576 - Jorge Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(118,'2026-01-19 19:40:50.000456','87','220576 - Jorge Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(119,'2026-01-19 19:40:50.000490','86','220575 - Maria Gonzalez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(120,'2026-01-19 19:40:50.000524','85','220575 - Maria Gonzalez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(121,'2026-01-19 19:40:50.000558','84','220575 - Maria Gonzalez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(122,'2026-01-19 19:40:50.000593','83','220574 - Pedro Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(123,'2026-01-19 19:40:50.000629','82','220574 - Pedro Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(124,'2026-01-19 19:40:50.000662','81','220574 - Pedro Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(125,'2026-01-19 19:40:50.000698','80','220573 - Miguel Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(126,'2026-01-19 19:40:50.000733','79','220573 - Miguel Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(127,'2026-01-19 19:40:50.000768','78','220573 - Miguel Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(128,'2026-01-19 19:40:50.000801','77','220572 - Lucia Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(129,'2026-01-19 19:40:50.000835','76','220572 - Lucia Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(130,'2026-01-19 19:40:50.000871','75','220572 - Lucia Perez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(131,'2026-01-19 19:40:50.000908','74','220571 - Lucia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(132,'2026-01-19 19:40:50.000963','73','220571 - Lucia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(133,'2026-01-19 19:40:50.000999','72','220571 - Lucia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(134,'2026-01-19 19:40:50.001032','71','220570 - Pedro Lopez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(135,'2026-01-19 19:40:50.001066','70','220570 - Pedro Lopez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(136,'2026-01-19 19:40:50.001098','69','220570 - Pedro Lopez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(137,'2026-01-19 19:40:50.001131','68','220569 - Luis Garcia - COLEGIATURA - General ($700.00)',3,'',17,6),
-(138,'2026-01-19 19:40:50.001166','67','220569 - Luis Garcia - COLEGIATURA - General ($700.00)',3,'',17,6),
-(139,'2026-01-19 19:40:50.001199','66','220569 - Luis Garcia - COLEGIATURA - General ($700.00)',3,'',17,6),
-(140,'2026-01-19 19:40:50.001231','65','220568 - Carlos Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(141,'2026-01-19 19:40:50.001263','64','220568 - Carlos Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(142,'2026-01-19 19:40:50.001296','63','220568 - Carlos Sanchez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(143,'2026-01-19 19:40:50.001328','62','220567 - Lucia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(144,'2026-01-19 19:40:50.001364','61','220567 - Lucia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(145,'2026-01-19 19:40:50.001398','60','220567 - Lucia Perez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(146,'2026-01-19 19:40:50.001432','59','220566 - Luis Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(147,'2026-01-19 19:40:50.001467','58','220566 - Luis Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(148,'2026-01-19 19:40:50.001500','57','220566 - Luis Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(149,'2026-01-19 19:40:50.001532','56','220565 - Carlos Gonzalez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(150,'2026-01-19 19:40:50.001567','55','220565 - Carlos Gonzalez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(151,'2026-01-19 19:40:50.001602','54','220565 - Carlos Gonzalez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(152,'2026-01-19 19:40:50.001638','53','220564 - Lucia Lopez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(153,'2026-01-19 19:40:50.001674','52','220564 - Lucia Lopez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(154,'2026-01-19 19:40:50.001720','51','220564 - Lucia Lopez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(155,'2026-01-19 19:40:50.001757','50','220563 - Maria Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(156,'2026-01-19 19:40:50.001793','49','220563 - Maria Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(157,'2026-01-19 19:40:50.001829','48','220563 - Maria Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(158,'2026-01-19 19:40:50.001862','47','220562 - Maria Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(159,'2026-01-19 19:40:50.001898','46','220562 - Maria Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(160,'2026-01-19 19:40:50.001948','45','220562 - Maria Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(161,'2026-01-19 19:40:50.001983','44','220561 - Luis Garcia - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(162,'2026-01-19 19:40:50.002017','43','220561 - Luis Garcia - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(163,'2026-01-19 19:40:50.002051','42','220561 - Luis Garcia - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(164,'2026-01-19 19:40:50.002086','41','220560 - Pedro Gonzalez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(165,'2026-01-19 19:40:50.002119','40','220560 - Pedro Gonzalez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(166,'2026-01-19 19:40:50.002154','39','220560 - Pedro Gonzalez - COLEGIATURA - General ($700.00)',3,'',17,6),
-(167,'2026-01-19 19:40:50.002188','38','220559 - Carlos Gonzalez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(168,'2026-01-19 19:40:50.002223','37','220559 - Carlos Gonzalez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(169,'2026-01-19 19:40:50.002257','36','220559 - Carlos Gonzalez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(170,'2026-01-19 19:40:50.002291','35','220558 - Jorge Rodriguez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(171,'2026-01-19 19:40:50.002326','34','220558 - Jorge Rodriguez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(172,'2026-01-19 19:40:50.002360','33','220558 - Jorge Rodriguez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(173,'2026-01-19 19:40:50.002395','32','220557 - Carlos Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(174,'2026-01-19 19:40:50.002430','31','220557 - Carlos Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(175,'2026-01-19 19:40:50.002465','30','220557 - Carlos Gonzalez - COLEGIATURA - General ($2240.00)',3,'',17,6),
-(176,'2026-01-19 19:40:50.002500','29','220556 - Sofia Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(177,'2026-01-19 19:40:50.002538','28','220556 - Sofia Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(178,'2026-01-19 19:40:50.002574','27','220556 - Sofia Hernandez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(179,'2026-01-19 19:40:50.002609','26','220555 - Carlos Garcia - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(180,'2026-01-19 19:40:50.002644','25','220555 - Carlos Garcia - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(181,'2026-01-19 19:40:50.002679','24','220555 - Carlos Garcia - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(182,'2026-01-19 19:40:50.002714','23','220554 - Miguel Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(183,'2026-01-19 19:40:50.002747','22','220554 - Miguel Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(184,'2026-01-19 19:40:50.002780','21','220554 - Miguel Martinez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(185,'2026-01-19 19:40:50.002813','20','220553 - Sofia Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(186,'2026-01-19 19:40:50.002845','19','220553 - Sofia Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(187,'2026-01-19 19:40:50.002879','18','220553 - Sofia Sanchez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(188,'2026-01-19 19:40:50.002913','17','220552 - Jorge Rodriguez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(189,'2026-01-19 19:40:50.002970','16','220552 - Jorge Rodriguez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(190,'2026-01-19 19:40:50.003007','15','220552 - Jorge Rodriguez - COLEGIATURA - General ($1400.00)',3,'',17,6),
-(191,'2026-01-19 19:40:50.003040','14','220551 - Maria Rodriguez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(192,'2026-01-19 19:40:50.003075','13','220551 - Maria Rodriguez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(193,'2026-01-19 19:40:50.003117','12','220551 - Maria Rodriguez - COLEGIATURA - General ($2100.00)',3,'',17,6),
-(194,'2026-01-19 19:40:50.003153','11','220550 - Maria Hernandez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(195,'2026-01-19 19:40:50.003188','10','220550 - Maria Hernandez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(196,'2026-01-19 19:40:50.003220','9','220550 - Maria Hernandez - COLEGIATURA - General ($2520.00)',3,'',17,6),
-(197,'2026-01-19 19:40:50.003255','8','220549 - Estudiante Prueba - Inscripción - General ($1000.00)',3,'',17,6),
-(198,'2026-01-19 19:40:50.003289','1','220548 - MARIANA FLOWERS - Colegiatura Enero - Universidad ($4000.00)',3,'',17,6),
-(199,'2026-01-19 19:41:15.339137','7','Colegiatura ENERO - Todos',3,'',18,6),
-(200,'2026-01-19 19:41:15.339181','6','COMEDOR - General',3,'',18,6),
-(201,'2026-01-19 19:41:15.339203','5','UNIFORME - General',3,'',18,6),
-(202,'2026-01-19 19:41:15.339222','4','LIBROS - General',3,'',18,6),
-(203,'2026-01-19 19:41:15.339240','3','COLEGIATURA - General',3,'',18,6),
-(204,'2026-01-19 19:41:15.339258','1','Colegiatura Enero - Universidad',3,'',18,6),
-(205,'2026-01-19 19:42:30.594536','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Descripcion\", \"Nivel educativo\", \"Generar por Escolaridad (Nivel)\"]}}]',18,6),
-(206,'2026-01-19 19:42:51.787449','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar por Escolaridad (Nivel)\"]}}]',18,6),
-(207,'2026-01-19 19:43:50.002319','194','220548 - MARIANA FLOWERS - Inscripción - Primaria ($1000)',1,'[{\"added\": {}}]',17,6),
-(208,'2026-01-19 19:44:31.137874','65','Pago $1000 - 2026-01-19',1,'[{\"added\": {}}]',19,6),
-(209,'2026-01-19 19:53:58.478731','1','Beca 10% (10%) - Vigente',1,'[{\"added\": {}}, {\"added\": {\"name\": \"Beca-Estudiante\", \"object\": \"220548 - MARIANA FLOWERS - Beca 10% (Activa)\"}}]',24,6),
-(210,'2026-01-19 19:58:41.160371','8','Colegiatura Enero 2026 - Secundaria',1,'[{\"added\": {}}]',18,6),
-(211,'2026-01-19 19:59:50.919437','195','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($500)',1,'[{\"added\": {}}]',17,6),
-(212,'2026-01-19 21:34:50.730332','194','220548 - MARIANA FLOWERS - Inscripción - Primaria ($1000.00)',3,'',17,6),
-(213,'2026-01-19 21:36:08.542767','196','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($350.000)',1,'[{\"added\": {}}]',17,6),
-(214,'2026-01-19 21:36:29.571752','195','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($500.00)',3,'',17,6),
-(215,'2026-01-19 21:47:05.231802','197','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($350.000)',1,'[{\"added\": {}}]',17,6),
-(216,'2026-01-19 21:50:24.756777','197','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($350.00)',3,'',17,6),
-(217,'2026-01-19 21:50:35.176877','196','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($350.00)',3,'',17,6),
-(218,'2026-01-19 21:50:53.067091','198','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($350.000)',1,'[{\"added\": {}}]',17,6),
-(219,'2026-01-19 21:53:24.241232','220548','220548 - MARIANA FLOWERS',2,'[{\"added\": {\"name\": \"Evaluaci\\u00f3n Socioecon\\u00f3mica\", \"object\": \"[+] Evaluaci\\u00f3n 220548 - MARIANA FLOWERS - Aprobada\"}}]',9,6),
-(220,'2026-01-19 21:53:50.478739','199','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($400.000)',1,'[{\"added\": {}}]',17,6),
-(221,'2026-01-19 21:56:04.865949','66','Pago $500 - 2026-01-19',1,'[{\"added\": {}}]',19,6),
-(222,'2026-01-20 17:21:34.002202','67','Pago $400.00 - 2026-01-20',1,'[{\"added\": {}}]',19,6),
-(223,'2026-01-20 17:23:31.486075','9','Colegiatura Febrero 2026 - Primaria',1,'[{\"added\": {}}]',18,6),
-(224,'2026-01-20 17:24:37.877195','9','Colegiatura Febrero 2026 - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar por Escolaridad (Nivel)\", \"Generar para Grado\"]}}]',18,6),
-(225,'2026-01-20 17:25:46.639200','200','220569 - Luis Garcia - Colegiatura Febrero 2026 - Primaria ($125.0000)',1,'[{\"added\": {}}]',17,6),
-(226,'2026-01-20 17:28:02.299315','220569','220569 - Luis Garcia',2,'[{\"added\": {\"name\": \"Beca-Estudiante\", \"object\": \"220569 - Luis Garcia - Beca 10% (Activa)\"}}]',9,6),
-(227,'2026-01-20 17:28:33.461071','201','220569 - Luis Garcia - Colegiatura Febrero 2026 - Primaria ($75.0000)',1,'[{\"added\": {}}]',17,6),
-(228,'2026-01-20 17:30:29.091347','68','Pago $125.00 - 2026-01-20',1,'[{\"added\": {}}]',19,6),
-(229,'2026-01-20 17:39:22.142831','69','Pago $75.00 - 2026-01-20',1,'[{\"added\": {}}]',19,6),
-(230,'2026-01-20 17:42:24.980038','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar por Escolaridad (Nivel)\"]}}]',18,6),
-(231,'2026-01-20 17:43:03.081445','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grado\", \"Generar para Grupo\"]}}]',18,6),
-(232,'2026-01-20 17:46:55.236150','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grado\"]}}]',18,6),
-(233,'2026-01-20 17:47:21.293101','9','Colegiatura Febrero 2026 - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grupo\"]}}]',18,6),
-(234,'2026-01-20 17:48:08.630965','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grado\"]}}]',18,6),
-(235,'2026-01-20 17:50:26.363785','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar por Escolaridad (Nivel)\"]}}]',18,6),
-(236,'2026-01-20 17:50:56.270623','8','Colegiatura Enero 2026 - Secundaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grado\"]}}]',18,6),
-(237,'2026-01-20 17:51:45.550247','10','Colegiatura Marzo - Todos',1,'[{\"added\": {}}]',18,6),
-(238,'2026-01-20 18:01:25.605826','2','Inscripción - Primaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grado\"]}}]',18,6),
-(239,'2026-01-20 19:08:42.361696','69','Pago $75.00 - 2026-01-20',3,'',19,6),
-(240,'2026-01-20 19:08:42.361749','68','Pago $125.00 - 2026-01-20',3,'',19,6),
-(241,'2026-01-20 19:08:42.361774','67','Pago $400.00 - 2026-01-20',3,'',19,6),
-(242,'2026-01-20 19:08:42.361796','66','Pago $500.00 - 2026-01-19',3,'',19,6),
-(243,'2026-01-20 19:08:55.643450','262','220606 - Maria Garcia - Inscripción - Primaria ($800.00)',3,'',17,6),
-(244,'2026-01-20 19:08:55.643505','261','220605 - Lucia Lopez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(245,'2026-01-20 19:08:55.643532','260','220603 - Pedro Hernandez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(246,'2026-01-20 19:08:55.643556','259','220602 - Sofia Perez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(247,'2026-01-20 19:08:55.643578','258','220599 - Carlos Martinez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(248,'2026-01-20 19:08:55.643600','257','220598 - Maria Sanchez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(249,'2026-01-20 19:08:55.643622','256','220596 - Elena Martinez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(250,'2026-01-20 19:08:55.643645','255','220595 - Miguel Perez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(251,'2026-01-20 19:08:55.643667','254','220594 - Miguel Gonzalez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(252,'2026-01-20 19:08:55.643703','253','220593 - Lucia Sanchez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(253,'2026-01-20 19:08:55.643725','252','220592 - Carlos Perez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(254,'2026-01-20 19:08:55.643747','251','220591 - Elena Martinez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(255,'2026-01-20 19:08:55.643769','250','220590 - Sofia Lopez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(256,'2026-01-20 19:08:55.643789','249','220589 - Pedro Hernandez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(257,'2026-01-20 19:08:55.643809','248','220585 - Ana Perez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(258,'2026-01-20 19:08:55.643830','247','220583 - Carlos Hernandez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(259,'2026-01-20 19:08:55.643851','246','220582 - Elena Rodriguez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(260,'2026-01-20 19:08:55.643891','245','220580 - Jorge Lopez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(261,'2026-01-20 19:08:55.643914','244','220578 - Luis Martinez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(262,'2026-01-20 19:08:55.643935','243','220576 - Jorge Perez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(263,'2026-01-20 19:08:55.643955','242','220573 - Miguel Martinez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(264,'2026-01-20 19:08:55.643975','241','220572 - Lucia Perez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(265,'2026-01-20 19:08:55.643997','240','220571 - Lucia Perez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(266,'2026-01-20 19:08:55.644018','239','220568 - Carlos Sanchez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(267,'2026-01-20 19:08:55.644039','238','220566 - Luis Gonzalez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(268,'2026-01-20 19:08:55.644059','237','220559 - Carlos Gonzalez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(269,'2026-01-20 19:08:55.644079','236','220558 - Jorge Rodriguez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(270,'2026-01-20 19:08:55.644099','235','220557 - Carlos Gonzalez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(271,'2026-01-20 19:08:55.644119','234','220554 - Miguel Martinez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(272,'2026-01-20 19:08:55.644140','233','220553 - Sofia Sanchez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(273,'2026-01-20 19:08:55.644160','232','220609 - Luis Martinez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(274,'2026-01-20 19:08:55.644180','231','220608 - Lucia Sanchez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(275,'2026-01-20 19:08:55.644200','230','220607 - Jorge Sanchez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(276,'2026-01-20 19:08:55.644222','229','220604 - Miguel Hernandez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(277,'2026-01-20 19:08:55.644242','228','220601 - Maria Hernandez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(278,'2026-01-20 19:08:55.644264','227','220600 - Elena Perez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(279,'2026-01-20 19:08:55.644284','226','220597 - Jorge Gonzalez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(280,'2026-01-20 19:08:55.644304','225','220588 - Maria Perez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(281,'2026-01-20 19:08:55.644323','224','220587 - Lucia Gonzalez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(282,'2026-01-20 19:08:55.644344','223','220586 - Sofia Sanchez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(283,'2026-01-20 19:08:55.644365','222','220584 - Jorge Rodriguez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(284,'2026-01-20 19:08:55.644386','221','220581 - Luis Hernandez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(285,'2026-01-20 19:08:55.644407','220','220579 - Ana Rodriguez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(286,'2026-01-20 19:08:55.644429','219','220577 - Luis Sanchez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(287,'2026-01-20 19:08:55.644450','218','220575 - Maria Gonzalez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(288,'2026-01-20 19:08:55.644471','217','220574 - Pedro Perez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(289,'2026-01-20 19:08:55.644492','216','220570 - Pedro Lopez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(290,'2026-01-20 19:08:55.644513','215','220569 - Luis Garcia - Inscripción - Primaria ($150.00)',3,'',17,6),
-(291,'2026-01-20 19:08:55.644534','214','220567 - Lucia Perez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(292,'2026-01-20 19:08:55.644565','213','220565 - Carlos Gonzalez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(293,'2026-01-20 19:08:55.644587','212','220564 - Lucia Lopez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(294,'2026-01-20 19:08:55.644607','211','220563 - Maria Sanchez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(295,'2026-01-20 19:08:55.644630','210','220562 - Maria Gonzalez - Inscripción - Primaria ($800.00)',3,'',17,6),
-(296,'2026-01-20 19:08:55.644652','209','220561 - Luis Garcia - Inscripción - Primaria ($900.00)',3,'',17,6),
-(297,'2026-01-20 19:08:55.644672','208','220560 - Pedro Gonzalez - Inscripción - Primaria ($250.00)',3,'',17,6),
-(298,'2026-01-20 19:08:55.644693','207','220556 - Sofia Hernandez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(299,'2026-01-20 19:08:55.644715','206','220555 - Carlos Garcia - Inscripción - Primaria ($750.00)',3,'',17,6),
-(300,'2026-01-20 19:08:55.644736','205','220552 - Jorge Rodriguez - Inscripción - Primaria ($500.00)',3,'',17,6),
-(301,'2026-01-20 19:08:55.644756','204','220551 - Maria Rodriguez - Inscripción - Primaria ($750.00)',3,'',17,6),
-(302,'2026-01-20 19:08:55.644776','203','220550 - Maria Hernandez - Inscripción - Primaria ($900.00)',3,'',17,6),
-(303,'2026-01-20 19:08:55.644796','202','220548 - MARIANA FLOWERS - Inscripción - Primaria ($800.00)',3,'',17,6),
-(304,'2026-01-20 19:08:55.644815','201','220569 - Luis Garcia - Colegiatura Febrero 2026 - Primaria ($75.00)',3,'',17,6),
-(305,'2026-01-20 19:08:55.644837','200','220569 - Luis Garcia - Colegiatura Febrero 2026 - Primaria ($125.00)',3,'',17,6),
-(306,'2026-01-20 19:08:55.644856','199','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($400.00)',3,'',17,6),
-(307,'2026-01-20 19:08:55.644889','198','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($350.00)',3,'',17,6),
-(308,'2026-01-20 19:11:45.225901','8','Colegiatura Enero 2026 - Secundaria',2,'[{\"changed\": {\"fields\": [\"Generar para Grupo\"]}}]',18,6),
-(309,'2026-01-20 19:12:08.887284','70','Pago $250.00 - 2026-01-20',1,'[{\"added\": {}}]',19,6),
-(310,'2026-01-20 22:27:20.010689','2','BAJA',2,'[{\"changed\": {\"fields\": [\"Nombre\"]}}]',7,6),
-(311,'2026-01-20 22:27:28.710074','1','ACTIVO',2,'[{\"changed\": {\"fields\": [\"Nombre\"]}}]',7,6),
-(312,'2026-01-20 23:25:52.167196','299','729293 - GEN ONE - C2_1768951485 - TEST ($1000.00)',3,'',17,6),
-(313,'2026-01-20 23:25:52.167286','298','716821 - GEN ONE - C2_1768951264 - TEST ($1000.00)',3,'',17,6),
-(314,'2026-01-20 23:25:52.167334','297','829740 - TEST PRO - C_1768950793 - TEST_NIVEL ($650.00)',3,'',17,6),
-(315,'2026-01-20 23:25:52.167374','296','828974 - TEST PRO - C_1768950617 - TEST_NIVEL ($650.00)',3,'',17,6),
-(316,'2026-01-20 23:25:52.167412','295','923666 - TEST_PRO SMOKE - TEST_CONCEPTO_1768950179 - Universidad ($700.00)',3,'',17,6),
-(317,'2026-01-20 23:25:52.167448','294','906028 - TEST_PRO SMOKE - TEST_CONCEPTO_1768950113 - Universidad ($700.00)',3,'',17,6),
-(318,'2026-01-20 23:25:52.167484','293','220609 - Luis Martinez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(319,'2026-01-20 23:25:52.167519','292','220608 - Lucia Sanchez - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(320,'2026-01-20 23:25:52.167553','291','220607 - Jorge Sanchez - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(321,'2026-01-20 23:25:52.167589','290','220604 - Miguel Hernandez - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(322,'2026-01-20 23:25:52.167625','289','220601 - Maria Hernandez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(323,'2026-01-20 23:25:52.167662','288','220600 - Elena Perez - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(324,'2026-01-20 23:25:52.167698','287','220597 - Jorge Gonzalez - Colegiatura Enero 2026 - Secundaria ($125.00)',3,'',17,6),
-(325,'2026-01-20 23:25:52.167733','286','220588 - Maria Perez - Colegiatura Enero 2026 - Secundaria ($400.00)',3,'',17,6),
-(326,'2026-01-20 23:25:52.167769','285','220587 - Lucia Gonzalez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(327,'2026-01-20 23:25:52.167804','284','220586 - Sofia Sanchez - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(328,'2026-01-20 23:25:52.167839','283','220584 - Jorge Rodriguez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(329,'2026-01-20 23:25:52.167874','282','220581 - Luis Hernandez - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(330,'2026-01-20 23:25:52.167909','281','220579 - Ana Rodriguez - Colegiatura Enero 2026 - Secundaria ($400.00)',3,'',17,6),
-(331,'2026-01-20 23:25:52.167944','280','220577 - Luis Sanchez - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(332,'2026-01-20 23:25:52.167978','279','220575 - Maria Gonzalez - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(333,'2026-01-20 23:25:52.168012','278','220574 - Pedro Perez - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(334,'2026-01-20 23:25:52.168071','277','220570 - Pedro Lopez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(335,'2026-01-20 23:25:52.168106','276','220569 - Luis Garcia - Colegiatura Enero 2026 - Secundaria ($75.00)',3,'',17,6),
-(336,'2026-01-20 23:25:52.168140','275','220567 - Lucia Perez - Colegiatura Enero 2026 - Secundaria ($125.00)',3,'',17,6),
-(337,'2026-01-20 23:25:52.168175','274','220565 - Carlos Gonzalez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(338,'2026-01-20 23:25:52.168209','273','220564 - Lucia Lopez - Colegiatura Enero 2026 - Secundaria ($125.00)',3,'',17,6),
-(339,'2026-01-20 23:25:52.168242','272','220563 - Maria Sanchez - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(340,'2026-01-20 23:25:52.168277','271','220562 - Maria Gonzalez - Colegiatura Enero 2026 - Secundaria ($400.00)',3,'',17,6),
-(341,'2026-01-20 23:25:52.168311','270','220561 - Luis Garcia - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(342,'2026-01-20 23:25:52.168343','269','220560 - Pedro Gonzalez - Colegiatura Enero 2026 - Secundaria ($125.00)',3,'',17,6),
-(343,'2026-01-20 23:25:52.168377','268','220556 - Sofia Hernandez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(344,'2026-01-20 23:25:52.168410','267','220555 - Carlos Garcia - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(345,'2026-01-20 23:25:52.168443','266','220552 - Jorge Rodriguez - Colegiatura Enero 2026 - Secundaria ($250.00)',3,'',17,6),
-(346,'2026-01-20 23:25:52.168476','265','220551 - Maria Rodriguez - Colegiatura Enero 2026 - Secundaria ($375.00)',3,'',17,6),
-(347,'2026-01-20 23:25:52.168510','264','220550 - Maria Hernandez - Colegiatura Enero 2026 - Secundaria ($450.00)',3,'',17,6),
-(348,'2026-01-20 23:25:52.168545','263','220548 - MARIANA FLOWERS - Colegiatura Enero 2026 - Secundaria ($400.00)',3,'',17,6),
-(349,'2026-01-20 23:26:16.576067','18','C2_1768951485 - TEST',3,'',18,6),
-(350,'2026-01-20 23:26:16.576168','16','C2_1768951264 - TEST',3,'',18,6),
-(351,'2026-01-20 23:26:16.576219','14','C_1768950793 - TEST_NIVEL',3,'',18,6),
-(352,'2026-01-20 23:26:16.576261','13','C_1768950617 - TEST_NIVEL',3,'',18,6),
-(353,'2026-01-20 23:26:16.576307','12','TEST_CONCEPTO_1768950179 - Universidad',3,'',18,6),
-(354,'2026-01-20 23:26:16.576351','11','TEST_CONCEPTO_1768950113 - Universidad',3,'',18,6),
-(355,'2026-01-21 22:49:56.577583','2000','AdmissionUser object (2000)',1,'[{\"added\": {}}]',28,6),
-(356,'2026-01-21 22:50:39.750611','1','ROQUE SALAZ ARTURO PADILLA',1,'[{\"added\": {}}]',26,6),
-(357,'2026-01-21 22:56:33.615866','2','2000 - NAZARIO RAMIREZ RONALDO',1,'[{\"added\": {}}, {\"added\": {\"name\": \"Tutor\", \"object\": \"2000 - NAZARIO RAMIREZ RONALDO -> ROQUE SALAZ ARTURO PADILLA (Padre)\"}}]',29,6),
-(358,'2026-01-22 17:19:55.877428','20','C2_1768951581 - TEST',3,'',18,6),
-(359,'2026-01-22 17:20:08.755940','10','Colegiatura Marzo - Todos',3,'',18,6),
-(360,'2026-01-22 17:20:08.756033','9','Colegiatura Febrero 2026 - Primaria',3,'',18,6),
-(361,'2026-01-22 17:20:08.756090','8','Colegiatura Enero 2026 - Secundaria',3,'',18,6),
-(362,'2026-01-22 17:20:08.756143','2','Inscripción - Primaria',3,'',18,6),
-(363,'2026-01-26 19:32:23.402213','6','AdmissionTutorAspirante object (6)',2,'[{\"changed\": {\"fields\": [\"Aspirante\"]}}]',27,6),
-(364,'2026-01-27 04:09:28.117850','32','2030 - ADMISSION FULL_TEST',3,'',29,6),
-(365,'2026-01-27 04:09:28.117930','31','2029 - ADMISSION FULL_TEST',3,'',29,6),
-(366,'2026-01-27 04:09:28.117972','30','2028 - ADMISSION FULL_TEST',3,'',29,6),
-(367,'2026-01-27 04:09:28.118008','29','2027 - ADMISSION FULL_TEST',3,'',29,6),
-(368,'2026-01-27 04:09:28.118044','28','2026 - ADMISSION FULL_TEST',3,'',29,6),
-(369,'2026-01-27 04:09:28.118081','27','2025 - ADMISSION FULL_TEST',3,'',29,6),
-(370,'2026-01-27 04:09:28.118115','26','2024 - ADMISSION FULL_TEST',3,'',29,6),
-(371,'2026-01-27 04:09:28.118148','25','2023 - ADMISSION FULL_TEST',3,'',29,6),
-(372,'2026-01-27 04:09:28.118182','24','2022 - ADMISSION FULL_TEST',3,'',29,6),
-(373,'2026-01-27 04:09:28.118215','23','2021 - ADMISSION FULL_TEST',3,'',29,6),
-(374,'2026-01-27 04:09:28.118247','22','2020 - ADMISSION FULL_TEST',3,'',29,6),
-(375,'2026-01-27 04:09:28.118279','21','2019 - ADMISSION FULL_TEST',3,'',29,6),
-(376,'2026-01-27 04:09:28.118310','20','2018 - ADMISSION FULL_TEST',3,'',29,6),
-(377,'2026-01-27 04:09:28.118342','19','2017 - ADMISSION FULL_TEST',3,'',29,6),
-(378,'2026-01-27 04:09:28.118374','18','2016 - ADMISSION FULL_TEST',3,'',29,6),
-(379,'2026-01-27 04:09:28.118405','17','2015 - ADMISSION FULL_TEST',3,'',29,6),
-(380,'2026-01-27 04:09:28.118436','16','2014 - ADMISSION FULL_TEST',3,'',29,6),
-(381,'2026-01-27 04:09:28.118468','15','2013 - TEST VERIFY',3,'',29,6),
-(382,'2026-01-27 04:09:28.118500','14','2012 - TEST VERIFY',3,'',29,6),
-(383,'2026-01-27 04:09:28.118530','13','2011 - TEST VERIFY',3,'',29,6),
-(384,'2026-01-27 04:09:28.118562','12','2010 - PEREZ JUAN',3,'',29,6),
-(385,'2026-01-27 04:09:28.118595','11','2009 - MARIA Test',3,'',29,6),
-(386,'2026-01-27 04:09:28.118627','10','2008 - Prueba Niño',3,'',29,6),
-(387,'2026-01-27 04:09:28.118659','9','2007 - Prueba Niño',3,'',29,6),
-(388,'2026-01-27 04:09:38.761017','20','TUPAT None TUTOR_TEST',3,'',26,6),
-(389,'2026-01-27 04:09:38.761094','19','TUPAT None TUTOR_TEST',3,'',26,6),
-(390,'2026-01-27 04:09:38.761141','18','TUPAT None TUTOR_TEST',3,'',26,6),
-(391,'2026-01-27 04:09:38.761182','17','TUPAT None TUTOR_TEST',3,'',26,6),
-(392,'2026-01-27 04:09:38.761222','16','TUPAT None TUTOR_TEST',3,'',26,6),
-(393,'2026-01-27 04:09:38.761263','15','TUPAT None TUTOR_TEST',3,'',26,6),
-(394,'2026-01-27 04:09:38.761304','14','TUPAT None TUTOR_TEST',3,'',26,6),
-(395,'2026-01-27 04:09:38.761344','13','TUPAT None TUTOR_TEST',3,'',26,6),
-(396,'2026-01-27 04:09:38.761384','12','TUPAT None TUTOR_TEST',3,'',26,6),
-(397,'2026-01-27 04:09:38.761422','11','TUPAT None TUTOR_TEST',3,'',26,6),
-(398,'2026-01-27 04:09:38.761460','10','TUPAT None TUTOR_TEST',3,'',26,6),
-(399,'2026-01-27 04:09:38.761498','9','TUPAT None TUTOR_TEST',3,'',26,6),
-(400,'2026-01-27 04:09:38.761535','8','TUPAT None TUTOR_TEST',3,'',26,6),
-(401,'2026-01-27 04:09:38.761573','7','TUPAT None TUTOR_TEST',3,'',26,6),
-(402,'2026-01-27 04:09:38.761611','6','TUPAT None TUTOR_TEST',3,'',26,6),
-(403,'2026-01-27 04:09:38.761650','5','Prueba None Padre',3,'',26,6),
-(404,'2026-01-27 04:09:38.761689','4','Prueba None Padre',3,'',26,6),
-(405,'2026-01-27 04:09:38.761727','3','Paterno None Tutor1',3,'',26,6),
-(406,'2026-01-27 04:09:38.761764','2','Paterno None Tutor1',3,'',26,6),
-(407,'2026-01-27 04:09:38.761802','1','ROQUE SALAZ ARTURO PADILLA',3,'',26,6),
-(408,'2026-01-27 04:10:17.608861','33','2031 - ADMISSION FULL_TEST',2,'[{\"changed\": {\"fields\": [\"Status\", \"Pagado status\", \"Fecha nacimiento\", \"Sexo\"]}}]',29,6),
-(409,'2026-01-27 16:52:02.908232','2031','Folio 2031 - adancito_test1040@aspirante.com',3,'',28,6),
-(410,'2026-01-27 16:52:02.908315','2030','Folio 2030 - adancito_test7221@aspirante.com',3,'',28,6),
-(411,'2026-01-27 16:52:02.908354','2029','Folio 2029 - adancito_test7960@aspirante.com',3,'',28,6),
-(412,'2026-01-27 16:52:02.908387','2028','Folio 2028 - adancito_test7818@aspirante.com',3,'',28,6),
-(413,'2026-01-27 16:52:02.908421','2027','Folio 2027 - test_full_8723@aspirante.com',3,'',28,6),
-(414,'2026-01-27 16:52:02.908453','2026','Folio 2026 - test_full_7665@aspirante.com',3,'',28,6),
-(415,'2026-01-27 16:52:02.908484','2025','Folio 2025 - test_full_8420@aspirante.com',3,'',28,6),
-(416,'2026-01-27 16:52:02.908514','2024','Folio 2024 - test_full_7662@aspirante.com',3,'',28,6),
-(417,'2026-01-27 16:52:02.908544','2023','Folio 2023 - test_full_6738@aspirante.com',3,'',28,6),
-(418,'2026-01-27 16:52:02.908572','2022','Folio 2022 - test_full_5373@aspirante.com',3,'',28,6),
-(419,'2026-01-27 16:52:02.908602','2021','Folio 2021 - test_full_5176@aspirante.com',3,'',28,6),
-(420,'2026-01-27 16:52:02.908632','2020','Folio 2020 - test_full_7318@aspirante.com',3,'',28,6),
-(421,'2026-01-27 16:52:02.908662','2019','Folio 2019 - test_full_7907@aspirante.com',3,'',28,6),
-(422,'2026-01-27 16:52:02.908692','2018','Folio 2018 - test_full_1928@aspirante.com',3,'',28,6),
-(423,'2026-01-27 16:52:02.908720','2017','Folio 2017 - test_full_6635@aspirante.com',3,'',28,6),
-(424,'2026-01-27 16:52:02.908769','2016','Folio 2016 - test_full_4771@aspirante.com',3,'',28,6),
-(425,'2026-01-27 16:52:02.908798','2015','Folio 2015 - test_full_4413@aspirante.com',3,'',28,6),
-(426,'2026-01-27 16:52:02.908828','2014','Folio 2014 - test_full_0878@aspirante.com',3,'',28,6),
-(427,'2026-01-27 16:52:02.908857','2013','Folio 2013 - test_verify_949@aspirante.com',3,'',28,6),
-(428,'2026-01-27 16:52:02.908886','2012','Folio 2012 - test_verify_226@aspirante.com',3,'',28,6),
-(429,'2026-01-27 16:52:02.908915','2011','Folio 2011 - test_verify_584@aspirante.com',3,'',28,6),
-(430,'2026-01-27 16:52:02.908944','2010','Folio 2010 - aspirante@ejemplo.com',3,'',28,6),
-(431,'2026-01-27 16:52:02.908973','2009','Folio 2009 - testpass@aspirante.com',3,'',28,6),
-(432,'2026-01-27 16:52:02.909003','2008','Folio 2008 - revamp_test_1324@example.com',3,'',28,6),
-(433,'2026-01-27 16:52:02.909031','2007','Folio 2007 - revamp_test_6219@example.com',3,'',28,6),
-(434,'2026-01-27 16:52:02.909061','2006','Folio 2006 - full_test_10075@example.com',3,'',28,6),
-(435,'2026-01-27 16:52:02.909091','2005','Folio 2005 - full_test_1350@example.com',3,'',28,6),
-(436,'2026-01-27 16:52:02.909120','2004','Folio 2004 - full_test_6171@example.com',3,'',28,6),
-(437,'2026-01-27 16:52:02.909147','2003','Folio 2003 - test_asp_3436@example.com',3,'',28,6),
-(438,'2026-01-27 16:52:02.909176','2002','Folio 2002 - test_asp_8524@example.com',3,'',28,6),
-(439,'2026-01-27 16:52:02.909205','2001','Folio 2001 - test_asp_9400@example.com',3,'',28,6),
-(440,'2026-01-27 16:52:02.909232','2000','Folio 2000 - prueba@prueba.com',3,'',28,6),
-(441,'2026-01-27 19:10:57.744655','22','Colegiatura Enero 2026 - Primaria',1,'[{\"added\": {}}]',18,6),
-(442,'2026-01-27 19:11:18.761363','301','220330 - MAURICER PANDILLA - Colegiatura Test - Todos ($1000.00)',2,'[]',17,6),
-(443,'2026-01-27 19:11:42.181737','302','220569 - Luis Garcia - Colegiatura Enero 2026 - Primaria ($75.0000)',1,'[{\"added\": {}}]',17,6),
-(444,'2026-01-27 19:23:16.027903','220569','220569 - Luis Garcia',2,'[]',9,6),
-(445,'2026-01-27 19:27:25.115531','220548','220548 - MARIANA FLOWERS',3,'',9,6),
-(446,'2026-01-27 19:27:25.115584','220606','220606 - Maria Garcia',3,'',9,6),
-(447,'2026-01-27 19:27:25.115607','220569','220569 - Luis Garcia',3,'',9,6),
-(448,'2026-01-27 19:27:25.115627','220555','220555 - Carlos Garcia',3,'',9,6),
-(449,'2026-01-27 19:27:25.115647','220561','220561 - Luis Garcia',3,'',9,6),
-(450,'2026-01-27 19:27:25.115667','220575','220575 - Maria Gonzalez',3,'',9,6),
-(451,'2026-01-27 19:27:25.115686','220566','220566 - Luis Gonzalez',3,'',9,6),
-(452,'2026-01-27 19:27:25.115707','220565','220565 - Carlos Gonzalez',3,'',9,6),
-(453,'2026-01-27 19:27:25.115727','220557','220557 - Carlos Gonzalez',3,'',9,6),
-(454,'2026-01-27 19:27:25.115747','220597','220597 - Jorge Gonzalez',3,'',9,6),
-(455,'2026-01-27 19:27:25.115766','220562','220562 - Maria Gonzalez',3,'',9,6),
-(456,'2026-01-27 19:27:25.115786','220560','220560 - Pedro Gonzalez',3,'',9,6),
-(457,'2026-01-27 19:27:25.115805','220559','220559 - Carlos Gonzalez',3,'',9,6),
-(458,'2026-01-27 19:27:25.115824','220594','220594 - Miguel Gonzalez',3,'',9,6),
-(459,'2026-01-27 19:27:25.115843','220587','220587 - Lucia Gonzalez',3,'',9,6),
-(460,'2026-01-27 19:27:25.115863','220601','220601 - Maria Hernandez',3,'',9,6),
-(461,'2026-01-27 19:27:25.115882','220583','220583 - Carlos Hernandez',3,'',9,6),
-(462,'2026-01-27 19:27:25.115902','220589','220589 - Pedro Hernandez',3,'',9,6),
-(463,'2026-01-27 19:27:25.115921','220556','220556 - Sofia Hernandez',3,'',9,6),
-(464,'2026-01-27 19:27:25.115939','220581','220581 - Luis Hernandez',3,'',9,6),
-(465,'2026-01-27 19:27:25.115959','220603','220603 - Pedro Hernandez',3,'',9,6),
-(466,'2026-01-27 19:27:25.115978','220604','220604 - Miguel Hernandez',3,'',9,6),
-(467,'2026-01-27 19:27:25.115998','220550','220550 - Maria Hernandez',3,'',9,6),
-(468,'2026-01-27 19:27:25.116017','220570','220570 - Pedro Lopez',3,'',9,6),
-(469,'2026-01-27 19:27:25.116037','220605','220605 - Lucia Lopez',3,'',9,6),
-(470,'2026-01-27 19:27:25.116056','220580','220580 - Jorge Lopez',3,'',9,6),
-(471,'2026-01-27 19:27:25.116075','220564','220564 - Lucia Lopez',3,'',9,6),
-(472,'2026-01-27 19:27:25.116096','220590','220590 - Sofia Lopez',3,'',9,6),
-(473,'2026-01-27 19:27:25.116116','220591','220591 - Elena Martinez',3,'',9,6),
-(474,'2026-01-27 19:27:25.116135','220578','220578 - Luis Martinez',3,'',9,6),
-(475,'2026-01-27 19:27:25.116154','220599','220599 - Carlos Martinez',3,'',9,6),
-(476,'2026-01-27 19:27:25.116173','220596','220596 - Elena Martinez',3,'',9,6),
-(477,'2026-01-27 19:27:25.116192','220573','220573 - Miguel Martinez',3,'',9,6),
-(478,'2026-01-27 19:27:25.116211','220554','220554 - Miguel Martinez',3,'',9,6),
-(479,'2026-01-27 19:27:25.116231','220609','220609 - Luis Martinez',3,'',9,6),
-(480,'2026-01-27 19:27:25.116249','729293','729293 - GEN ONE',3,'',9,6),
-(481,'2026-01-27 19:27:25.116268','716821','716821 - GEN ONE',3,'',9,6),
-(482,'2026-01-27 19:27:25.116287','716081','716081 - GEN ONE',3,'',9,6),
-(483,'2026-01-27 19:27:25.116305','220330','220330 - MAURICER PANDILLA',3,'',9,6),
-(484,'2026-01-27 19:27:25.116323','220585','220585 - Ana Perez',3,'',9,6),
-(485,'2026-01-27 19:27:25.116343','220574','220574 - Pedro Perez',3,'',9,6),
-(486,'2026-01-27 19:27:25.116363','220600','220600 - Elena Perez',3,'',9,6),
-(487,'2026-01-27 19:27:25.116381','220588','220588 - Maria Perez',3,'',9,6),
-(488,'2026-01-27 19:27:25.116400','220567','220567 - Lucia Perez',3,'',9,6),
-(489,'2026-01-27 19:27:25.116436','220602','220602 - Sofia Perez',3,'',9,6),
-(490,'2026-01-27 19:27:25.116456','220595','220595 - Miguel Perez',3,'',9,6),
-(491,'2026-01-27 19:27:25.116474','220576','220576 - Jorge Perez',3,'',9,6),
-(492,'2026-01-27 19:27:25.116493','220571','220571 - Lucia Perez',3,'',9,6),
-(493,'2026-01-27 19:27:25.116511','220592','220592 - Carlos Perez',3,'',9,6),
-(494,'2026-01-27 19:27:25.116530','220572','220572 - Lucia Perez',3,'',9,6),
-(495,'2026-01-27 19:27:25.116549','830259','830259 - TEST PRO',3,'',9,6),
-(496,'2026-01-27 19:27:25.116568','829740','829740 - TEST PRO',3,'',9,6),
-(497,'2026-01-27 19:27:25.116586','828974','828974 - TEST PRO',3,'',9,6),
-(498,'2026-01-27 19:27:25.116606','220549','220549 - Estudiante Prueba',3,'',9,6),
-(499,'2026-01-27 19:27:25.116625','220551','220551 - Maria Rodriguez',3,'',9,6),
-(500,'2026-01-27 19:27:25.116643','220579','220579 - Ana Rodriguez',3,'',9,6),
-(501,'2026-01-27 19:27:25.116661','220558','220558 - Jorge Rodriguez',3,'',9,6),
-(502,'2026-01-27 19:27:25.116678','220552','220552 - Jorge Rodriguez',3,'',9,6),
-(503,'2026-01-27 19:27:25.116696','220584','220584 - Jorge Rodriguez',3,'',9,6),
-(504,'2026-01-27 19:27:25.116715','220582','220582 - Elena Rodriguez',3,'',9,6),
-(505,'2026-01-27 19:27:25.116733','220563','220563 - Maria Sanchez',3,'',9,6),
-(506,'2026-01-27 19:27:25.116751','220607','220607 - Jorge Sanchez',3,'',9,6),
-(507,'2026-01-27 19:27:25.116769','220598','220598 - Maria Sanchez',3,'',9,6),
-(508,'2026-01-27 19:27:25.116787','220593','220593 - Lucia Sanchez',3,'',9,6),
-(509,'2026-01-27 19:27:25.116805','220568','220568 - Carlos Sanchez',3,'',9,6),
-(510,'2026-01-27 19:27:25.116824','220608','220608 - Lucia Sanchez',3,'',9,6),
-(511,'2026-01-27 19:27:25.116844','220586','220586 - Sofia Sanchez',3,'',9,6),
-(512,'2026-01-27 19:27:25.116862','220553','220553 - Sofia Sanchez',3,'',9,6),
-(513,'2026-01-27 19:27:25.116880','220577','220577 - Luis Sanchez',3,'',9,6),
-(514,'2026-01-27 19:27:25.116899','923666','923666 - TEST_PRO SMOKE',3,'',9,6),
-(515,'2026-01-27 19:27:25.116917','906028','906028 - TEST_PRO SMOKE',3,'',9,6),
-(516,'2026-01-27 19:27:25.116936','220991','220991 - TEST SMOKE',3,'',9,6),
-(517,'2026-01-27 19:27:25.116954','220990','220990 - BANDIT ROJELIO SOLIS',3,'',9,6),
-(518,'2026-01-27 19:27:39.678283','15','E_1990 (12.00%)',3,'',8,6),
-(519,'2026-01-27 19:27:39.678376','14','E_1388 (12.00%)',3,'',8,6),
-(520,'2026-01-27 19:27:39.678453','13','E_1257 (12.00%)',3,'',8,6),
-(521,'2026-01-27 19:27:39.678506','12','DBG_1095 (10.00%)',3,'',8,6),
-(522,'2026-01-27 19:27:39.678553','11','DEBUG_E (10.00%)',3,'',8,6),
-(523,'2026-01-27 19:27:39.678588','10','E_1969 (12.00%)',3,'',8,6),
-(524,'2026-01-27 19:27:39.678622','9','E_1016 (12.00%)',3,'',8,6),
-(525,'2026-01-27 19:27:39.678655','8','E_33 (15.00%)',3,'',8,6),
-(526,'2026-01-27 19:27:39.678686','7','E_9 (15.00%)',3,'',8,6),
-(527,'2026-01-27 19:27:39.678719','6','E_DEBUG (15.00%)',3,'',8,6),
-(528,'2026-01-27 19:27:39.678752','5','E (75.00%)',3,'',8,6),
-(529,'2026-01-27 19:27:39.678785','4','D (50.00%)',3,'',8,6),
-(530,'2026-01-27 19:27:39.678817','3','C (25.00%)',3,'',8,6),
-(531,'2026-01-27 19:27:39.678849','2','A (10.00%)',3,'',8,6),
-(532,'2026-01-27 19:27:39.678893','1','B (20.00%)',3,'',8,6),
-(533,'2026-01-27 19:27:55.533697','14','G_PERM_1768951581 - TEST',3,'',12,6),
-(534,'2026-01-27 19:27:55.533767','12','G_PERM_1768951485 - TEST',3,'',12,6),
-(535,'2026-01-27 19:27:55.533806','10','G_PERM_1768951264 - TEST',3,'',12,6),
-(536,'2026-01-27 19:27:55.533840','8','G_PERM_1768951073 - TEST',3,'',12,6),
-(537,'2026-01-27 19:27:55.533877','6','G_PERM_1768951028 - TEST',3,'',12,6),
-(538,'2026-01-27 19:27:55.533912','4','G_TEST_1768950793_UPD - TEST_NIVEL',3,'',12,6),
-(539,'2026-01-27 19:27:55.533948','3','G_TEST_1768950617_UPD - TEST_NIVEL',3,'',12,6),
-(540,'2026-01-27 19:27:55.533984','2','G_TEST_1768950505_UPD - TEST_NIVEL',3,'',12,6),
-(541,'2026-01-27 19:27:55.534017','1','10 - Universidad',3,'',12,6),
-(542,'2026-01-27 19:27:55.534051','15','1° Preescolar',3,'',12,6),
-(543,'2026-01-27 19:27:55.534085','16','2° Preescolar',3,'',12,6),
-(544,'2026-01-27 19:27:55.534118','17','3° Preescolar',3,'',12,6),
-(545,'2026-01-27 19:27:55.534153','18','1° Primaria',3,'',12,6),
-(546,'2026-01-27 19:27:55.534186','19','2° Primaria',3,'',12,6),
-(547,'2026-01-27 19:27:55.534219','20','3° Primaria',3,'',12,6),
-(548,'2026-01-27 19:27:55.534250','21','4° Primaria',3,'',12,6),
-(549,'2026-01-27 19:27:55.534282','22','5° Primaria',3,'',12,6),
-(550,'2026-01-27 19:27:55.534314','23','6° Primaria',3,'',12,6),
-(551,'2026-01-27 19:27:55.534347','24','1° Secundaria',3,'',12,6),
-(552,'2026-01-27 19:27:55.534379','25','2° Secundaria',3,'',12,6),
-(553,'2026-01-27 19:27:55.534410','26','3° Secundaria',3,'',12,6),
-(554,'2026-01-27 19:28:34.765315','14','TUTOR TEST MADRE',3,'',15,6),
-(555,'2026-01-27 19:28:34.765387','13','TUTOR TEST MADRE',3,'',15,6),
-(556,'2026-01-27 19:36:09.245866','8','ESTADO_1768950793',3,'',7,6),
-(557,'2026-01-27 19:36:09.245938','7','ESTADO_1768950617',3,'',7,6),
-(558,'2026-01-27 19:36:09.245975','6','ESTADO_1768950505',3,'',7,6),
-(559,'2026-01-27 19:38:46.253314','27','A Preescolar',1,'[{\"added\": {}}]',12,6),
-(560,'2026-01-27 19:40:59.313835','27','A Preescolar',3,'',12,6),
-(561,'2026-01-27 20:12:56.787423','1000','1000 - HECTOR ADAN HURTADO',1,'[{\"added\": {}}, {\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"1000 - HECTOR ADAN HURTADO -> PEPE EL PIYO Sanchez Pedroza (Padre)\"}}, {\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"1000 - HECTOR ADAN HURTADO -> Maria FERNANDA Garcia Lopez (Madre)\"}}]',9,6),
-(562,'2026-01-27 20:22:47.146116','1000','1000 - HECTOR ADAN HURTADO',2,'[{\"added\": {\"name\": \"Beca-Estudiante\", \"object\": \"1000 - HECTOR ADAN HURTADO - Beca 10% (Activa)\"}}]',9,6),
-(563,'2026-01-27 20:23:18.958891','303','1000 - HECTOR ADAN HURTADO - Colegiatura Enero 2026 - Primaria ($450.00)',1,'[{\"added\": {}}]',17,6),
-(564,'2026-01-27 20:28:01.336074','16','A (0%)',1,'[{\"added\": {}}]',8,6),
-(565,'2026-01-27 20:28:59.985967','17','B (60%)',1,'[{\"added\": {}}]',8,6),
-(566,'2026-01-27 20:29:52.264482','18','C (80%)',1,'[{\"added\": {}}]',8,6),
-(567,'2026-01-27 20:30:13.149312','1000','1000 - HECTOR ADAN HURTADO',2,'[{\"changed\": {\"name\": \"Beca-Estudiante\", \"object\": \"1000 - HECTOR ADAN HURTADO - Beca 10% (Retirada)\", \"fields\": [\"Activa\"]}}]',9,6),
-(568,'2026-01-27 20:30:59.295412','304','1000 - HECTOR ADAN HURTADO - Colegiatura Enero 2026 - Primaria ($500.00)',1,'[{\"added\": {}}]',17,6),
-(569,'2026-01-27 20:32:22.560251','1000','1000 - HECTOR ADAN HURTADO',2,'[{\"changed\": {\"name\": \"Beca-Estudiante\", \"object\": \"1000 - HECTOR ADAN HURTADO - Beca 10% (Activa)\", \"fields\": [\"Activa\"]}}]',9,6),
-(570,'2026-01-27 20:33:26.490464','1000','1000 - HECTOR ADAN HURTADO',2,'[{\"added\": {\"name\": \"Evaluaci\\u00f3n Socioecon\\u00f3mica\", \"object\": \"[+] Evaluaci\\u00f3n 1000 - HECTOR ADAN HURTADO - Aprobada\"}}]',9,6),
-(571,'2026-01-27 20:35:33.329330','305','1000 - HECTOR ADAN HURTADO - Colegiatura Enero 2026 - Primaria ($180.00)',1,'[{\"added\": {}}]',17,6),
-(572,'2026-01-27 20:47:10.189777','78','Pago $450.00 - 2026-01-27',1,'[{\"added\": {}}]',19,6),
-(573,'2026-01-27 20:48:30.828686','2','2025-2026 [ACTIVO]',1,'[{\"added\": {}}]',31,6),
-(574,'2026-01-27 20:50:51.059878','79','Pago $540.00 - 2026-01-27',1,'[{\"added\": {}}]',19,6),
-(575,'2026-01-27 22:41:23.139591','5','BECA_TEST_1768950179 (10.00%) - Vigente',3,'',24,6),
-(576,'2026-01-27 22:41:23.139652','4','BECA_TEST_1768950113 (10.00%) - Vigente',3,'',24,6),
-(577,'2026-01-27 22:41:23.139724','3','BECA_TEST_1768949919 (10.00%) - Vigente',3,'',24,6),
-(578,'2026-01-27 22:41:23.139753','2','BECA_TEST_1768949870 (10.00%) - Vigente',3,'',24,6),
-(579,'2026-01-27 22:41:23.139780','7','B_1768950793 (20.00%) - Vigente',3,'',24,6),
-(580,'2026-01-27 22:41:23.139807','6','B_1768950617 (20.00%) - Vigente',3,'',24,6),
-(581,'2026-01-27 22:42:33.618481','21','TUPAT None TUTOR_TEST',3,'',26,6),
-(582,'2026-01-27 22:42:58.580414','45','VerificationCode object (45)',3,'',30,6),
-(583,'2026-01-27 22:42:58.580490','44','VerificationCode object (44)',3,'',30,6),
-(584,'2026-01-27 22:42:58.580526','43','VerificationCode object (43)',3,'',30,6),
-(585,'2026-01-27 22:42:58.580559','42','VerificationCode object (42)',3,'',30,6),
-(586,'2026-01-27 22:42:58.580592','41','VerificationCode object (41)',3,'',30,6),
-(587,'2026-01-27 22:42:58.580624','40','VerificationCode object (40)',3,'',30,6),
-(588,'2026-01-27 22:42:58.580657','39','VerificationCode object (39)',3,'',30,6),
-(589,'2026-01-27 22:42:58.580716','38','VerificationCode object (38)',3,'',30,6),
-(590,'2026-01-27 22:42:58.580742','37','VerificationCode object (37)',3,'',30,6),
-(591,'2026-01-27 22:42:58.580765','36','VerificationCode object (36)',3,'',30,6),
-(592,'2026-01-27 22:42:58.580790','35','VerificationCode object (35)',3,'',30,6),
-(593,'2026-01-27 22:42:58.580813','34','VerificationCode object (34)',3,'',30,6),
-(594,'2026-01-27 22:42:58.580837','33','VerificationCode object (33)',3,'',30,6),
-(595,'2026-01-27 22:42:58.580861','32','VerificationCode object (32)',3,'',30,6),
-(596,'2026-01-27 22:42:58.580884','31','VerificationCode object (31)',3,'',30,6),
-(597,'2026-01-27 22:42:58.580908','30','VerificationCode object (30)',3,'',30,6),
-(598,'2026-01-27 22:42:58.580932','29','VerificationCode object (29)',3,'',30,6),
-(599,'2026-01-27 22:42:58.580956','28','VerificationCode object (28)',3,'',30,6),
-(600,'2026-01-27 22:42:58.580980','27','VerificationCode object (27)',3,'',30,6),
-(601,'2026-01-27 22:42:58.581004','26','VerificationCode object (26)',3,'',30,6),
-(602,'2026-01-27 22:42:58.581026','25','VerificationCode object (25)',3,'',30,6),
-(603,'2026-01-27 22:42:58.581049','24','VerificationCode object (24)',3,'',30,6),
-(604,'2026-01-27 22:42:58.581073','23','VerificationCode object (23)',3,'',30,6),
-(605,'2026-01-27 22:42:58.581097','21','VerificationCode object (21)',3,'',30,6),
-(606,'2026-01-27 22:42:58.581120','18','VerificationCode object (18)',3,'',30,6),
-(607,'2026-01-27 22:42:58.581142','17','VerificationCode object (17)',3,'',30,6),
-(608,'2026-01-27 22:42:58.581166','15','VerificationCode object (15)',3,'',30,6),
-(609,'2026-01-27 22:42:58.581189','14','VerificationCode object (14)',3,'',30,6),
-(610,'2026-01-27 22:42:58.581220','13','VerificationCode object (13)',3,'',30,6),
-(611,'2026-01-27 22:42:58.581243','11','VerificationCode object (11)',3,'',30,6),
-(612,'2026-01-27 22:42:58.581266','10','VerificationCode object (10)',3,'',30,6),
-(613,'2026-01-27 22:42:58.581290','4','VerificationCode object (4)',3,'',30,6),
-(614,'2026-01-27 22:42:58.581313','3','VerificationCode object (3)',3,'',30,6),
-(615,'2026-01-27 22:42:58.581337','2','VerificationCode object (2)',3,'',30,6),
-(616,'2026-01-27 22:42:58.581360','1','VerificationCode object (1)',3,'',30,6),
-(617,'2026-01-27 22:50:40.973317','1001','1001 - FLORENCIO MOHAMED',1,'[{\"added\": {}}, {\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"1001 - FLORENCIO MOHAMED -> JASSIEL NU\\u00d1EZ PEDROZA (Padre)\"}}, {\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"1001 - FLORENCIO MOHAMED -> ROBERTA OLED JARAMILLO (Madre)\"}}]',9,6),
-(618,'2026-01-27 22:51:05.281115','1001','1001 - FLORENCIO MOHAMED',2,'[{\"added\": {\"name\": \"Beca-Estudiante\", \"object\": \"1001 - FLORENCIO MOHAMED - Beca 10% (Activa)\"}}]',9,6),
-(619,'2026-01-27 22:55:38.653179','1000','1000 - ARRON ADRIAN SOMALI',2,'[{\"changed\": {\"fields\": [\"Nombre\", \"Apellido paterno\", \"Apellido materno\"]}}]',9,6),
-(620,'2026-01-27 22:55:55.238571','1001','1001 - FLORENCIO MOHAMED',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1001 - FLORENCIO MOHAMED - 3\\u00b0A - Preescolar (activo)\", \"fields\": [\"Grupo\"]}}]',9,6),
-(621,'2026-01-27 22:57:00.214234','1000','1000 - ARRON ADRIAN SOMALI',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1000 - ARRON ADRIAN SOMALI - 5\\u00b0A - Primaria (completado)\", \"fields\": [\"Grupo\"]}}, {\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1000 - ARRON ADRIAN SOMALI - 6\\u00b0C - Primaria (activo)\", \"fields\": [\"Grupo\"]}}]',9,6),
-(622,'2026-01-27 23:28:22.635303','3','2026-2027 [ACTIVO]',1,'[{\"added\": {}}]',31,6),
-(623,'2026-01-27 23:36:02.104070','308','1001 - FLORENCIO MOHAMED - Reinscripción Primaria Automática - Primaria ($1350.00)',3,'',17,6),
-(624,'2026-01-27 23:36:02.104144','307','1000 - ARRON ADRIAN SOMALI - Reinscripción Secundaria Automática - Secundaria ($720.00)',3,'',17,6),
-(625,'2026-01-27 23:36:02.104188','305','1000 - ARRON ADRIAN SOMALI - Colegiatura Enero 2026 - Primaria ($180.00)',3,'',17,6),
-(626,'2026-01-27 23:36:02.104227','304','1000 - ARRON ADRIAN SOMALI - Colegiatura Enero 2026 - Primaria ($500.00)',3,'',17,6),
-(627,'2026-01-27 23:36:30.006946','3','2026-2027 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(628,'2026-01-27 23:36:30.081427','1','2024-2025 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(629,'2026-01-27 23:36:56.867330','75','1000 - ARRON ADRIAN SOMALI - 6°C - Primaria (pendiente_pago)',3,'',32,6),
-(630,'2026-01-27 23:37:37.232547','306','1000 - ARRON ADRIAN SOMALI - Reinscripción Primaria Automática - Primaria ($540.00)',3,'',17,6),
-(631,'2026-01-27 23:37:37.232593','303','1000 - ARRON ADRIAN SOMALI - Colegiatura Enero 2026 - Primaria ($450.00)',3,'',17,6),
-(632,'2026-01-27 23:37:53.454478','24','Reinscripción Secundaria Automática - Secundaria',3,'',18,6),
-(633,'2026-01-27 23:37:53.454552','23','Reinscripción Primaria Automática - Primaria',3,'',18,6),
-(634,'2026-01-27 23:37:53.454591','22','Colegiatura Enero 2026 - Primaria',3,'',18,6),
-(635,'2026-01-27 23:37:53.454624','21','Colegiatura Test - Todos',3,'',18,6),
-(636,'2026-01-27 23:38:16.726897','76','1001 - FLORENCIO MOHAMED - 3°A - Preescolar (pendiente_pago)',3,'',32,6),
-(637,'2026-01-27 23:38:34.094489','3','2026-2027 ',3,'',31,6),
-(638,'2026-01-27 23:38:34.094532','2','2025-2026 ',3,'',31,6),
-(639,'2026-01-27 23:41:02.969957','4','2025-2024 [ACTIVO]',1,'[{\"added\": {}}]',31,6),
-(640,'2026-01-27 23:41:52.402792','1001','1001 - FLORENCIO MOHAMED',2,'[{\"added\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1001 - FLORENCIO MOHAMED - 3\\u00b0A - Preescolar (activo)\"}}]',9,6),
-(641,'2026-01-27 23:42:07.862795','4','2025-2024 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(642,'2026-01-27 23:42:07.916642','1','2024-2025 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(643,'2026-01-27 23:42:32.680091','4','2025-2024 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(644,'2026-01-27 23:42:32.690774','1','2024-2025 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(645,'2026-01-27 23:42:54.499633','4','2025-2024 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(646,'2026-01-27 23:42:54.574242','1','2024-2025 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(647,'2026-01-27 23:43:48.858967','1000','1000 - ARRON ADRIAN SOMALI',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1000 - ARRON ADRIAN SOMALI - 5\\u00b0A - Primaria (activo)\", \"fields\": [\"Estatus\"]}}]',9,6),
-(648,'2026-01-27 23:44:14.827274','74','1000 - ARRON ADRIAN SOMALI - 5°A - Primaria (pendiente_pago)',2,'[{\"changed\": {\"fields\": [\"Estatus\"]}}]',32,6),
-(649,'2026-01-27 23:44:25.062417','4','2025-2024 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(650,'2026-01-27 23:44:25.064903','1','2024-2025 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(651,'2026-01-27 23:44:42.852452','80','Pago $1350.00 - 2026-01-27',1,'[{\"added\": {}}]',19,6),
-(652,'2026-01-27 23:46:29.171403','309','1001 - FLORENCIO MOHAMED - Reinscripción Primaria Automática - Primaria ($1350.00)',3,'',17,6),
-(653,'2026-01-27 23:46:42.471504','4','2025-2024 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(654,'2026-01-27 23:46:42.563472','1','2024-2025 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(655,'2026-01-27 23:47:05.259818','78','1001 - FLORENCIO MOHAMED - 1°A - Primaria (pendiente_pago)',3,'',32,6),
-(656,'2026-01-27 23:47:15.073721','4','2025-2024 ',3,'',31,6),
-(657,'2026-01-27 23:47:42.927467','1001','1001 - FLORENCIO MOHAMED',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1001 - FLORENCIO MOHAMED - 3\\u00b0A - Preescolar (activo)\", \"fields\": [\"Estatus\"]}}]',9,6),
-(658,'2026-01-27 23:47:57.384080','1000','1000 - ARRON ADRIAN SOMALI',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1000 - ARRON ADRIAN SOMALI - 5\\u00b0A - Primaria (activo)\", \"fields\": [\"Estatus\"]}}]',9,6),
-(659,'2026-01-27 23:48:17.971964','1001','1001 - FLORENCIO MOHAMED',2,'[]',9,6),
-(660,'2026-01-27 23:48:51.648391','5','2025-2026 [ACTIVO]',1,'[{\"added\": {}}]',31,6),
-(661,'2026-01-27 23:49:39.058222','311','1000 - ARRON ADRIAN SOMALI - Reinscripción Primaria Automática - Primaria ($540.00)',3,'',17,6),
-(662,'2026-01-27 23:49:39.058318','310','1001 - FLORENCIO MOHAMED - Reinscripción Primaria Automática - Primaria ($1350.00)',3,'',17,6),
-(663,'2026-01-27 23:49:52.828450','25','Reinscripción Primaria Automática - Primaria',3,'',18,6),
-(664,'2026-01-27 23:50:15.104282','5','2025-2026 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(665,'2026-01-27 23:50:15.184192','1','2024-2025 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(666,'2026-01-27 23:50:31.585647','5','2025-2026 ',3,'',31,6),
-(667,'2026-01-27 23:50:58.987677','1001','1001 - FLORENCIO MOHAMED',2,'[]',9,6),
-(668,'2026-01-27 23:51:10.755125','1000','1000 - ARRON ADRIAN SOMALI',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1000 - ARRON ADRIAN SOMALI - 5\\u00b0A - Primaria (activo)\", \"fields\": [\"Estatus\"]}}]',9,6),
-(669,'2026-01-27 23:51:19.591869','1001','1001 - FLORENCIO MOHAMED',2,'[]',9,6),
-(670,'2026-01-28 22:22:07.388887','35','2001 - Apellido AspiranteTest',3,'',29,6),
-(671,'2026-01-28 22:22:07.388969','34','2000 - None AspiranteTest',3,'',29,6),
-(672,'2026-01-28 22:26:09.259939','36','2002 - Apellido AspiranteTest',2,'[{\"changed\": {\"fields\": [\"Status\"]}}]',29,6),
-(673,'2026-01-28 22:27:37.788399','36','2002 - Apellido AspiranteTest',2,'[{\"changed\": {\"fields\": [\"Status\", \"Acta nacimiento\"]}}]',29,6),
-(674,'2026-01-28 23:35:31.882815','41','2007 - Apellido AspiranteTest',2,'[{\"changed\": {\"fields\": [\"Fecha visita domiciliaria\"]}}]',29,6),
-(675,'2026-01-28 23:36:29.882942','41','2007 - Apellido AspiranteTest',2,'[{\"changed\": {\"fields\": [\"Fecha entrevista psicologia\"]}}]',29,6),
-(676,'2026-01-30 19:53:55.079610','45','1001 - FLORENCIO MOHAMED - 2026-01-30 (Desayuno)',1,'[{\"added\": {}}]',16,6),
-(677,'2026-01-30 19:54:16.726254','45','1001 - FLORENCIO MOHAMED - 2026-01-30 (Desayuno)',3,'',16,6),
-(678,'2026-01-30 20:02:17.606321','46','1001 - FLORENCIO MOHAMED - 2026-01-30 (Desayuno)',1,'[{\"added\": {}}]',16,6),
-(679,'2026-01-30 21:59:33.440423','1','1001 - FLORENCIO MOHAMED - $10.00 (PENDIENTE)',3,'',35,6),
-(680,'2026-01-30 22:16:00.282804','48','1001 - FLORENCIO MOHAMED - 2026-01-30 (Comida)',1,'[{\"added\": {}}]',16,6),
-(681,'2026-01-30 22:24:07.669827','81','Pago $13.50 - 2026-01-30',1,'[{\"added\": {}}]',19,6),
-(682,'2026-02-02 22:02:33.644135','77','bandit@test.com (Estudiante)',2,'[{\"changed\": {\"fields\": [\"password\"]}}]',1,6),
-(683,'2026-02-02 22:11:01.494371','1','adancpphack@gmail.com (Estudiante)',2,'[{\"changed\": {\"fields\": [\"password\"]}}]',1,6),
-(684,'2026-02-02 22:11:50.301030','6','hectorino2789@gmail.com (administrador)',2,'[{\"changed\": {\"fields\": [\"Nombre\", \"Role\"]}}]',1,6),
-(685,'2026-02-02 22:12:00.901112','1','adancpphack@gmail.com (estudiante)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(686,'2026-02-02 22:12:10.963396','77','bandit@test.com (estudiante)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(687,'2026-02-02 22:22:03.454671','314','1001 - FLORENCIO MOHAMED - Consumo Cafeteria - Todos ($136.0000)',2,'[{\"changed\": {\"fields\": [\"Fecha vencimiento\"]}}]',17,6),
-(688,'2026-02-03 22:38:15.328337','82','Pago $136.00 - 2026-02-03',1,'[{\"added\": {}}]',19,6),
-(689,'2026-02-03 22:38:38.376804','83','Pago $10.00 - 2026-02-03',1,'[{\"added\": {}}]',19,6),
-(690,'2026-02-03 22:38:59.732440','1001','1001 - FLORENCIO MOHAMED',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1001 - FLORENCIO MOHAMED - 3\\u00b0A - Preescolar (activo)\", \"fields\": [\"Ciclo escolar\"]}}]',9,6),
-(691,'2026-02-03 22:39:10.680106','1000','1000 - ARRON ADRIAN SOMALI',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1000 - ARRON ADRIAN SOMALI - 5\\u00b0A - Primaria (activo)\", \"fields\": [\"Ciclo escolar\"]}}]',9,6),
-(692,'2026-02-03 22:39:50.034243','1002','1002 - ESTUDIANTE TEST',2,'[{\"added\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1002 - ESTUDIANTE TEST - 1\\u00b0B - Preescolar (activo)\"}}]',9,6),
-(693,'2026-02-03 22:42:06.458356','91','admin_testing@school.com (becas_admin)',2,'[{\"changed\": {\"fields\": [\"Nombre\", \"Role\"]}}]',1,6),
-(694,'2026-02-03 22:48:30.541986','51','1000 - ARRON ADRIAN SOMALI - 2026-02-03 (Comida)',1,'[{\"added\": {}}]',16,6),
-(695,'2026-02-03 22:51:44.072832','7','2026-2027 ',1,'[{\"added\": {}}]',31,6),
-(696,'2026-02-03 22:59:38.633671','7','2026-2027 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(697,'2026-02-03 22:59:38.635696','6','2025-2026 ',2,'[{\"changed\": {\"fields\": [\"Activo\"]}}]',31,6),
-(698,'2026-02-04 20:43:17.944910','91','admin_testing@school.com (administrador)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(699,'2026-02-04 20:57:02.982960','91','admin_testing@school.com (comedor_admin)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(700,'2026-02-04 20:57:31.102222','91','admin_testing@school.com (admisiones_admin)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(701,'2026-02-04 23:18:13.094727','55','1001 - FLORENCIO MOHAMED - 2026-02-04 (Desayuno)',1,'[{\"added\": {}}]',16,6),
-(702,'2026-02-05 01:25:18.765229','91','admin_testing@school.com (estudiante)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(703,'2026-02-05 01:25:57.967307','91','admin_testing@school.com (finanzas_admin)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(704,'2026-02-05 03:21:44.809909','91','admin_testing@school.com (becas_admin)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(705,'2026-02-05 03:22:26.088326','91','admin_testing@school.com (administrador)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(706,'2026-02-05 03:22:50.745397','91','admin_testing@school.com (comedor_admin)',2,'[{\"changed\": {\"fields\": [\"Role\"]}}]',1,6),
-(707,'2026-02-12 03:06:33.799000','92','student_test_final@school.com (estudiante)',2,'[{\"changed\": {\"fields\": [\"password\"]}}]',1,6),
-(708,'2026-02-12 17:37:48.236049','3','Autorización 3 - 99988886 - Juanito Perez - 10.00',3,'',38,6),
-(709,'2026-02-12 17:37:48.236143','2','Autorización 2 - 99988885 - Juanito Perez - 10.00',3,'',38,6),
-(710,'2026-02-12 17:37:48.236202','1','Autorización 1 - 99988884 - Juanito Perez - 10.00',3,'',38,6),
-(711,'2026-02-12 17:38:29.523591','3','99988886 - Juanito Perez - 10.00',3,'',39,6),
-(712,'2026-02-12 17:38:29.523660','2','99988885 - Juanito Perez - 10.00',3,'',39,6),
-(713,'2026-02-12 17:38:29.523705','1','99988884 - Juanito Perez - 10.00',3,'',39,6),
-(714,'2026-02-12 17:38:53.526065','1','Profesor X Y - Matemáticas I (MAT-1P-TEST) (1A_TESTA_TEST (2025-2026-TEST))',3,'',37,6),
-(715,'2026-02-12 17:39:06.048176','3','99988886 - Juanito Perez - Matemáticas I (MAT-1P-TEST) - AO',3,'',40,6),
-(716,'2026-02-12 17:39:06.048266','2','99988885 - Juanito Perez - Matemáticas I (MAT-1P-TEST) - AO',3,'',40,6),
-(717,'2026-02-12 17:39:06.048320','1','99988884 - Juanito Perez - Matemáticas I (MAT-1P-TEST) - AO',3,'',40,6),
-(718,'2026-02-12 17:39:15.066185','1','Matemáticas I (MAT-1P-TEST)',3,'',42,6),
-(719,'2026-02-12 17:39:46.884335','1','Parcial 1 - 2025-2026-TEST [ACTIVO]',3,'',44,6),
-(720,'2026-02-12 17:40:05.962222','57','2015 - MIGRACION JUAN',3,'',29,6),
-(721,'2026-02-12 17:40:05.962310','48','2014 - Perez Juan',3,'',29,6),
-(722,'2026-02-12 17:40:05.962363','47','2013 - TEST ASPIRANTE ACTUALIZADO',3,'',29,6),
-(723,'2026-02-12 17:40:05.962408','46','2012 - TEST ASPIRANTE ACTUALIZADO',3,'',29,6),
-(724,'2026-02-12 17:40:05.962450','45','2011 - TEST ASPIRANTE',3,'',29,6),
-(725,'2026-02-12 17:40:05.962492','44','2010 - TEST ASPIRANTE',3,'',29,6),
-(726,'2026-02-12 17:40:05.962533','43','2009 - Apellido AspiranteTest',3,'',29,6),
-(727,'2026-02-12 17:40:05.962574','42','2008 - Apellido AspiranteTest',3,'',29,6),
-(728,'2026-02-12 17:40:05.962616','41','2007 - Apellido AspiranteTest',3,'',29,6),
-(729,'2026-02-12 17:40:05.962658','40','2006 - Apellido AspiranteTest',3,'',29,6),
-(730,'2026-02-12 17:40:05.962699','39','2005 - Apellido AspiranteTest',3,'',29,6),
-(731,'2026-02-12 17:40:05.962740','38','2004 - Apellido AspiranteTest',3,'',29,6),
-(732,'2026-02-12 17:40:05.962780','37','2003 - Apellido AspiranteTest',3,'',29,6),
-(733,'2026-02-12 17:40:05.962821','36','2002 - Apellido AspiranteTest',3,'',29,6),
-(734,'2026-02-12 17:40:17.425274','42','DE PRUEBA PADRE',3,'',26,6),
-(735,'2026-02-12 17:40:17.425359','41','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(736,'2026-02-12 17:40:17.425409','40','Paterno Materno Tutor Uno',3,'',26,6),
-(737,'2026-02-12 17:40:17.425452','39','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(738,'2026-02-12 17:40:17.425492','38','Paterno Materno Tutor Uno',3,'',26,6),
-(739,'2026-02-12 17:40:17.425533','37','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(740,'2026-02-12 17:40:17.425574','36','Paterno Materno Tutor Uno',3,'',26,6),
-(741,'2026-02-12 17:40:17.425614','35','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(742,'2026-02-12 17:40:17.425661','34','Paterno Materno Tutor Uno',3,'',26,6),
-(743,'2026-02-12 17:40:17.425723','33','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(744,'2026-02-12 17:40:17.425788','32','Paterno Materno Tutor Uno',3,'',26,6),
-(745,'2026-02-12 17:40:17.425849','31','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(746,'2026-02-12 17:40:17.425911','30','Paterno Materno Tutor Uno',3,'',26,6),
-(747,'2026-02-12 17:40:17.425952','29','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(748,'2026-02-12 17:40:17.426013','28','Paterno Materno Tutor Uno',3,'',26,6),
-(749,'2026-02-12 17:40:17.426055','27','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(750,'2026-02-12 17:40:17.426095','26','Paterno Materno Tutor Uno',3,'',26,6),
-(751,'2026-02-12 17:40:17.426134','25','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(752,'2026-02-12 17:40:17.426173','24','Paterno Materno Tutor Uno',3,'',26,6),
-(753,'2026-02-12 17:40:17.426210','23','Paterno2 Materno2 Tutor Dos',3,'',26,6),
-(754,'2026-02-12 17:40:17.426248','22','Paterno Materno Tutor Uno',3,'',26,6),
-(755,'2026-02-12 17:40:29.503142','2015','Folio 2015 - test_migracion@example.com',3,'',28,6),
-(756,'2026-02-12 17:40:29.503246','2014','Folio 2014 - aspirante@test.com',3,'',28,6),
-(757,'2026-02-12 17:40:29.503316','2013','Folio 2013 - aspirante_test_1770062701@school.com',3,'',28,6),
-(758,'2026-02-12 17:40:29.503374','2012','Folio 2012 - aspirante_test_1770062618@school.com',3,'',28,6),
-(759,'2026-02-12 17:40:29.503438','2011','Folio 2011 - aspirante_test_1770062583@school.com',3,'',28,6),
-(760,'2026-02-12 17:40:29.503495','2010','Folio 2010 - aspirante_test_1770062563@school.com',3,'',28,6),
-(761,'2026-02-12 17:40:29.503552','2009','Folio 2009 - test_5807@example.com',3,'',28,6),
-(762,'2026-02-12 17:40:29.503595','2008','Folio 2008 - test_2976@example.com',3,'',28,6),
-(763,'2026-02-12 17:40:29.503635','2007','Folio 2007 - test_9133@example.com',3,'',28,6),
-(764,'2026-02-12 17:40:29.503673','2006','Folio 2006 - test_7766@example.com',3,'',28,6),
-(765,'2026-02-12 17:40:29.503714','2005','Folio 2005 - test_4259@example.com',3,'',28,6),
-(766,'2026-02-12 17:40:29.503754','2004','Folio 2004 - test_10798@example.com',3,'',28,6),
-(767,'2026-02-12 17:40:29.503792','2003','Folio 2003 - test_8802@example.com',3,'',28,6),
-(768,'2026-02-12 17:40:29.503831','2002','Folio 2002 - test_10336@example.com',3,'',28,6),
-(769,'2026-02-12 17:40:29.503870','2001','Folio 2001 - test_2237@example.com',3,'',28,6),
-(770,'2026-02-12 17:40:29.503910','2000','Folio 2000 - test_5550@example.com',3,'',28,6),
-(771,'2026-02-12 17:40:43.665947','66','VerificationCode object (66)',3,'',30,6),
-(772,'2026-02-12 17:40:43.666055','65','VerificationCode object (65)',3,'',30,6),
-(773,'2026-02-12 17:40:43.666104','64','VerificationCode object (64)',3,'',30,6),
-(774,'2026-02-12 17:40:43.666146','63','VerificationCode object (63)',3,'',30,6),
-(775,'2026-02-12 17:40:43.666188','62','VerificationCode object (62)',3,'',30,6),
-(776,'2026-02-12 17:40:43.666230','61','VerificationCode object (61)',3,'',30,6),
-(777,'2026-02-12 17:40:43.666271','60','VerificationCode object (60)',3,'',30,6),
-(778,'2026-02-12 17:40:43.666311','59','VerificationCode object (59)',3,'',30,6),
-(779,'2026-02-12 17:40:43.666349','58','VerificationCode object (58)',3,'',30,6),
-(780,'2026-02-12 17:40:43.666392','57','VerificationCode object (57)',3,'',30,6),
-(781,'2026-02-12 17:40:43.666433','56','VerificationCode object (56)',3,'',30,6),
-(782,'2026-02-12 17:40:43.666472','55','VerificationCode object (55)',3,'',30,6),
-(783,'2026-02-12 17:40:43.666510','54','VerificationCode object (54)',3,'',30,6),
-(784,'2026-02-12 17:40:43.666549','53','VerificationCode object (53)',3,'',30,6),
-(785,'2026-02-12 17:40:43.666588','52','VerificationCode object (52)',3,'',30,6),
-(786,'2026-02-12 17:40:43.666626','51','VerificationCode object (51)',3,'',30,6),
-(787,'2026-02-12 17:40:43.666664','50','VerificationCode object (50)',3,'',30,6),
-(788,'2026-02-12 17:40:43.666703','49','VerificationCode object (49)',3,'',30,6),
-(789,'2026-02-12 17:40:43.666742','48','VerificationCode object (48)',3,'',30,6),
-(790,'2026-02-12 17:40:43.666780','47','VerificationCode object (47)',3,'',30,6),
-(791,'2026-02-12 17:40:43.666818','46','VerificationCode object (46)',3,'',30,6),
-(792,'2026-02-12 17:41:00.724656','3','Director Z',3,'',36,6),
-(793,'2026-02-12 17:41:00.724738','2','Director Z',3,'',36,6),
-(794,'2026-02-12 17:41:00.724785','1','Director Z',3,'',36,6),
-(795,'2026-02-12 17:41:15.246537','4','Profesor X Y',3,'',41,6),
-(796,'2026-02-12 17:41:15.246621','3','Profesor X Y',3,'',41,6),
-(797,'2026-02-12 17:41:15.246669','2','Profesor X Y',3,'',41,6),
-(798,'2026-02-12 17:41:15.246710','1','Profesor X Y',3,'',41,6),
-(799,'2026-02-12 17:41:30.611922','1','Programa Primaria 2025 TEST',3,'',45,6),
-(800,'2026-02-12 17:42:07.417256','55','1001 - FLORENCIO MOHAMED - 2026-02-04 (Desayuno)',3,'',16,6),
-(801,'2026-02-12 17:42:07.417316','54','1001 - FLORENCIO MOHAMED - 2026-02-04 (Comida)',3,'',16,6),
-(802,'2026-02-12 17:42:07.417348','53','1001 - FLORENCIO MOHAMED - 2026-02-03 (Comida)',3,'',16,6),
-(803,'2026-02-12 17:42:07.417376','51','1000 - ARRON ADRIAN SOMALI - 2026-02-03 (Comida)',3,'',16,6),
-(804,'2026-02-12 17:42:07.417402','50','1001 - FLORENCIO MOHAMED - 2026-02-02 (Comida)',3,'',16,6),
-(805,'2026-02-12 17:42:07.417429','49','1001 - FLORENCIO MOHAMED - 2026-01-31 (Comida)',3,'',16,6),
-(806,'2026-02-12 17:42:07.417455','48','1001 - FLORENCIO MOHAMED - 2026-01-30 (Comida)',3,'',16,6),
-(807,'2026-02-12 17:42:07.417481','47','1000 - ARRON ADRIAN SOMALI - 2026-01-30 (Comida)',3,'',16,6),
-(808,'2026-02-12 17:42:07.417508','46','1001 - FLORENCIO MOHAMED - 2026-01-30 (Desayuno)',3,'',16,6),
-(809,'2026-02-12 17:42:19.607621','22','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(810,'2026-02-12 17:42:19.607677','21','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(811,'2026-02-12 17:42:19.607707','20','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(812,'2026-02-12 17:42:19.607736','19','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(813,'2026-02-12 17:42:19.607766','18','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(814,'2026-02-12 17:42:19.607792','17','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(815,'2026-02-12 17:42:19.607819','16','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(816,'2026-02-12 17:42:19.607846','15','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(817,'2026-02-12 17:42:19.607872','14','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(818,'2026-02-12 17:42:19.607898','13','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(819,'2026-02-12 17:42:19.607926','12','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(820,'2026-02-12 17:42:19.607953','11','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(821,'2026-02-12 17:42:19.607981','10','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(822,'2026-02-12 17:42:19.608035','9','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(823,'2026-02-12 17:42:19.608066','8','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(824,'2026-02-12 17:42:19.608093','7','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(825,'2026-02-12 17:42:19.608120','6','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(826,'2026-02-12 17:42:19.608146','5','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(827,'2026-02-12 17:42:19.608173','4','Menu 2026-02-02 - 2026-02-06',3,'',21,6),
-(828,'2026-02-12 17:42:19.608202','3','Menu 2025-01-20 - 2025-01-24',3,'',21,6),
-(829,'2026-02-12 17:42:19.608230','2','Menu 2025-01-13 - 2025-01-17',3,'',21,6),
-(830,'2026-02-12 17:42:19.608258','1','Menu 2025-01-06 - 2025-01-10',3,'',21,6),
-(831,'2026-02-12 17:42:32.659966','25','Menu Test',3,'',20,6),
-(832,'2026-02-12 17:42:32.660050','24','Menu Test',3,'',20,6),
-(833,'2026-02-12 17:42:32.660079','23','Menu Test',3,'',20,6),
-(834,'2026-02-12 17:42:32.660104','22','Menu Test',3,'',20,6),
-(835,'2026-02-12 17:42:32.660128','21','Menu Test',3,'',20,6),
-(836,'2026-02-12 17:42:32.660151','20','Menu Test',3,'',20,6),
-(837,'2026-02-12 17:42:32.660176','19','Menu Test',3,'',20,6),
-(838,'2026-02-12 17:42:32.660199','18','Menu Test',3,'',20,6),
-(839,'2026-02-12 17:42:32.660223','17','Menu Test',3,'',20,6),
-(840,'2026-02-12 17:42:32.660246','16','Menu Test',3,'',20,6),
-(841,'2026-02-12 17:42:32.660269','15','Menu Test',3,'',20,6),
-(842,'2026-02-12 17:42:32.660291','14','Menu Test',3,'',20,6),
-(843,'2026-02-12 17:42:32.660313','13','Menu Test 1770166749',3,'',20,6),
-(844,'2026-02-12 17:42:32.660337','12','Menu Test 1770062512',3,'',20,6),
-(845,'2026-02-12 17:42:32.660360','11','Menu Test 1769917676',3,'',20,6),
-(846,'2026-02-12 17:42:32.660383','10','Menu Test 1769917410',3,'',20,6),
-(847,'2026-02-12 17:42:32.660405','9','Menu Test 1769917382',3,'',20,6),
-(848,'2026-02-12 17:42:32.660429','8','Menu Test 1769917101',3,'',20,6),
-(849,'2026-02-12 17:42:32.660451','7','Menu Test 1769917023',3,'',20,6),
-(850,'2026-02-12 17:42:32.660474','6','Comida Corrida Test',3,'',20,6),
-(851,'2026-02-12 17:42:32.660497','5','Jugo de Naranja',3,'',20,6),
-(852,'2026-02-12 17:42:32.660521','4','Sandwich de Pollo',3,'',20,6),
-(853,'2026-02-12 17:42:32.660546','3','Comida Corrida del Dia',3,'',20,6),
-(854,'2026-02-12 17:42:32.660574','2','Molletes con Chorizo',3,'',20,6),
-(855,'2026-02-12 17:42:32.660598','1','Chilaquiles Rojos',3,'',20,6),
-(856,'2026-02-12 17:42:56.789502','9999','9999 - Maria Garcia',3,'',9,6),
-(857,'2026-02-12 17:42:56.789556','123457','123457 - JUAN MIGRACION',3,'',9,6),
-(858,'2026-02-12 17:42:56.789584','1001','1001 - FLORENCIO MOHAMED',3,'',9,6),
-(859,'2026-02-12 17:42:56.789611','123456','123456 - Juan Perez',3,'',9,6),
-(860,'2026-02-12 17:42:56.789636','99988886','99988886 - Juanito Perez',3,'',9,6),
-(861,'2026-02-12 17:42:56.789661','99988885','99988885 - Juanito Perez',3,'',9,6),
-(862,'2026-02-12 17:42:56.789685','99988884','99988884 - Juanito Perez',3,'',9,6),
-(863,'2026-02-12 17:42:56.789709','99988883','99988883 - PEDRO REINSC',3,'',9,6),
-(864,'2026-02-12 17:42:56.789733','99988828','99988828 - PEDRO REINSC',3,'',9,6),
-(865,'2026-02-12 17:42:56.789756','99988814','99988814 - PEDRO REINSC',3,'',9,6),
-(866,'2026-02-12 17:42:56.789780','253475','253475 - PEDRO REINSC',3,'',9,6),
-(867,'2026-02-12 17:42:56.789804','253430','253430 - PEDRO REINSC',3,'',9,6),
-(868,'2026-02-12 17:42:56.789827','1000','1000 - ARRON ADRIAN SOMALI',3,'',9,6),
-(869,'2026-02-12 17:42:56.789850','1002','1002 - ESTUDIANTE TEST',3,'',9,6),
-(870,'2026-02-12 17:43:24.154252','41','Reinscripcion-Test-1770253475 - ',3,'',18,6),
-(871,'2026-02-12 17:43:24.154344','40','Reinscripcion-Test-1770253430 - ',3,'',18,6),
-(872,'2026-02-12 17:43:24.154394','39','Reinscripcion 2026-10169 - ',3,'',18,6),
-(873,'2026-02-12 17:43:24.154440','38','Reinscripcion 2026-68577 - ',3,'',18,6),
-(874,'2026-02-12 17:43:24.154484','36','Reinscripcion 2026 - ',3,'',18,6),
-(875,'2026-02-12 17:43:24.154532','35','Reinscripción TEST-2026 - Todos',3,'',18,6),
-(876,'2026-02-12 17:43:24.154575','34','Test Concepto - ',3,'',18,6),
-(877,'2026-02-12 17:43:24.154622','33','Colegiatura Test - ',3,'',18,6),
-(878,'2026-02-12 17:43:24.154665','32','Test Reinscripcion Debt - Todos',3,'',18,6),
-(879,'2026-02-12 17:43:24.154712','31','Test Extra Debt - Todos',3,'',18,6),
-(880,'2026-02-12 17:43:24.154754','30','Test Reinscripcion - Todos',3,'',18,6),
-(881,'2026-02-12 17:43:24.154801','29','Test Extra - Todos',3,'',18,6),
-(882,'2026-02-12 17:43:24.154854','28','Reinscripción Preescolar Automática - Preescolar',3,'',18,6),
-(883,'2026-02-12 17:43:24.154900','27','Reinscripción Primaria Automática - Primaria',3,'',18,6),
-(884,'2026-02-12 17:43:24.154941','26','Consumo Cafeteria - Todos',3,'',18,6),
-(885,'2026-02-12 17:44:12.358605','284','1A_TESTA_TEST (2025-2026-TEST)',3,'',13,6),
-(886,'2026-02-12 17:44:12.358663','283','1° TESTA TEST (2025-2026 TEST)',3,'',13,6),
-(887,'2026-02-12 17:44:12.358694','282','2do-T-1770253475A (Ciclo-Next-1770253475)',3,'',13,6),
-(888,'2026-02-12 17:44:12.358723','281','1ro-T-1770253475A (Ciclo-Act-1770253475)',3,'',13,6),
-(889,'2026-02-12 17:44:12.358749','280','2do-T-1770253430A (Ciclo-Next-1770253430)',3,'',13,6),
-(890,'2026-02-12 17:44:12.358776','279','1ro-T-1770253430A (Ciclo-Act-1770253430)',3,'',13,6),
-(891,'2026-02-12 17:44:12.358803','278','2do-T-10169A (2026-Next-10169)',3,'',13,6),
-(892,'2026-02-12 17:44:12.358830','277','1ro-T-10169A (2025-Act-10169)',3,'',13,6),
-(893,'2026-02-12 17:44:12.358856','276','2do-T-68577A (2026-Next-68577)',3,'',13,6),
-(894,'2026-02-12 17:44:12.358882','275','1ro-T-68577A (2025-Act-68577)',3,'',13,6),
-(895,'2026-02-12 17:44:12.358908','274','2do-T-25378A (2026-Next-25378)',3,'',13,6),
-(896,'2026-02-12 17:44:12.358934','273','1ro-T-25378A (2025-Act-25378)',3,'',13,6),
-(897,'2026-02-12 17:44:49.164433','53','1A_TEST PRIMARIA_TEST',3,'',12,6),
-(898,'2026-02-12 17:44:49.164515','52','1° TEST - PRIMARIA',3,'',12,6),
-(899,'2026-02-12 17:44:49.164566','51','2do-T-1770253475 Nivel-Test-1770253475',3,'',12,6),
-(900,'2026-02-12 17:44:49.164612','50','1ro-T-1770253475 Nivel-Test-1770253475',3,'',12,6),
-(901,'2026-02-12 17:44:49.164657','49','2do-T-1770253430 Nivel-Test-1770253430',3,'',12,6),
-(902,'2026-02-12 17:44:49.164701','48','1ro-T-1770253430 Nivel-Test-1770253430',3,'',12,6),
-(903,'2026-02-12 17:44:49.164745','47','2do-T-10169 Primaria',3,'',12,6),
-(904,'2026-02-12 17:44:49.164789','46','1ro-T-10169 Primaria',3,'',12,6),
-(905,'2026-02-12 17:44:49.164833','45','2do-T-68577 Primaria',3,'',12,6),
-(906,'2026-02-12 17:44:49.164876','44','1ro-T-68577 Primaria',3,'',12,6),
-(907,'2026-02-12 17:44:49.164919','43','2do-T-25378 Primaria',3,'',12,6),
-(908,'2026-02-12 17:44:49.164964','42','1ro-T-25378 Primaria',3,'',12,6),
-(909,'2026-02-12 17:45:07.684083','40','1ro Primaria',3,'',12,6),
-(910,'2026-02-12 17:45:07.684162','41','2do Primaria',3,'',12,6),
-(911,'2026-02-12 17:46:25.125642','233','1°A (2026-2027)',3,'',13,6),
-(912,'2026-02-12 17:46:25.125692','16','1°A (2024-2025)',3,'',13,6),
-(913,'2026-02-12 17:46:25.125723','234','1°B (2026-2027)',3,'',13,6),
-(914,'2026-02-12 17:46:25.125751','17','1°B (2024-2025)',3,'',13,6),
-(915,'2026-02-12 17:46:25.125778','235','1°C (2026-2027)',3,'',13,6),
-(916,'2026-02-12 17:46:25.125806','18','1°C (2024-2025)',3,'',13,6),
-(917,'2026-02-12 17:46:25.125833','236','2°A (2026-2027)',3,'',13,6),
-(918,'2026-02-12 17:46:25.125860','19','2°A (2024-2025)',3,'',13,6),
-(919,'2026-02-12 17:46:25.125886','237','2°B (2026-2027)',3,'',13,6),
-(920,'2026-02-12 17:46:25.125912','20','2°B (2024-2025)',3,'',13,6),
-(921,'2026-02-12 17:46:25.125939','238','2°C (2026-2027)',3,'',13,6),
-(922,'2026-02-12 17:46:25.125965','21','2°C (2024-2025)',3,'',13,6),
-(923,'2026-02-12 17:46:25.126006','239','3°A (2026-2027)',3,'',13,6),
-(924,'2026-02-12 17:46:25.126033','22','3°A (2024-2025)',3,'',13,6),
-(925,'2026-02-12 17:46:25.126058','240','3°B (2026-2027)',3,'',13,6),
-(926,'2026-02-12 17:46:25.126084','23','3°B (2024-2025)',3,'',13,6),
-(927,'2026-02-12 17:46:25.126110','241','3°C (2026-2027)',3,'',13,6),
-(928,'2026-02-12 17:46:25.126136','24','3°C (2024-2025)',3,'',13,6),
-(929,'2026-02-12 17:46:25.126162','269','1°A (TEST-2026)',3,'',13,6),
-(930,'2026-02-12 17:46:25.126188','242','1°A (2026-2027)',3,'',13,6),
-(931,'2026-02-12 17:46:25.126214','196','1°A (2025-2026)',3,'',13,6),
-(932,'2026-02-12 17:46:25.126240','25','1°A (2024-2025)',3,'',13,6),
-(933,'2026-02-12 17:46:25.126266','243','1°B (2026-2027)',3,'',13,6),
-(934,'2026-02-12 17:46:25.126291','26','1°B (2024-2025)',3,'',13,6),
-(935,'2026-02-12 17:46:25.126317','244','1°C (2026-2027)',3,'',13,6),
-(936,'2026-02-12 17:46:25.126342','27','1°C (2024-2025)',3,'',13,6),
-(937,'2026-02-12 17:46:25.126367','245','2°A (2026-2027)',3,'',13,6),
-(938,'2026-02-12 17:46:25.126393','28','2°A (2024-2025)',3,'',13,6),
-(939,'2026-02-12 17:46:25.126418','246','2°B (2026-2027)',3,'',13,6),
-(940,'2026-02-12 17:46:25.126444','29','2°B (2024-2025)',3,'',13,6),
-(941,'2026-02-12 17:46:25.126469','247','2°C (2026-2027)',3,'',13,6),
-(942,'2026-02-12 17:46:25.126495','30','2°C (2024-2025)',3,'',13,6),
-(943,'2026-02-12 17:46:25.126520','248','3°A (2026-2027)',3,'',13,6),
-(944,'2026-02-12 17:46:25.126546','31','3°A (2024-2025)',3,'',13,6),
-(945,'2026-02-12 17:46:25.126572','249','3°B (2026-2027)',3,'',13,6),
-(946,'2026-02-12 17:46:25.126597','32','3°B (2024-2025)',3,'',13,6),
-(947,'2026-02-12 17:46:25.126623','250','3°C (2026-2027)',3,'',13,6),
-(948,'2026-02-12 17:46:25.126648','33','3°C (2024-2025)',3,'',13,6),
-(949,'2026-02-12 17:46:25.126673','251','4°A (2026-2027)',3,'',13,6),
-(950,'2026-02-12 17:46:25.126699','34','4°A (2024-2025)',3,'',13,6),
-(951,'2026-02-12 17:46:25.126725','252','4°B (2026-2027)',3,'',13,6),
-(952,'2026-02-12 17:46:25.126751','35','4°B (2024-2025)',3,'',13,6),
-(953,'2026-02-12 17:46:25.126777','253','4°C (2026-2027)',3,'',13,6),
-(954,'2026-02-12 17:46:25.126803','36','4°C (2024-2025)',3,'',13,6),
-(955,'2026-02-12 17:46:25.126830','254','5°A (2026-2027)',3,'',13,6),
-(956,'2026-02-12 17:46:25.126857','37','5°A (2024-2025)',3,'',13,6),
-(957,'2026-02-12 17:46:25.126883','255','5°B (2026-2027)',3,'',13,6),
-(958,'2026-02-12 17:46:25.126908','38','5°B (2024-2025)',3,'',13,6),
-(959,'2026-02-12 17:46:25.126935','256','5°C (2026-2027)',3,'',13,6),
-(960,'2026-02-12 17:46:25.126961','39','5°C (2024-2025)',3,'',13,6),
-(961,'2026-02-12 17:46:25.126987','257','6°A (2026-2027)',3,'',13,6),
-(962,'2026-02-12 17:46:25.127038','40','6°A (2024-2025)',3,'',13,6),
-(963,'2026-02-12 17:46:25.127071','258','6°B (2026-2027)',3,'',13,6),
-(964,'2026-02-12 17:46:25.127098','41','6°B (2024-2025)',3,'',13,6),
-(965,'2026-02-12 17:46:25.127124','259','6°C (2026-2027)',3,'',13,6),
-(966,'2026-02-12 17:46:25.127150','42','6°C (2024-2025)',3,'',13,6),
-(967,'2026-02-12 17:46:25.127176','260','1°A (2026-2027)',3,'',13,6),
-(968,'2026-02-12 17:46:25.127201','43','1°A (2024-2025)',3,'',13,6),
-(969,'2026-02-12 17:46:25.127229','261','1°B (2026-2027)',3,'',13,6),
-(970,'2026-02-12 17:46:25.127254','44','1°B (2024-2025)',3,'',13,6),
-(971,'2026-02-12 17:46:25.127280','262','1°C (2026-2027)',3,'',13,6),
-(972,'2026-02-12 17:46:25.127305','45','1°C (2024-2025)',3,'',13,6),
-(973,'2026-02-12 17:46:25.127332','263','2°A (2026-2027)',3,'',13,6),
-(974,'2026-02-12 17:46:25.127357','46','2°A (2024-2025)',3,'',13,6),
-(975,'2026-02-12 17:46:25.127383','264','2°B (2026-2027)',3,'',13,6),
-(976,'2026-02-12 17:46:25.127409','47','2°B (2024-2025)',3,'',13,6),
-(977,'2026-02-12 17:46:25.127435','265','2°C (2026-2027)',3,'',13,6),
-(978,'2026-02-12 17:46:25.127461','48','2°C (2024-2025)',3,'',13,6),
-(979,'2026-02-12 17:46:25.127487','266','3°A (2026-2027)',3,'',13,6),
-(980,'2026-02-12 17:46:25.127512','49','3°A (2024-2025)',3,'',13,6),
-(981,'2026-02-12 17:46:25.127537','267','3°B (2026-2027)',3,'',13,6),
-(982,'2026-02-12 17:46:25.127563','50','3°B (2024-2025)',3,'',13,6),
-(983,'2026-02-12 17:46:25.127588','268','3°C (2026-2027)',3,'',13,6),
-(984,'2026-02-12 17:46:25.127612','51','3°C (2024-2025)',3,'',13,6),
-(985,'2026-02-12 17:46:51.435559','23','2025-2026 TEST ',3,'',31,6),
-(986,'2026-02-12 17:46:51.435634','7','2026-2027 ',3,'',31,6),
-(987,'2026-02-12 17:46:51.435676','22','Ciclo-Next-1770253475 ',3,'',31,6),
-(988,'2026-02-12 17:46:51.435717','20','Ciclo-Next-1770253430 ',3,'',31,6),
-(989,'2026-02-12 17:46:51.435756','18','2026-Next-10169 ',3,'',31,6),
-(990,'2026-02-12 17:46:51.435791','16','2026-Next-68577 ',3,'',31,6),
-(991,'2026-02-12 17:46:51.435829','14','2026-Next-25378 ',3,'',31,6),
-(992,'2026-02-12 17:46:51.435867','12','2026-Next ',3,'',31,6),
-(993,'2026-02-12 17:46:51.435905','9','2026-Test ',3,'',31,6),
-(994,'2026-02-12 17:46:51.435943','8','TEST-2026 ',3,'',31,6),
-(995,'2026-02-12 17:46:51.435982','24','2025-2026-TEST [ACTIVO]',3,'',31,6),
-(996,'2026-02-12 17:46:51.436040','6','2025-2026 ',3,'',31,6),
-(997,'2026-02-12 17:46:51.436076','21','Ciclo-Act-1770253475 ',3,'',31,6),
-(998,'2026-02-12 17:46:51.436112','19','Ciclo-Act-1770253430 ',3,'',31,6),
-(999,'2026-02-12 17:46:51.436150','17','2025-Act-10169 ',3,'',31,6),
-(1000,'2026-02-12 17:46:51.436190','15','2025-Act-68577 ',3,'',31,6),
-(1001,'2026-02-12 17:46:51.436228','13','2025-Act-25378 ',3,'',31,6),
-(1002,'2026-02-12 17:46:51.436269','11','2025-Act ',3,'',31,6),
-(1003,'2026-02-12 17:46:51.436308','1','2024-2025 ',3,'',31,6),
-(1004,'2026-02-12 17:47:16.856544','25','2026-2027 [ACTIVO]',1,'[{\"added\": {}}]',31,6),
-(1005,'2026-02-12 17:53:41.365793','6','PRIMARIA_TEST',3,'',33,6),
-(1006,'2026-02-12 17:53:41.365850','5','Nivel-Test-1770253475',3,'',33,6),
-(1007,'2026-02-12 17:53:41.365879','4','Nivel-Test-1770253430',3,'',33,6),
-(1008,'2026-02-12 17:55:02.841620','2','Programa educativo 2017 Preescolar',1,'[{\"added\": {}}]',45,6),
-(1009,'2026-02-12 17:56:52.787210','3','Programa Edcuativo 2017 - Primaria',1,'[{\"added\": {}}]',45,6),
-(1010,'2026-02-12 18:01:08.659706','4','Programa Educativo Secundaria 2017',1,'[{\"added\": {}}]',45,6),
-(1011,'2026-02-12 18:03:17.456478','2','Enero-Febrero - 2026-2027 [ACTIVO]',1,'[{\"added\": {}}]',44,6),
-(1012,'2026-02-12 18:05:12.476367','1000','1000 - MAURICIO ANDRÉS PADILLA',1,'[{\"added\": {}}]',9,6),
-(1013,'2026-02-12 18:05:34.137024','1000','1000 - MAURICIO ANDRÉS PADILLA',2,'[{\"added\": {\"name\": \"Beca-Estudiante\", \"object\": \"1000 - MAURICIO ANDR\\u00c9S PADILLA - Beca 10% (Activa)\"}}]',9,6),
-(1014,'2026-02-12 18:05:48.656017','1000','1000 - MAURICIO ANDRÉS PADILLA',2,'[]',9,6),
-(1015,'2026-02-12 18:07:27.689122','1000','1000 - MAURICIO ANDRÉS PADILLA',2,'[{\"added\": {\"name\": \"Evaluaci\\u00f3n Socioecon\\u00f3mica\", \"object\": \"Evaluaci\\u00f3n 1000 - MAURICIO ANDR\\u00c9S PADILLA - Pendiente\"}}]',9,6),
-(1016,'2026-02-12 18:07:39.849455','1000','1000 - MAURICIO ANDRÉS PADILLA',2,'[]',9,6),
-(1017,'2026-02-12 18:08:10.511976','72','Evaluación 1000 - MAURICIO ANDRÉS PADILLA - Aprobada',2,'[{\"changed\": {\"fields\": [\"Aprobado\"]}}]',11,6),
-(1018,'2026-02-12 18:11:23.745951','1001','1001 - RAMIRO PATADA',1,'[{\"added\": {}}, {\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"1001 - RAMIRO PATADA -> Maria FERNANDA Garcia Lopez (Madre)\"}}]',9,6),
-(1019,'2026-02-12 18:12:00.144569','1001','1001 - RAMIRO PATADA',2,'[{\"added\": {\"name\": \"Evaluaci\\u00f3n Socioecon\\u00f3mica\", \"object\": \"Evaluaci\\u00f3n 1001 - RAMIRO PATADA - Aprobada\"}}]',9,6),
-(1020,'2026-02-12 18:12:25.305398','1001','1001 - RAMIRO PATADA',2,'[{\"changed\": {\"name\": \"Inscripci\\u00f3n\", \"object\": \"1001 - RAMIRO PATADA - 3\\u00b0B (2026-2027) (activo)\", \"fields\": [\"Grupo\"]}}]',9,6),
-(1021,'2026-02-12 18:18:46.688807','2','Enero-Febrero - 2026-2027 [ACTIVO]',2,'[{\"changed\": {\"fields\": [\"Estatus\"]}}]',44,6),
-(1022,'2026-02-12 18:19:58.369514','2','Matemáticas (1)',1,'[{\"added\": {}}]',42,6),
-(1023,'2026-02-12 18:20:39.498908','117','admin_escolar_test_4016@school.com (admin_escolar)',3,'',1,6),
-(1024,'2026-02-12 18:20:39.499022','111','admin_escolar_test_6777@school.com (admin_escolar)',3,'',1,6),
-(1025,'2026-02-12 18:20:39.499074','114','admin_escolar_test_9163@school.com (admin_escolar)',3,'',1,6),
-(1026,'2026-02-12 18:20:39.499136','7','admin_test@example.com (administrador)',3,'',1,6),
-(1027,'2026-02-12 18:20:39.499198','91','admin_testing@school.com (comedor_admin)',3,'',1,6),
-(1028,'2026-02-12 18:20:39.499253','9','admin_verify@test.com (administrador)',3,'',1,6),
-(1029,'2026-02-12 18:20:39.499293','94','aspirante@test.com (aspirante)',3,'',1,6),
-(1030,'2026-02-12 18:20:39.499332','77','bandit@test.com (estudiante)',3,'',1,6),
-(1031,'2026-02-12 18:20:39.499371','86','e_716081@t.com (estudiante)',3,'',1,6),
-(1032,'2026-02-12 18:20:39.499411','84','e_716821@t.com (estudiante)',3,'',1,6),
-(1033,'2026-02-12 18:20:39.499452','85','e_729293@t.com (estudiante)',3,'',1,6),
-(1034,'2026-02-12 18:20:39.499492','82','e_828974@t.com (estudiante)',3,'',1,6),
-(1035,'2026-02-12 18:20:39.499533','83','e_829740@t.com (estudiante)',3,'',1,6),
-(1036,'2026-02-12 18:20:39.499572','81','e_830259@t.com (estudiante)',3,'',1,6),
-(1037,'2026-02-12 18:20:39.499611','118','estudiante_test_4016@school.com (estudiante)',3,'',1,6),
-(1038,'2026-02-12 18:20:39.499649','112','estudiante_test_6777@school.com (estudiante)',3,'',1,6),
-(1039,'2026-02-12 18:20:39.499694','115','estudiante_test_9163@school.com (estudiante)',3,'',1,6),
-(1040,'2026-02-12 18:20:39.499751','95','estudiante@test.com (estudiante)',3,'',1,6),
-(1041,'2026-02-12 18:20:39.499791','116','maestro_test_4016@school.com (maestro)',3,'',1,6),
-(1042,'2026-02-12 18:20:39.499829','110','maestro_test_6777@school.com (maestro)',3,'',1,6),
-(1043,'2026-02-12 18:20:39.499867','113','maestro_test_9163@school.com (maestro)',3,'',1,6),
-(1044,'2026-02-12 18:20:39.499924','108','maestro_test@school.com (maestro)',3,'',1,6),
-(1045,'2026-02-12 18:20:39.499973','8','prueba@test.com (Estudiante)',3,'',1,6),
-(1046,'2026-02-12 18:20:39.500030','90','roberto@gmail.com (estudiante)',3,'',1,6),
-(1047,'2026-02-12 18:20:39.500074','17','student_0_1468@test.com (estudiante)',3,'',1,6),
-(1048,'2026-02-12 18:20:39.500130','47','student_0_1685@test.com (estudiante)',3,'',1,6),
-(1049,'2026-02-12 18:20:39.500170','48','student_1_2090@test.com (estudiante)',3,'',1,6),
-(1050,'2026-02-12 18:20:39.500208','18','student_1_9604@test.com (estudiante)',3,'',1,6),
-(1051,'2026-02-12 18:20:39.500246','27','student_10_2617@test.com (estudiante)',3,'',1,6),
-(1052,'2026-02-12 18:20:39.500284','57','student_10_7371@test.com (estudiante)',3,'',1,6),
-(1053,'2026-02-12 18:20:39.500322','58','student_11_2128@test.com (estudiante)',3,'',1,6),
-(1054,'2026-02-12 18:20:39.500359','28','student_11_3087@test.com (estudiante)',3,'',1,6),
-(1055,'2026-02-12 18:20:39.500396','29','student_12_4799@test.com (estudiante)',3,'',1,6),
-(1056,'2026-02-12 18:20:39.500435','59','student_12_6041@test.com (estudiante)',3,'',1,6),
-(1057,'2026-02-12 18:20:39.500474','30','student_13_6368@test.com (estudiante)',3,'',1,6),
-(1058,'2026-02-12 18:20:39.500511','60','student_13_7314@test.com (estudiante)',3,'',1,6),
-(1059,'2026-02-12 18:20:39.500549','31','student_14_1200@test.com (estudiante)',3,'',1,6),
-(1060,'2026-02-12 18:20:39.500586','61','student_14_3075@test.com (estudiante)',3,'',1,6),
-(1061,'2026-02-12 18:20:39.500624','62','student_15_1151@test.com (estudiante)',3,'',1,6),
-(1062,'2026-02-12 18:20:39.500661','32','student_15_3220@test.com (estudiante)',3,'',1,6),
-(1063,'2026-02-12 18:20:39.500698','33','student_16_6221@test.com (estudiante)',3,'',1,6),
-(1064,'2026-02-12 18:20:39.500737','63','student_16_9351@test.com (estudiante)',3,'',1,6),
-(1065,'2026-02-12 18:20:39.500775','64','student_17_1759@test.com (estudiante)',3,'',1,6),
-(1066,'2026-02-12 18:20:39.500827','34','student_17_2022@test.com (estudiante)',3,'',1,6),
-(1067,'2026-02-12 18:20:39.500885','65','student_18_4045@test.com (estudiante)',3,'',1,6),
-(1068,'2026-02-12 18:20:39.500926','35','student_18_4298@test.com (estudiante)',3,'',1,6),
-(1069,'2026-02-12 18:20:39.500966','36','student_19_2004@test.com (estudiante)',3,'',1,6),
-(1070,'2026-02-12 18:20:39.501019','66','student_19_6407@test.com (estudiante)',3,'',1,6),
-(1071,'2026-02-12 18:20:39.501062','19','student_2_2479@test.com (estudiante)',3,'',1,6),
-(1072,'2026-02-12 18:20:39.501100','49','student_2_9566@test.com (estudiante)',3,'',1,6),
-(1073,'2026-02-12 18:20:39.501138','37','student_20_1007@test.com (estudiante)',3,'',1,6),
-(1074,'2026-02-12 18:20:39.501176','67','student_20_1491@test.com (estudiante)',3,'',1,6),
-(1075,'2026-02-12 18:20:39.501215','38','student_21_1115@test.com (estudiante)',3,'',1,6),
-(1076,'2026-02-12 18:20:39.501253','68','student_21_2472@test.com (estudiante)',3,'',1,6),
-(1077,'2026-02-12 18:20:39.501292','39','student_22_1593@test.com (estudiante)',3,'',1,6),
-(1078,'2026-02-12 18:20:39.501330','69','student_22_2212@test.com (estudiante)',3,'',1,6),
-(1079,'2026-02-12 18:20:39.501368','70','student_23_3269@test.com (estudiante)',3,'',1,6),
-(1080,'2026-02-12 18:20:39.501407','40','student_23_8078@test.com (estudiante)',3,'',1,6),
-(1081,'2026-02-12 18:20:39.501463','71','student_24_2857@test.com (estudiante)',3,'',1,6),
-(1082,'2026-02-12 18:20:39.501504','41','student_24_5431@test.com (estudiante)',3,'',1,6),
-(1083,'2026-02-12 18:20:39.501542','42','student_25_5749@test.com (estudiante)',3,'',1,6),
-(1084,'2026-02-12 18:20:39.501597','72','student_25_8416@test.com (estudiante)',3,'',1,6),
-(1085,'2026-02-12 18:20:39.501654','43','student_26_3060@test.com (estudiante)',3,'',1,6),
-(1086,'2026-02-12 18:20:39.501711','73','student_26_8698@test.com (estudiante)',3,'',1,6),
-(1087,'2026-02-12 18:20:39.501755','74','student_27_6221@test.com (estudiante)',3,'',1,6),
-(1088,'2026-02-12 18:20:39.501796','44','student_27_7915@test.com (estudiante)',3,'',1,6),
-(1089,'2026-02-12 18:20:39.501834','45','student_28_2491@test.com (estudiante)',3,'',1,6),
-(1090,'2026-02-12 18:20:39.501872','75','student_28_8696@test.com (estudiante)',3,'',1,6),
-(1091,'2026-02-12 18:20:39.501910','76','student_29_6601@test.com (estudiante)',3,'',1,6),
-(1092,'2026-02-12 18:20:39.501947','46','student_29_7825@test.com (estudiante)',3,'',1,6),
-(1093,'2026-02-12 18:20:39.501985','50','student_3_1698@test.com (estudiante)',3,'',1,6),
-(1094,'2026-02-12 18:20:39.502048','20','student_3_9443@test.com (estudiante)',3,'',1,6),
-(1095,'2026-02-12 18:20:39.502087','21','student_4_2977@test.com (estudiante)',3,'',1,6),
-(1096,'2026-02-12 18:20:39.502125','51','student_4_9119@test.com (estudiante)',3,'',1,6),
-(1097,'2026-02-12 18:20:39.502163','52','student_5_4643@test.com (estudiante)',3,'',1,6),
-(1098,'2026-02-12 18:20:39.502201','22','student_5_6821@test.com (estudiante)',3,'',1,6),
-(1099,'2026-02-12 18:20:39.502239','23','student_6_1320@test.com (estudiante)',3,'',1,6),
-(1100,'2026-02-12 18:20:39.502278','53','student_6_8534@test.com (estudiante)',3,'',1,6),
-(1101,'2026-02-12 18:20:39.502316','24','student_7_3514@test.com (estudiante)',3,'',1,6),
-(1102,'2026-02-12 18:20:39.502354','54','student_7_5479@test.com (estudiante)',3,'',1,6),
-(1103,'2026-02-12 18:20:39.502392','25','student_8_1759@test.com (estudiante)',3,'',1,6),
-(1104,'2026-02-12 18:20:39.502430','55','student_8_9706@test.com (estudiante)',3,'',1,6),
-(1105,'2026-02-12 18:20:39.502469','26','student_9_3689@test.com (estudiante)',3,'',1,6),
-(1106,'2026-02-12 18:20:39.502507','56','student_9_5652@test.com (estudiante)',3,'',1,6),
-(1107,'2026-02-12 18:20:39.502545','16','student_crud@test.com (estudiante)',3,'',1,6),
-(1108,'2026-02-12 18:20:39.502583','92','student_test_final@school.com (estudiante)',3,'',1,6),
-(1109,'2026-02-12 18:20:39.502622','78','test_1768949919@example.com (estudiante)',3,'',1,6),
-(1110,'2026-02-12 18:20:39.502659','79','test_906028@school.com (estudiante)',3,'',1,6),
-(1111,'2026-02-12 18:20:39.502697','80','test_923666@school.com (estudiante)',3,'',1,6),
-(1112,'2026-02-12 18:20:39.502735','99','test_migracion@example.com (estudiante)',3,'',1,6),
-(1113,'2026-02-12 18:20:39.502775','105','test_r_1770253420@example.com (estudiante)',3,'',1,6),
-(1114,'2026-02-12 18:20:39.502814','106','test_r_1770253430@example.com (estudiante)',3,'',1,6),
-(1115,'2026-02-12 18:20:39.502852','107','test_r_1770253475@example.com (estudiante)',3,'',1,6),
-(1116,'2026-02-12 18:20:39.502891','101','test_reinscrip@example.com (estudiante)',3,'',1,6),
-(1117,'2026-02-12 18:20:39.502930','104','test_reinscrip34913@example.com (estudiante)',3,'',1,6),
-(1118,'2026-02-12 18:20:39.502967','103','test_reinscrip76763@example.com (estudiante)',3,'',1,6),
-(1119,'2026-02-12 18:21:02.144895','102','test_reinscrip88201@example.com (estudiante)',3,'',1,6),
-(1120,'2026-02-12 18:21:02.144972','93','test_reset@school.com (estudiante)',3,'',1,6),
-(1121,'2026-02-12 18:21:02.145045','89','testpass@gmail.com (estudiante)',3,'',1,6),
-(1122,'2026-02-12 18:56:44.548700','5','HECTOR ADAN HURTADO BRISEÑO',1,'[{\"added\": {}}]',41,6),
-(1123,'2026-02-12 18:57:09.346464','2','HECTOR ADAN HURTADO BRISEÑO - Matemáticas (1) (3°B (2026-2027))',1,'[{\"added\": {}}]',37,6),
-(1124,'2026-02-12 18:57:23.822214','2','HECTOR ADAN HURTADO BRISEÑO - Matemáticas (1) (3°B (2026-2027))',2,'[]',37,6),
-(1125,'2026-02-12 18:58:05.331763','4','1000 - MAURICIO ANDRÉS PADILLA - 9',1,'[{\"added\": {}}]',39,6),
-(1126,'2026-02-12 18:59:51.648405','1000','1000 - MAURICIO ANDRÉS PADILLA',2,'[{\"added\": {\"name\": \"Estudiante-Tutor\", \"object\": \"1000 - MAURICIO ANDR\\u00c9S PADILLA -> PEPE EL PIYO Sanchez Pedroza (Padre)\"}}]',9,6),
-(1127,'2026-02-12 19:00:48.788241','4','1000 - MAURICIO ANDRÉS PADILLA - 10',2,'[{\"changed\": {\"fields\": [\"Calificacion\"]}}]',39,6),
-(1128,'2026-02-12 19:03:03.878217','26','2027-2028 [ACTIVO]',1,'[{\"added\": {}}]',31,6),
-(1129,'2026-02-12 19:04:41.543581','84','Pago $1500.00 - 2026-02-12',1,'[{\"added\": {}}]',19,6),
-(1130,'2026-02-12 19:05:47.290080','71','padilla@gmail.com - 2026-02-12 18:59:12.142410+00:00 - EXITOSO',3,'',34,6),
-(1131,'2026-02-12 19:05:47.290173','70','student_test_final@school.com - 2026-02-12 03:06:40.646335+00:00 - EXITOSO',3,'',34,6),
-(1132,'2026-02-12 19:05:47.290229','69','student_test_final@school.com - 2026-02-12 03:02:15.939524+00:00 - FALLIDO',3,'',34,6),
-(1133,'2026-02-12 19:05:47.290278','68','estudiante@test.com - 2026-02-12 03:01:31.032069+00:00 - FALLIDO',3,'',34,6),
-(1134,'2026-02-12 19:05:47.290326','67','student_0_1468@test.com - 2026-02-12 02:56:17.548109+00:00 - EXITOSO',3,'',34,6),
-(1135,'2026-02-12 19:05:47.290373','66','student_0_1468@test.com - 2026-02-12 02:56:05.317396+00:00 - EXITOSO',3,'',34,6),
-(1136,'2026-02-12 19:05:47.290419','65','adancpphack@gmail.com - 2026-02-12 02:55:13.541091+00:00 - EXITOSO',3,'',34,6),
-(1137,'2026-02-12 19:05:47.290464','64','adancpphack@gmail.com - 2026-02-12 02:24:18.448535+00:00 - EXITOSO',3,'',34,6),
-(1138,'2026-02-12 19:05:47.290511','63','hectorino2789@gmail.com - 2026-02-12 01:55:59.929864+00:00 - EXITOSO',3,'',34,6),
-(1139,'2026-02-12 19:05:47.290558','62','adancpphack@gmail.com - 2026-02-12 01:55:25.537917+00:00 - EXITOSO',3,'',34,6),
-(1140,'2026-02-12 19:05:47.290604','61','adancpphack@gmail.com - 2026-02-12 01:55:05.716199+00:00 - FALLIDO',3,'',34,6),
-(1141,'2026-02-12 19:05:47.290650','60','bandit@test.com - 2026-02-11 01:07:55.032340+00:00 - EXITOSO',3,'',34,6),
-(1142,'2026-02-12 19:05:47.290695','59','hectorino2789@gmail.com - 2026-02-11 01:00:04.160930+00:00 - EXITOSO',3,'',34,6),
-(1143,'2026-02-12 19:05:47.290740','58','adancpphack@gmail.com - 2026-02-11 00:53:41.195220+00:00 - EXITOSO',3,'',34,6),
-(1144,'2026-02-12 19:05:47.290784','57','hectorino2789@gmail.com - 2026-02-11 00:47:13.058559+00:00 - EXITOSO',3,'',34,6),
-(1145,'2026-02-12 19:05:47.290863','56','adancpphack@gmail.com - 2026-02-11 00:43:40.150698+00:00 - EXITOSO',3,'',34,6),
-(1146,'2026-02-12 19:05:47.290933','55','admin_testing@school.com - 2026-02-05 03:23:28.843834+00:00 - EXITOSO',3,'',34,6),
-(1147,'2026-02-12 19:05:47.290982','54','admin_testing@school.com - 2026-02-05 03:22:54.285594+00:00 - EXITOSO',3,'',34,6),
-(1148,'2026-02-12 19:05:47.291027','53','admin_testing@school.com - 2026-02-05 03:22:30.059024+00:00 - EXITOSO',3,'',34,6),
-(1149,'2026-02-12 19:05:47.291072','52','admin_testing@school.com - 2026-02-05 03:22:15.542382+00:00 - EXITOSO',3,'',34,6),
-(1150,'2026-02-12 19:05:47.291117','51','admin_testing@school.com - 2026-02-05 03:21:52.295466+00:00 - EXITOSO',3,'',34,6),
-(1151,'2026-02-12 19:05:47.291161','50','admin_testing@school.com - 2026-02-05 03:21:28.191287+00:00 - EXITOSO',3,'',34,6),
-(1152,'2026-02-12 19:05:47.291207','49','admin_testing@school.com - 2026-02-05 03:20:27.353343+00:00 - EXITOSO',3,'',34,6),
-(1153,'2026-02-12 19:05:47.291252','48','admin_testing@school.com - 2026-02-05 03:10:07.093456+00:00 - EXITOSO',3,'',34,6),
-(1154,'2026-02-12 19:05:47.291296','47','admin_testing@school.com - 2026-02-05 03:08:36.082874+00:00 - EXITOSO',3,'',34,6),
-(1155,'2026-02-12 19:05:47.291338','46','admin_testing@school.com - 2026-02-05 02:57:02.553703+00:00 - EXITOSO',3,'',34,6),
-(1156,'2026-02-12 19:05:47.291383','45','admin_testing@school.com - 2026-02-05 01:37:21.641459+00:00 - EXITOSO',3,'',34,6),
-(1157,'2026-02-12 19:05:47.291427','44','admin_testing@school.com - 2026-02-05 01:37:07.581978+00:00 - EXITOSO',3,'',34,6),
-(1158,'2026-02-12 19:05:47.291470','43','admin_testing@school.com - 2026-02-05 01:36:54.992071+00:00 - EXITOSO',3,'',34,6),
-(1159,'2026-02-12 19:05:47.291514','42','admin_testing@school.com - 2026-02-05 01:36:39.425734+00:00 - EXITOSO',3,'',34,6),
-(1160,'2026-02-12 19:05:47.291558','41','admin_testing@school.com - 2026-02-05 01:36:37.098669+00:00 - EXITOSO',3,'',34,6),
-(1161,'2026-02-12 19:05:47.291602','40','admin_testing@school.com - 2026-02-05 01:26:07.736337+00:00 - EXITOSO',3,'',34,6),
-(1162,'2026-02-12 19:05:47.291647','39','admin_testing@school.com - 2026-02-05 01:25:40.760400+00:00 - EXITOSO',3,'',34,6),
-(1163,'2026-02-12 19:05:47.291692','38','admin_testing@school.com - 2026-02-05 01:25:27.265800+00:00 - EXITOSO',3,'',34,6),
-(1164,'2026-02-12 19:05:47.291737','37','admin_testing@school.com - 2026-02-05 01:24:31.823366+00:00 - EXITOSO',3,'',34,6),
-(1165,'2026-02-12 19:05:47.291782','36','admin_testing@school.com - 2026-02-05 01:24:24.402485+00:00 - EXITOSO',3,'',34,6),
-(1166,'2026-02-12 19:05:47.291847','35','admin_testing@school.com - 2026-02-04 23:16:58.318261+00:00 - EXITOSO',3,'',34,6),
-(1167,'2026-02-12 19:05:47.291894','34','admin_testing@school.com - 2026-02-04 20:57:45.919319+00:00 - EXITOSO',3,'',34,6),
-(1168,'2026-02-12 19:05:47.291938','33','admin_testing@school.com - 2026-02-04 20:57:06.756207+00:00 - EXITOSO',3,'',34,6),
-(1169,'2026-02-12 19:05:47.291983','32','admin_testing@school.com - 2026-02-04 20:43:36.799819+00:00 - EXITOSO',3,'',34,6),
-(1170,'2026-02-12 19:05:47.292028','31','admin_testing@school.com - 2026-02-04 20:43:25.218171+00:00 - EXITOSO',3,'',34,6),
-(1171,'2026-02-12 19:05:47.292074','30','admin_testing@school.com - 2026-02-04 20:42:02.962524+00:00 - EXITOSO',3,'',34,6),
-(1172,'2026-02-12 19:05:47.292119','29','admin_testing@school.com - 2026-02-04 20:41:45.094848+00:00 - EXITOSO',3,'',34,6),
-(1173,'2026-02-12 19:05:47.292165','28','student_test_final@school.com - 2026-02-04 20:41:26.831783+00:00 - FALLIDO',3,'',34,6),
-(1174,'2026-02-12 19:05:47.292212','27','admin_testing@school.com - 2026-02-04 20:41:02.764319+00:00 - EXITOSO',3,'',34,6),
-(1175,'2026-02-12 19:05:47.292259','26','admin_testing@school.com - 2026-02-04 01:04:12.573052+00:00 - EXITOSO',3,'',34,6),
-(1176,'2026-02-12 19:05:47.292304','25','admin_testing@school.com - 2026-02-04 01:01:21.769549+00:00 - EXITOSO',3,'',34,6),
-(1177,'2026-02-12 19:05:47.292347','24','admin_testing@school.com - 2026-02-04 00:59:09.561751+00:00 - EXITOSO',3,'',34,6),
-(1178,'2026-02-12 19:05:47.292393','23','student_test_final@school.com - 2026-02-03 22:35:07.640380+00:00 - EXITOSO',3,'',34,6),
-(1179,'2026-02-12 19:05:47.292436','22','student_test_final@school.com - 2026-02-03 22:02:12.648362+00:00 - EXITOSO',3,'',34,6),
-(1180,'2026-02-12 19:05:47.292480','21','student_test_final@school.com - 2026-02-02 20:03:53.635945+00:00 - EXITOSO',3,'',34,6),
-(1181,'2026-02-12 19:05:47.292523','20','admin_testing@school.com - 2026-02-02 20:01:52.403165+00:00 - EXITOSO',3,'',34,6),
-(1182,'2026-02-12 19:05:47.292566','19','admin_testing@school.com - 2026-02-02 20:01:42.871815+00:00 - EXITOSO',3,'',34,6),
-(1183,'2026-02-12 19:05:47.292610','18','admin_testing@school.com - 2026-02-01 03:47:55.810506+00:00 - EXITOSO',3,'',34,6),
-(1184,'2026-02-12 19:05:47.292653','17','admin_testing@school.com - 2026-02-01 03:47:54.303952+00:00 - EXITOSO',3,'',34,6),
-(1185,'2026-02-12 19:05:47.292696','16','student_test_final@school.com - 2026-02-01 03:47:53.520042+00:00 - EXITOSO',3,'',34,6),
-(1186,'2026-02-12 19:05:47.292739','15','admin_testing@school.com - 2026-02-01 03:43:30.267408+00:00 - EXITOSO',3,'',34,6),
-(1187,'2026-02-12 19:05:47.292782','14','admin_testing@school.com - 2026-02-01 03:43:01.929910+00:00 - EXITOSO',3,'',34,6),
-(1188,'2026-02-12 19:05:47.292846','13','admin_testing@school.com - 2026-02-01 03:43:00.276688+00:00 - EXITOSO',3,'',34,6),
-(1189,'2026-02-12 19:05:47.292890','12','student_test_final@school.com - 2026-02-01 03:42:59.444071+00:00 - EXITOSO',3,'',34,6),
-(1190,'2026-02-12 19:05:47.292933','11','student_0_1468@test.com - 2026-02-01 03:39:19.673109+00:00 - EXITOSO',3,'',34,6),
-(1191,'2026-02-12 19:05:47.292976','10','admin_testing@school.com - 2026-02-01 03:38:20.862849+00:00 - EXITOSO',3,'',34,6),
-(1192,'2026-02-12 19:05:47.293019','9','admin_testing@school.com - 2026-02-01 03:37:56.623309+00:00 - EXITOSO',3,'',34,6),
-(1193,'2026-02-12 19:05:47.293062','8','admin_testing@school.com - 2026-02-01 03:37:02.560193+00:00 - EXITOSO',3,'',34,6),
-(1194,'2026-02-12 19:05:47.293105','7','admin_testing@school.com - 2026-02-01 03:37:00.828055+00:00 - EXITOSO',3,'',34,6),
-(1195,'2026-02-12 19:05:47.293148','6','admin_testing@school.com - 2026-02-01 03:36:08.661284+00:00 - EXITOSO',3,'',34,6),
-(1196,'2026-02-12 19:05:47.293192','5','admin_testing@school.com - 2026-02-01 03:36:07.090642+00:00 - EXITOSO',3,'',34,6),
-(1197,'2026-02-12 19:05:47.293234','4','admin_testing@school.com - 2026-02-01 03:34:07.637996+00:00 - EXITOSO',3,'',34,6),
-(1198,'2026-02-12 19:05:47.293277','3','admin_testing@school.com - 2026-02-01 03:33:19.705030+00:00 - EXITOSO',3,'',34,6),
-(1199,'2026-02-12 19:05:47.293318','2','admin_testing@school.com - 2026-02-01 03:32:48.603355+00:00 - EXITOSO',3,'',34,6),
-(1200,'2026-02-12 19:05:47.293361','1','hectorino2789@gmail.com - 2026-01-30 19:27:15.185009+00:00 - EXITOSO',3,'',34,6),
-(1201,'2026-02-16 19:39:33.034188','5','HECTOR ADRIAN MARTINEZ HERRERA JSJS',2,'[{\"changed\": {\"fields\": [\"Nombre\", \"Apellido paterno\", \"Apellido materno\", \"Telefono\"]}}]',41,6);
 /*!40000 ALTER TABLE `django_admin_log` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -2365,7 +1118,7 @@ CREATE TABLE `django_content_type` (
   `model` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2381,6 +1134,7 @@ INSERT INTO `django_content_type` VALUES
 (38,'academico','autorizacioncambiocalificacion'),
 (39,'academico','calificacion'),
 (40,'academico','calificacionfinal'),
+(52,'academico','eventocalendario'),
 (41,'academico','maestro'),
 (42,'academico','materia'),
 (43,'academico','modificacionmanualcalificacion'),
@@ -2444,7 +1198,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=94 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2547,7 +1301,14 @@ INSERT INTO `django_migrations` VALUES
 (90,'token_blacklist','0011_linearizes_history','2026-02-11 00:43:11.036717'),
 (91,'token_blacklist','0012_alter_outstandingtoken_user','2026-02-11 00:43:11.079135'),
 (92,'token_blacklist','0013_alter_blacklistedtoken_options_and_more','2026-02-11 00:43:11.098209'),
-(93,'academico','0002_remove_maestro_email_remove_materia_fecha_fin_and_more','2026-02-13 04:03:19.950148');
+(93,'academico','0002_remove_maestro_email_remove_materia_fecha_fin_and_more','2026-02-13 04:03:19.950148'),
+(94,'admissions','0013_remove_admissiontutor_foto_fachada_domicilio_and_more','2026-02-17 22:19:50.681589'),
+(95,'estudiantes','0013_estudiantetutor_es_principal','2026-02-18 00:41:20.578899'),
+(96,'academico','0003_eventocalendario','2026-02-18 19:35:03.508537'),
+(97,'pagos','0019_alter_pago_metodo_pago','2026-02-18 19:38:43.676930'),
+(98,'estudiantes','0014_alter_inscripcion_grupo','2026-02-19 23:18:35.832701'),
+(99,'academico','0004_alter_administradorescolar_nivel_educativo_and_more','2026-02-19 23:18:36.105274'),
+(100,'users','0010_alter_user_role','2026-02-19 23:58:29.320523');
 /*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -2577,12 +1338,13 @@ LOCK TABLES `django_session` WRITE;
 set autocommit=0;
 INSERT INTO `django_session` VALUES
 ('0opmbuz29n0jft98il06t8t0hu7wx5bh','.eJxVjDsOwjAQBe_iGln-rZ1Q0nMGa9dr4wBypDipEHeHSCmgfTPzXiLitta49bzEicVZeHH63QjTI7cd8B3bbZZpbusykdwVedAurzPn5-Vw_w4q9vqtIZfCLoHRqIPTiiyz8UgjKlJoDQckp4LSNoEOACpZBsfDAOxpLCTeH-wMN-M:1vfXIo:ShoYv1l-QtWKsSdrPv1fu6JYTwqFeHDP4SWeETb_FGM','2026-01-27 05:50:50.978570'),
-('ccav1j5uzzqj7q5k90m7to4vc7nvv9p2','.eJxVjDsOwjAQBe_iGln-rZ1Q0nMGa9dr4wBypDipEHeHSCmgfTPzXiLitta49bzEicVZeHH63QjTI7cd8B3bbZZpbusykdwVedAurzPn5-Vw_w4q9vqtIZfCLoHRqIPTiiyz8UgjKlJoDQckp4LSNoEOACpZBsfDAOxpLCTeH-wMN-M:1vqN2H:loWNOLSlGW7ZohYy2FHPhhvyZ3mfqxxOLcS5U8GjMWc','2026-02-26 03:06:33.808664'),
+('61lis8r370zbha44rrsqm9fd3ebafx74','.eJxVjDsOwyAQBe9CHSGD-Tllep8BscsSnEQgGbuKcvdgyUXSzsx7b-bDvmW_N1r9EtmVCWXZ5ZdCwCeVQ8VHKPfKsZZtXYAfCT9t43ON9Lqd7d9BDi33dUhGUQQcyWrtkNJAg3AStCYwRsoRSVrA1OlkHFg7oVBaKDl2l5Jhny9KODg-:1vtadX:UeBtoPaGofvK6PQ-70CHLQZCba3NrKXdOLO_IFsDhU8','2026-03-07 00:14:19.024113'),
 ('dwpvx1fqoclttjn0k7ahwp144boxpr9o','.eJxVjDsOwjAQBe_iGln-rZ1Q0nMGa9dr4wBypDipEHeHSCmgfTPzXiLitta49bzEicVZeHH63QjTI7cd8B3bbZZpbusykdwVedAurzPn5-Vw_w4q9vqtIZfCLoHRqIPTiiyz8UgjKlJoDQckp4LSNoEOACpZBsfDAOxpLCTeH-wMN-M:1vkS8p:VG6Nxqk4DJ4F5CuMwa1yt7h_T0_6hV2Kip5NpTCfiDA','2026-02-09 19:20:51.879519'),
 ('fu7jhpatze0b6q2kesnfmq6agu62ticv','.eJxVjDsOwjAQBe_iGln-rZ1Q0nMGa9dr4wBypDipEHeHSCmgfTPzXiLitta49bzEicVZeHH63QjTI7cd8B3bbZZpbusykdwVedAurzPn5-Vw_w4q9vqtIZfCLoHRqIPTiiyz8UgjKlJoDQckp4LSNoEOACpZBsfDAOxpLCTeH-wMN-M:1vg8dI:lA6MIU3c_Ec4JWvYKciojmoiQp3QXMPDSImkbmF714A','2026-01-28 21:42:28.928797'),
 ('ma4zf92ag8wz6y27a8ku0n4ycf8yuhi6','.eJxVjMsOwiAQRf-FtSGFysule7-BzDCDVA0kpV0Z_92QdKHbe865bxFh30rcO69xIXERszj9bgjpyXUAekC9N5la3dYF5VDkQbu8NeLX9XD_Dgr0MmoNQSUINin03jsCnRGVYzRmziYrjZQsJRPIoIaJ2ejJzs568O6MLD5fBhs4lQ:1verBc:WrN3QPx-lk7alNXi8Aeka5qT-moC742T18lVWw3KsbY','2026-01-25 08:52:36.278559'),
 ('oqvo9kptxvxsiisuq13nn41wsgntft0p','.eJxVjDsOwjAQBe_iGln-rZ1Q0nMGa9dr4wBypDipEHeHSCmgfTPzXiLitta49bzEicVZeHH63QjTI7cd8B3bbZZpbusykdwVedAurzPn5-Vw_w4q9vqtIZfCLoHRqIPTiiyz8UgjKlJoDQckp4LSNoEOACpZBsfDAOxpLCTeH-wMN-M:1vhJEf:NgY9F1pXKnpyM69aUeypBCoBDZUuJdYEV8KTzf-9AB4','2026-02-01 03:13:53.559281'),
-('twoh2h80gw2863j5hg5oeharge9qvgla','.eJxVjDsOwjAQRO_iGll2_Fso6TmDtV5vcADZUpxUiLuTSCmgG817M28RcV1KXDvPccriIpw4_XYJ6cl1B_mB9d4ktbrMU5K7Ig_a5a1lfl0P9--gYC_b2toBIXDShrLzW8wKWEFipQfS5NiP3ngeLQKb7AgDJSAInqxV5qzF5wvszjgI:1vfSNb:Xqjy_B7NUDIHvh7R9NXYFdxY8EnR8msf9uBEuTg96DE','2026-01-27 00:35:27.355781');
+('twoh2h80gw2863j5hg5oeharge9qvgla','.eJxVjDsOwjAQRO_iGll2_Fso6TmDtV5vcADZUpxUiLuTSCmgG817M28RcV1KXDvPccriIpw4_XYJ6cl1B_mB9d4ktbrMU5K7Ig_a5a1lfl0P9--gYC_b2toBIXDShrLzW8wKWEFipQfS5NiP3ngeLQKb7AgDJSAInqxV5qzF5wvszjgI:1vfSNb:Xqjy_B7NUDIHvh7R9NXYFdxY8EnR8msf9uBEuTg96DE','2026-01-27 00:35:27.355781'),
+('zyhuy2vzf81li3ivrcl7k5wsek6liils','.eJxVjDsOwjAQBe_iGln-rZ1Q0nMGa9dr4wBypDipEHeHSCmgfTPzXiLitta49bzEicVZeHH63QjTI7cd8B3bbZZpbusykdwVedAurzPn5-Vw_w4q9vqtIZfCLoHRqIPTiiyz8UgjKlJoDQckp4LSNoEOACpZBsfDAOxpLCTeH-wMN-M:1vtCxb:I1Ce_BsfMEV-seKk0k9Kdw6CjZ6OuFXtsJNvTVRRpes','2026-03-05 22:57:27.886261');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -2698,19 +1460,6 @@ CREATE TABLE `estudiantes` (
 LOCK TABLES `estudiantes` WRITE;
 /*!40000 ALTER TABLE `estudiantes` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `estudiantes` VALUES
-(1000,'MAURICIO ANDRÉS','PADILLA','RIOS','Por el Centro',119,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(1001,'RAMIRO','PATADA','LECHUGA','{}',120,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240000,'Alumno','Test 0','Simulado','',131,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240001,'Alumno','Test 1','Simulado','',132,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240002,'Alumno','Test 2','Simulado','',133,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240003,'Alumno','Test 3','Simulado','',134,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240004,'Alumno','Test 4','Simulado','',135,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240005,'Alumno','Test 5','Simulado','',136,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240006,'Alumno','Test 6','Simulado','',137,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240007,'Alumno','Test 7','Simulado','',138,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240008,'Alumno','Test 8','Simulado','',139,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL),
-(20240009,'Alumno','Test 9','Simulado','',140,1,NULL,0.00,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `estudiantes` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -2729,13 +1478,14 @@ CREATE TABLE `estudiantes_tutores` (
   `activo` tinyint(1) NOT NULL,
   `estudiante_matricula` int(11) NOT NULL,
   `tutor_id` bigint(20) NOT NULL,
+  `es_principal` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `estudiantes_tutores_estudiante_matricula_tutor_id_72e6c895_uniq` (`estudiante_matricula`,`tutor_id`),
   KEY `idx_estudiantetutor_estudiante` (`estudiante_matricula`),
   KEY `idx_estudiantetutor_tutor` (`tutor_id`),
   CONSTRAINT `estudiantes_tutores_estudiante_matricula_a3dca86b_fk_estudiant` FOREIGN KEY (`estudiante_matricula`) REFERENCES `estudiantes` (`matricula`),
   CONSTRAINT `estudiantes_tutores_tutor_id_a72f9574_fk_tutores_id` FOREIGN KEY (`tutor_id`) REFERENCES `tutores` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2745,9 +1495,6 @@ CREATE TABLE `estudiantes_tutores` (
 LOCK TABLES `estudiantes_tutores` WRITE;
 /*!40000 ALTER TABLE `estudiantes_tutores` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `estudiantes_tutores` VALUES
-(14,'Madre','2026-02-12 18:11:23.744351',1,1001,1),
-(15,'Padre','2026-02-12 18:59:51.647223',1,1000,2);
 /*!40000 ALTER TABLE `estudiantes_tutores` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -2797,11 +1544,41 @@ CREATE TABLE `evaluaciones_socioeconomicas` (
 LOCK TABLES `evaluaciones_socioeconomicas` WRITE;
 /*!40000 ALTER TABLE `evaluaciones_socioeconomicas` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `evaluaciones_socioeconomicas` VALUES
-(71,'2026-02-12 18:07:27.687620',50000.00,'Ladrillo',3,'{}',NULL,'2026-02-12 18:07:27.687770',16,1000,'',0,16,'2027-02-12','',0,0,NULL),
-(72,'2026-02-12 18:08:10.510357',50000.00,'Ladrillo',3,'{}',1,'2026-02-12 18:08:10.510466',16,1000,'',0,16,'2027-02-12','',0,0,NULL),
-(73,'2026-02-12 18:12:00.143619',5000.00,'Ladrillo',4,'{}',1,'2026-02-12 18:12:00.143689',17,1001,'{}',0,17,NULL,'',0,0,NULL);
 /*!40000 ALTER TABLE `evaluaciones_socioeconomicas` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `eventos_calendario`
+--
+
+DROP TABLE IF EXISTS `eventos_calendario`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `eventos_calendario` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `titulo` varchar(200) NOT NULL,
+  `descripcion` longtext DEFAULT NULL,
+  `fecha_inicio` datetime(6) NOT NULL,
+  `fecha_fin` datetime(6) NOT NULL,
+  `tipo_evento` varchar(20) NOT NULL,
+  `color` varchar(7) NOT NULL,
+  `es_global` tinyint(1) NOT NULL,
+  `nivel_educativo_id` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `eventos_calendario_nivel_educativo_id_8079fdf5_fk_niveles_e` (`nivel_educativo_id`),
+  CONSTRAINT `eventos_calendario_nivel_educativo_id_8079fdf5_fk_niveles_e` FOREIGN KEY (`nivel_educativo_id`) REFERENCES `niveles_educativos` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `eventos_calendario`
+--
+
+LOCK TABLES `eventos_calendario` WRITE;
+/*!40000 ALTER TABLE `eventos_calendario` DISABLE KEYS */;
+set autocommit=0;
+/*!40000 ALTER TABLE `eventos_calendario` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -2885,7 +1662,7 @@ CREATE TABLE `grupos` (
   KEY `idx_grupo_ciclo` (`ciclo_escolar_id`),
   CONSTRAINT `grupos_ciclo_escolar_id_3fc38f0c_fk_ciclos_escolares_id` FOREIGN KEY (`ciclo_escolar_id`) REFERENCES `ciclos_escolares` (`id`),
   CONSTRAINT `grupos_grado_id_7d47e77c_fk_grados_id` FOREIGN KEY (`grado_id`) REFERENCES `grados` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=358 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=466 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2895,80 +1672,6 @@ CREATE TABLE `grupos` (
 LOCK TABLES `grupos` WRITE;
 /*!40000 ALTER TABLE `grupos` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `grupos` VALUES
-(285,'A','',NULL,'2026-02-12 17:47:16.742590',28,30,25),
-(286,'B','',NULL,'2026-02-12 17:47:16.746837',28,30,25),
-(287,'C','',NULL,'2026-02-12 17:47:16.750362',28,30,25),
-(288,'A','',NULL,'2026-02-12 17:47:16.753910',29,30,25),
-(289,'B','',NULL,'2026-02-12 17:47:16.757461',29,30,25),
-(290,'C','',NULL,'2026-02-12 17:47:16.761488',29,30,25),
-(291,'A','',NULL,'2026-02-12 17:47:16.765087',30,30,25),
-(292,'B','',NULL,'2026-02-12 17:47:16.768482',30,30,25),
-(293,'C','',NULL,'2026-02-12 17:47:16.771927',30,30,25),
-(294,'A','',NULL,'2026-02-12 17:47:16.776084',31,30,25),
-(295,'B','',NULL,'2026-02-12 17:47:16.779572',31,30,25),
-(296,'C','',NULL,'2026-02-12 17:47:16.782499',31,30,25),
-(297,'A','',NULL,'2026-02-12 17:47:16.786532',32,30,25),
-(298,'B','',NULL,'2026-02-12 17:47:16.790303',32,30,25),
-(299,'C','',NULL,'2026-02-12 17:47:16.794358',32,30,25),
-(300,'A','',NULL,'2026-02-12 17:47:16.798059',33,30,25),
-(301,'B','',NULL,'2026-02-12 17:47:16.801711',33,30,25),
-(302,'C','',NULL,'2026-02-12 17:47:16.805352',33,30,25),
-(303,'A','',NULL,'2026-02-12 17:47:16.809149',34,30,25),
-(304,'B','',NULL,'2026-02-12 17:47:16.811937',34,30,25),
-(305,'C','',NULL,'2026-02-12 17:47:16.814182',34,30,25),
-(306,'A','',NULL,'2026-02-12 17:47:16.816388',35,30,25),
-(307,'B','',NULL,'2026-02-12 17:47:16.818652',35,30,25),
-(308,'C','',NULL,'2026-02-12 17:47:16.820835',35,30,25),
-(309,'A','',NULL,'2026-02-12 17:47:16.823229',36,30,25),
-(310,'B','',NULL,'2026-02-12 17:47:16.826903',36,30,25),
-(311,'C','',NULL,'2026-02-12 17:47:16.829581',36,30,25),
-(312,'A','',NULL,'2026-02-12 17:47:16.832327',37,30,25),
-(313,'B','',NULL,'2026-02-12 17:47:16.834948',37,30,25),
-(314,'C','',NULL,'2026-02-12 17:47:16.837680',37,30,25),
-(315,'A','',NULL,'2026-02-12 17:47:16.840155',38,30,25),
-(316,'B','',NULL,'2026-02-12 17:47:16.843093',38,30,25),
-(317,'C','',NULL,'2026-02-12 17:47:16.845901',38,30,25),
-(318,'A','',NULL,'2026-02-12 17:47:16.848569',39,30,25),
-(319,'B','',NULL,'2026-02-12 17:47:16.851308',39,30,25),
-(320,'C','',NULL,'2026-02-12 17:47:16.853961',39,30,25),
-(321,'A','',NULL,'2026-02-12 19:03:03.712249',28,30,26),
-(322,'B','',NULL,'2026-02-12 19:03:03.718763',28,30,26),
-(323,'C','',NULL,'2026-02-12 19:03:03.723318',28,30,26),
-(324,'A','',NULL,'2026-02-12 19:03:03.727199',29,30,26),
-(325,'B','',NULL,'2026-02-12 19:03:03.730476',29,30,26),
-(326,'C','',NULL,'2026-02-12 19:03:03.733740',29,30,26),
-(327,'A','',NULL,'2026-02-12 19:03:03.738079',30,30,26),
-(328,'B','',NULL,'2026-02-12 19:03:03.742590',30,30,26),
-(329,'C','',NULL,'2026-02-12 19:03:03.746134',30,30,26),
-(330,'A','',NULL,'2026-02-12 19:03:03.749386',31,30,26),
-(331,'B','',NULL,'2026-02-12 19:03:03.753050',31,30,26),
-(332,'C','',NULL,'2026-02-12 19:03:03.757606',31,30,26),
-(333,'A','',NULL,'2026-02-12 19:03:03.761238',32,30,26),
-(334,'B','',NULL,'2026-02-12 19:03:03.764409',32,30,26),
-(335,'C','',NULL,'2026-02-12 19:03:03.767734',32,30,26),
-(336,'A','',NULL,'2026-02-12 19:03:03.771402',33,30,26),
-(337,'B','',NULL,'2026-02-12 19:03:03.775328',33,30,26),
-(338,'C','',NULL,'2026-02-12 19:03:03.778581',33,30,26),
-(339,'A','',NULL,'2026-02-12 19:03:03.781720',34,30,26),
-(340,'B','',NULL,'2026-02-12 19:03:03.784986',34,30,26),
-(341,'C','',NULL,'2026-02-12 19:03:03.788628',34,30,26),
-(342,'A','',NULL,'2026-02-12 19:03:03.792716',35,30,26),
-(343,'B','',NULL,'2026-02-12 19:03:03.796167',35,30,26),
-(344,'C','',NULL,'2026-02-12 19:03:03.799145',35,30,26),
-(345,'A','',NULL,'2026-02-12 19:03:03.802303',36,30,26),
-(346,'B','',NULL,'2026-02-12 19:03:03.805452',36,30,26),
-(347,'C','',NULL,'2026-02-12 19:03:03.808362',36,30,26),
-(348,'A','',NULL,'2026-02-12 19:03:03.811127',37,30,26),
-(349,'B','',NULL,'2026-02-12 19:03:03.813705',37,30,26),
-(350,'C','',NULL,'2026-02-12 19:03:03.816369',37,30,26),
-(351,'A','',NULL,'2026-02-12 19:03:03.819984',38,30,26),
-(352,'B','',NULL,'2026-02-12 19:03:03.822862',38,30,26),
-(353,'C','',NULL,'2026-02-12 19:03:03.825464',38,30,26),
-(354,'A','',NULL,'2026-02-12 19:03:03.827986',39,30,26),
-(355,'B','',NULL,'2026-02-12 19:03:03.830357',39,30,26),
-(356,'C','',NULL,'2026-02-12 19:03:03.832733',39,30,26),
-(357,'1-A','',NULL,'2026-02-13 04:30:34.473945',31,30,27);
 /*!40000 ALTER TABLE `grupos` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -2993,7 +1696,7 @@ CREATE TABLE `historial_estados_estudiante` (
   KEY `idx_historialestado_estado` (`estado_id`),
   CONSTRAINT `historial_estados_es_estado_id_70112f90_fk_estados_e` FOREIGN KEY (`estado_id`) REFERENCES `estados_estudiante` (`id`),
   CONSTRAINT `historial_estados_es_estudiante_matricula_32e02065_fk_estudiant` FOREIGN KEY (`estudiante_matricula`) REFERENCES `estudiantes` (`matricula`)
-) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3003,11 +1706,6 @@ CREATE TABLE `historial_estados_estudiante` (
 LOCK TABLES `historial_estados_estudiante` WRITE;
 /*!40000 ALTER TABLE `historial_estados_estudiante` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `historial_estados_estudiante` VALUES
-(89,'Alta automatica','2026-02-12 18:05:12.475403',1,1000,NULL,NULL),
-(90,'Alta automatica','2026-02-12 18:11:23.742708',1,1001,NULL,NULL),
-(91,'Generación automática de reinscripción - Ciclo CI-2024-2025','2026-02-13 04:44:12.708973',15,1000,NULL,NULL),
-(92,'Generación automática de reinscripción - Ciclo CI-2024-2025','2026-02-13 04:44:12.718517',15,1001,NULL,NULL);
 /*!40000 ALTER TABLE `historial_estados_estudiante` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3035,7 +1733,7 @@ CREATE TABLE `inscripciones` (
   KEY `idx_inscripcion_estatus` (`estatus`),
   CONSTRAINT `inscripciones_estudiante_id_64dcccda_fk_estudiantes_matricula` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiantes` (`matricula`),
   CONSTRAINT `inscripciones_grupo_id_f5e700cb_fk_grupos_id` FOREIGN KEY (`grupo_id`) REFERENCES `grupos` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=110 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3045,20 +1743,6 @@ CREATE TABLE `inscripciones` (
 LOCK TABLES `inscripciones` WRITE;
 /*!40000 ALTER TABLE `inscripciones` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `inscripciones` VALUES
-(92,'pendiente_pago','2026-02-12 18:05:12.473321',NULL,'2026-02-12 19:03:03.854219',NULL,1000,291),
-(93,'pendiente_pago','2026-02-12 18:11:23.732025',NULL,'2026-02-12 19:03:03.876740',NULL,1001,301),
-(94,'activo','2026-02-12 19:04:41.511554',NULL,'2026-02-12 19:04:41.511639',NULL,1000,330),
-(95,'activo','2026-02-13 04:35:26.011422',NULL,'2026-02-13 04:35:26.011482',NULL,20240000,357),
-(96,'activo','2026-02-13 04:35:26.023396',NULL,'2026-02-13 04:35:26.023453',NULL,20240001,357),
-(97,'activo','2026-02-13 04:35:26.027850',NULL,'2026-02-13 04:35:26.027916',NULL,20240002,357),
-(98,'activo','2026-02-13 04:35:26.031521',NULL,'2026-02-13 04:35:26.031557',NULL,20240003,357),
-(99,'activo','2026-02-13 04:35:26.035398',NULL,'2026-02-13 04:35:26.035451',NULL,20240004,357),
-(100,'activo','2026-02-13 04:35:26.039723',NULL,'2026-02-13 04:35:26.039761',NULL,20240005,357),
-(101,'activo','2026-02-13 04:35:26.043526',NULL,'2026-02-13 04:35:26.043583',NULL,20240006,357),
-(102,'activo','2026-02-13 04:35:26.047450',NULL,'2026-02-13 04:35:26.047504',NULL,20240007,357),
-(103,'activo','2026-02-13 04:35:26.051465',NULL,'2026-02-13 04:35:26.051518',NULL,20240008,357),
-(104,'activo','2026-02-13 04:35:26.055412',NULL,'2026-02-13 04:35:26.055464',NULL,20240009,357);
 /*!40000 ALTER TABLE `inscripciones` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3079,7 +1763,7 @@ CREATE TABLE `login_attempts` (
   PRIMARY KEY (`id`),
   KEY `idx_login_email_time` (`email`,`timestamp`),
   KEY `idx_login_ip_time` (`ip_address`,`timestamp`)
-) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3089,8 +1773,6 @@ CREATE TABLE `login_attempts` (
 LOCK TABLES `login_attempts` WRITE;
 /*!40000 ALTER TABLE `login_attempts` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `login_attempts` VALUES
-(72,'hectorino2789@gmail.com','127.0.0.1','2026-02-16 19:28:44.760045',1);
 /*!40000 ALTER TABLE `login_attempts` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3131,18 +1813,6 @@ CREATE TABLE `maestros` (
 LOCK TABLES `maestros` WRITE;
 /*!40000 ALTER TABLE `maestros` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `maestros` VALUES
-(5,'HECTOR ADRIAN','MARTINEZ','HERRERA JSJS','440595839','2026-02-12',1,'2026-02-12 18:56:44.547395','2026-02-16 19:39:33.032259',2,1),
-(6,'Maestro','Simulado 0','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:28.264843','2026-02-13 04:30:28.264864',2,121),
-(7,'Maestro','Simulado 1','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:28.600301','2026-02-13 04:30:28.600323',2,122),
-(8,'Maestro','Simulado 2','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:28.933840','2026-02-13 04:30:28.933861',2,123),
-(9,'Maestro','Simulado 3','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:29.266171','2026-02-13 04:30:29.266191',2,124),
-(10,'Maestro','Simulado 4','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:29.599318','2026-02-13 04:30:29.599338',2,125),
-(11,'Maestro','Simulado 5','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:29.934600','2026-02-13 04:30:29.934621',2,126),
-(12,'Maestro','Simulado 6','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:30.269731','2026-02-13 04:30:30.269752',2,127),
-(13,'Maestro','Simulado 7','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:30.600256','2026-02-13 04:30:30.600278',2,128),
-(14,'Maestro','Simulado 8','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:30.930942','2026-02-13 04:30:30.930966',2,129),
-(15,'Maestro','Simulado 9','Test',NULL,'2024-01-01',1,'2026-02-13 04:30:31.256574','2026-02-13 04:30:31.256595',2,130);
 /*!40000 ALTER TABLE `maestros` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3173,7 +1843,7 @@ CREATE TABLE `materias` (
   KEY `idx_materia_activa` (`activa`),
   CONSTRAINT `materias_grado_id_7bfd0332_fk_grados_id` FOREIGN KEY (`grado_id`) REFERENCES `grados` (`id`),
   CONSTRAINT `materias_programa_educativo_i_a01577e6_fk_programas` FOREIGN KEY (`programa_educativo_id`) REFERENCES `programas_educativos` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3183,14 +1853,6 @@ CREATE TABLE `materias` (
 LOCK TABLES `materias` WRITE;
 /*!40000 ALTER TABLE `materias` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `materias` VALUES
-(2,'Matemáticas','1','',18.00,1,1,'2026-02-12 18:19:58.368111','2026-02-12 18:19:58.368151',33,3),
-(3,'Matemáticas','PRI1-0',NULL,0.00,1,0,'2026-02-13 04:30:27.880236','2026-02-13 04:30:27.880280',31,5),
-(4,'Español','PRI1-1',NULL,0.00,1,1,'2026-02-13 04:30:27.893371','2026-02-13 04:30:27.893404',31,5),
-(5,'Ciencias Naturales','PRI1-2',NULL,0.00,1,2,'2026-02-13 04:30:27.897949','2026-02-13 04:30:27.897983',31,5),
-(6,'Historia','PRI1-3',NULL,0.00,1,3,'2026-02-13 04:30:27.906057','2026-02-13 04:30:27.906113',31,5),
-(7,'Geografía','PRI1-4',NULL,0.00,1,4,'2026-02-13 04:30:27.911464','2026-02-13 04:30:27.911504',31,5),
-(8,'Inglés','PRI1-5',NULL,0.00,1,5,'2026-02-13 04:30:27.916209','2026-02-13 04:30:27.916244',31,5);
 /*!40000 ALTER TABLE `materias` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3321,7 +1983,7 @@ CREATE TABLE `pagos` (
   KEY `idx_pago_fecha` (`fecha_pago`),
   KEY `pagos_adeudo_id_14279390` (`adeudo_id`),
   CONSTRAINT `pagos_adeudo_id_14279390_fk_adeudos_id` FOREIGN KEY (`adeudo_id`) REFERENCES `adeudos` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=95 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=96 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3331,18 +1993,6 @@ CREATE TABLE `pagos` (
 LOCK TABLES `pagos` WRITE;
 /*!40000 ALTER TABLE `pagos` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `pagos` VALUES
-(84,1500.00,'2026-02-12 19:04:41.487262','Efectivo',NULL,'{}','hectorino2789@gmail.com','{}',342),
-(85,1500.00,'2026-02-13 04:35:26.151840','transferencia',NULL,NULL,'Simulador',NULL,344),
-(86,1500.00,'2026-02-13 04:35:26.170184','transferencia',NULL,NULL,'Simulador',NULL,345),
-(87,1500.00,'2026-02-13 04:35:26.186070','transferencia',NULL,NULL,'Simulador',NULL,346),
-(88,1500.00,'2026-02-13 04:35:26.202246','transferencia',NULL,NULL,'Simulador',NULL,347),
-(89,1500.00,'2026-02-13 04:35:26.220542','transferencia',NULL,NULL,'Simulador',NULL,348),
-(90,1500.00,'2026-02-13 04:35:26.234098','transferencia',NULL,NULL,'Simulador',NULL,349),
-(91,1500.00,'2026-02-13 04:35:26.247109','transferencia',NULL,NULL,'Simulador',NULL,350),
-(92,1500.00,'2026-02-13 04:35:26.260371','transferencia',NULL,NULL,'Simulador',NULL,351),
-(93,1500.00,'2026-02-13 04:35:26.274250','transferencia',NULL,NULL,'Simulador',NULL,352),
-(94,1500.00,'2026-02-13 04:35:26.287802','transferencia',NULL,NULL,'Simulador',NULL,353);
 /*!40000 ALTER TABLE `pagos` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3374,7 +2024,7 @@ CREATE TABLE `periodos_evaluacion` (
   KEY `idx_periodo_estatus` (`estatus`),
   CONSTRAINT `periodos_evaluacion_ciclo_escolar_id_bb2f9a82_fk_ciclos_es` FOREIGN KEY (`ciclo_escolar_id`) REFERENCES `ciclos_escolares` (`id`),
   CONSTRAINT `periodos_evaluacion_programa_educativo_i_d886f6e4_fk_programas` FOREIGN KEY (`programa_educativo_id`) REFERENCES `programas_educativos` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3384,9 +2034,6 @@ CREATE TABLE `periodos_evaluacion` (
 LOCK TABLES `periodos_evaluacion` WRITE;
 /*!40000 ALTER TABLE `periodos_evaluacion` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `periodos_evaluacion` VALUES
-(2,1,'Enero-Febrero','2026-02-12','2026-04-16','2026-04-09','2026-04-16','ACTIVO','2026-02-12 18:03:17.454868','2026-02-12 18:18:46.687135',25,2),
-(3,1,'Primer Trimestre','2024-08-01','2024-11-30','2024-11-23','2024-11-30','ACTIVO','2026-02-13 04:35:26.066804','2026-02-13 04:35:26.066830',27,5);
 /*!40000 ALTER TABLE `periodos_evaluacion` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3423,11 +2070,6 @@ CREATE TABLE `programas_educativos` (
 LOCK TABLES `programas_educativos` WRITE;
 /*!40000 ALTER TABLE `programas_educativos` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `programas_educativos` VALUES
-(2,'Programa educativo 2017 Preescolar','Es un programa educativo orientado a que los niños desarrollen sus capacidades motoras.','2026-02-12','2030-02-12',3,1,'2026-02-12 17:55:02.840167','2026-02-12 17:55:02.840198',1),
-(3,'Programa Edcuativo 2017 - Primaria','','2026-02-12','2030-02-12',3,0,'2026-02-12 17:56:52.786354','2026-02-12 17:56:52.786379',2),
-(4,'Programa Educativo Secundaria 2017','','2026-02-12','2030-02-12',3,1,'2026-02-12 18:01:08.658131','2026-02-12 18:01:08.658175',3),
-(5,'Plan de Estudios Primaria 2024',NULL,'2024-01-01',NULL,3,1,'2026-02-13 04:16:30.358169','2026-02-13 04:16:30.358190',2);
 /*!40000 ALTER TABLE `programas_educativos` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3446,7 +2088,7 @@ CREATE TABLE `token_blacklist_blacklistedtoken` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `token_id` (`token_id`),
   CONSTRAINT `token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3464,7 +2106,13 @@ INSERT INTO `token_blacklist_blacklistedtoken` VALUES
 (5,'2026-02-12 01:55:47.438699',8),
 (6,'2026-02-12 02:24:07.687551',10),
 (7,'2026-02-12 02:55:54.453103',13),
-(8,'2026-02-12 03:01:23.995154',14);
+(8,'2026-02-12 03:01:23.995154',14),
+(9,'2026-02-17 18:10:16.807150',20),
+(10,'2026-02-18 00:42:51.745593',21),
+(11,'2026-02-19 23:02:14.459952',24),
+(12,'2026-02-19 23:02:45.434006',23),
+(13,'2026-02-19 23:36:04.071324',27),
+(14,'2026-02-19 23:37:49.478209',28);
 /*!40000 ALTER TABLE `token_blacklist_blacklistedtoken` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3487,7 +2135,7 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
   UNIQUE KEY `token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq` (`jti`),
   KEY `token_blacklist_outs_user_id_83bc629a_fk_users_use` (`user_id`),
   CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_users_use` FOREIGN KEY (`user_id`) REFERENCES `users_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3498,24 +2146,37 @@ LOCK TABLES `token_blacklist_outstandingtoken` WRITE;
 /*!40000 ALTER TABLE `token_blacklist_outstandingtoken` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `token_blacklist_outstandingtoken` VALUES
-(1,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzAyMCwiaWF0IjoxNzcwNzcwNjIwLCJqdGkiOiIxZmM4NjNkYzc1OTI0NzhiYjQwNmRkODE3ZWE5YWEzZiIsInVzZXJfaWQiOiIxIn0.PaH_RMqA3nJdS-vBH5k7PwSwARsb1DpBKMuOgG3P2wA','2026-02-11 00:43:40.139358','2026-02-12 00:43:40.000000',1,'1fc863dc7592478bb406dd817ea9aa3f'),
-(2,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzIzMywiaWF0IjoxNzcwNzcwODMzLCJqdGkiOiJmN2QxYTI0ZmIxNDA0NjI0YTJiOWUwOWQyOWY5YTU2NiIsInVzZXJfaWQiOiI2In0.TUBKZlw4WJzwqzotA5PM8AEkAnDQDrW0IJe5pGbzw7M','2026-02-11 00:47:13.048476','2026-02-12 00:47:13.000000',6,'f7d1a24fb1404624a2b9e09d29f9a566'),
-(3,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzI0NCwiaWF0IjoxNzcwNzcwODQ0LCJqdGkiOiI5MTZjODlmNzlmOGE0NmE1OWE1ODA1ZTQ5MTExMjI3NCIsInVzZXJfaWQiOiI2In0.z_6BuWgaVE_s89x4jZWSUqrFRRwaf4qUSOgSdppJb6M','2026-02-11 00:47:24.315906','2026-02-12 00:47:24.000000',6,'916c89f79f8a46a59a5805e491112274'),
-(4,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzYyMSwiaWF0IjoxNzcwNzcxMjIxLCJqdGkiOiJlYmRhNzQ0Nzc1MzM0MzFmOTFhYWZhNWNhYmUzY2Q3ZiIsInVzZXJfaWQiOiIxIn0.r1TOx0LkaRs6PpKqjzvPBendUAVEKivNG7AHnnRSl0Q','2026-02-11 00:53:41.184920','2026-02-12 00:53:41.000000',1,'ebda74477533431f91aafa5cabe3cd7f'),
-(5,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1ODAwNCwiaWF0IjoxNzcwNzcxNjA0LCJqdGkiOiJlMTEzNzVjOGFkMTE0ZTA1OGE5ODQ4NWM5Y2QyZjE1ZCIsInVzZXJfaWQiOiI2In0.h02WSk-nGbunfrZvbmiWnmPOalfqBw3p_BSWwmvunfY','2026-02-11 01:00:04.151361','2026-02-12 01:00:04.000000',6,'e11375c8ad114e058a98485c9cd2f15d'),
-(6,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1ODAxNSwiaWF0IjoxNzcwNzcxNjE1LCJqdGkiOiJkOTNjNmRjNmNhOTM0YjhmYjYwZjEwMGU0OWRlZjQwYiIsInVzZXJfaWQiOiI2In0.wUSgnaiv7AZbDZ0RilvqqFAu15mH_5t7ktdYYT-JpjQ','2026-02-11 01:00:15.209920','2026-02-12 01:00:15.000000',6,'d93c6dc6ca934b8fb60f100e49def40b'),
+(1,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzAyMCwiaWF0IjoxNzcwNzcwNjIwLCJqdGkiOiIxZmM4NjNkYzc1OTI0NzhiYjQwNmRkODE3ZWE5YWEzZiIsInVzZXJfaWQiOiIxIn0.PaH_RMqA3nJdS-vBH5k7PwSwARsb1DpBKMuOgG3P2wA','2026-02-11 00:43:40.139358','2026-02-12 00:43:40.000000',NULL,'1fc863dc7592478bb406dd817ea9aa3f'),
+(2,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzIzMywiaWF0IjoxNzcwNzcwODMzLCJqdGkiOiJmN2QxYTI0ZmIxNDA0NjI0YTJiOWUwOWQyOWY5YTU2NiIsInVzZXJfaWQiOiI2In0.TUBKZlw4WJzwqzotA5PM8AEkAnDQDrW0IJe5pGbzw7M','2026-02-11 00:47:13.048476','2026-02-12 00:47:13.000000',NULL,'f7d1a24fb1404624a2b9e09d29f9a566'),
+(3,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzI0NCwiaWF0IjoxNzcwNzcwODQ0LCJqdGkiOiI5MTZjODlmNzlmOGE0NmE1OWE1ODA1ZTQ5MTExMjI3NCIsInVzZXJfaWQiOiI2In0.z_6BuWgaVE_s89x4jZWSUqrFRRwaf4qUSOgSdppJb6M','2026-02-11 00:47:24.315906','2026-02-12 00:47:24.000000',NULL,'916c89f79f8a46a59a5805e491112274'),
+(4,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1NzYyMSwiaWF0IjoxNzcwNzcxMjIxLCJqdGkiOiJlYmRhNzQ0Nzc1MzM0MzFmOTFhYWZhNWNhYmUzY2Q3ZiIsInVzZXJfaWQiOiIxIn0.r1TOx0LkaRs6PpKqjzvPBendUAVEKivNG7AHnnRSl0Q','2026-02-11 00:53:41.184920','2026-02-12 00:53:41.000000',NULL,'ebda74477533431f91aafa5cabe3cd7f'),
+(5,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1ODAwNCwiaWF0IjoxNzcwNzcxNjA0LCJqdGkiOiJlMTEzNzVjOGFkMTE0ZTA1OGE5ODQ4NWM5Y2QyZjE1ZCIsInVzZXJfaWQiOiI2In0.h02WSk-nGbunfrZvbmiWnmPOalfqBw3p_BSWwmvunfY','2026-02-11 01:00:04.151361','2026-02-12 01:00:04.000000',NULL,'e11375c8ad114e058a98485c9cd2f15d'),
+(6,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1ODAxNSwiaWF0IjoxNzcwNzcxNjE1LCJqdGkiOiJkOTNjNmRjNmNhOTM0YjhmYjYwZjEwMGU0OWRlZjQwYiIsInVzZXJfaWQiOiI2In0.wUSgnaiv7AZbDZ0RilvqqFAu15mH_5t7ktdYYT-JpjQ','2026-02-11 01:00:15.209920','2026-02-12 01:00:15.000000',NULL,'d93c6dc6ca934b8fb60f100e49def40b'),
 (7,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDg1ODQ3NSwiaWF0IjoxNzcwNzcyMDc1LCJqdGkiOiIwYmRkNGIxYmMwMGU0YmQwODdiM2M3NWEwNTM0ZDU2OSIsInVzZXJfaWQiOiI3NyJ9.FE9KN3ajpXlv5aYlzhsUAFa-9NzB9aGVgd2CVqpLFUE','2026-02-11 01:07:55.022307','2026-02-12 01:07:55.000000',NULL,'0bdd4b1bc00e4bd087b3c75a0534d569'),
-(8,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0NzcyNSwiaWF0IjoxNzcwODYxMzI1LCJqdGkiOiI0ZDk2NDQ3NzI4NzU0MDgwODI0OWJjODIwNmFiODFmYyIsInVzZXJfaWQiOiIxIn0.uLKWbNLEXYkka61deGuu-8ErqspC8cxGmUpan06Pnqs','2026-02-12 01:55:25.527644','2026-02-13 01:55:25.000000',1,'4d964477287540808249bc8206ab81fc'),
-(9,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0Nzc1OSwiaWF0IjoxNzcwODYxMzU5LCJqdGkiOiIzOWNhNzkyYTA5MjA0ZGZlYjA4OTExMzk4ZGRhODUyOCIsInVzZXJfaWQiOiI2In0.icptsUd5FAfjMv1zh3yGhyCEFNdj1XnHeM9pawX-UHw','2026-02-12 01:55:59.919935','2026-02-13 01:55:59.000000',6,'39ca792a09204dfeb08911398dda8528'),
-(10,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0Nzc3MCwiaWF0IjoxNzcwODYxMzcwLCJqdGkiOiI5M2U2MzgyNzYwN2E0OTUwYjk2NTNkZTZmZmRiY2RiYiIsInVzZXJfaWQiOiI2In0.yQgPcQ6Gs5uaGTCzn_Ecd0oIhsME8aQdDuXYMvUpyqw','2026-02-12 01:56:10.171093','2026-02-13 01:56:10.000000',6,'93e63827607a4950b9653de6ffdbcdbb'),
-(11,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0OTQ1OCwiaWF0IjoxNzcwODYzMDU4LCJqdGkiOiIwNGIzYzY0Y2Q0ZTk0ODQwYWUwYjRhNTc5OTk4YTM2MyIsInVzZXJfaWQiOiIxIn0.fXcvER_Jko4bTJDKG2VDTBbdhS8AmDUARoWFanNvb2s','2026-02-12 02:24:18.438980','2026-02-13 02:24:18.000000',1,'04b3c64cd4e94840ae0b4a579998a363'),
+(8,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0NzcyNSwiaWF0IjoxNzcwODYxMzI1LCJqdGkiOiI0ZDk2NDQ3NzI4NzU0MDgwODI0OWJjODIwNmFiODFmYyIsInVzZXJfaWQiOiIxIn0.uLKWbNLEXYkka61deGuu-8ErqspC8cxGmUpan06Pnqs','2026-02-12 01:55:25.527644','2026-02-13 01:55:25.000000',NULL,'4d964477287540808249bc8206ab81fc'),
+(9,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0Nzc1OSwiaWF0IjoxNzcwODYxMzU5LCJqdGkiOiIzOWNhNzkyYTA5MjA0ZGZlYjA4OTExMzk4ZGRhODUyOCIsInVzZXJfaWQiOiI2In0.icptsUd5FAfjMv1zh3yGhyCEFNdj1XnHeM9pawX-UHw','2026-02-12 01:55:59.919935','2026-02-13 01:55:59.000000',NULL,'39ca792a09204dfeb08911398dda8528'),
+(10,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0Nzc3MCwiaWF0IjoxNzcwODYxMzcwLCJqdGkiOiI5M2U2MzgyNzYwN2E0OTUwYjk2NTNkZTZmZmRiY2RiYiIsInVzZXJfaWQiOiI2In0.yQgPcQ6Gs5uaGTCzn_Ecd0oIhsME8aQdDuXYMvUpyqw','2026-02-12 01:56:10.171093','2026-02-13 01:56:10.000000',NULL,'93e63827607a4950b9653de6ffdbcdbb'),
+(11,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk0OTQ1OCwiaWF0IjoxNzcwODYzMDU4LCJqdGkiOiIwNGIzYzY0Y2Q0ZTk0ODQwYWUwYjRhNTc5OTk4YTM2MyIsInVzZXJfaWQiOiIxIn0.fXcvER_Jko4bTJDKG2VDTBbdhS8AmDUARoWFanNvb2s','2026-02-12 02:24:18.438980','2026-02-13 02:24:18.000000',NULL,'04b3c64cd4e94840ae0b4a579998a363'),
 (12,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk1MTE2MSwiaWF0IjoxNzcwODY0NzYxLCJqdGkiOiI0NTQ1ODQ1ZGRlNzU0MmQzODNiYTZjNzdkZGY4OGI2ZCIsInVzZXJfaWQiOiI5NSJ9.Z_e6fL7-uCCinpgMaNIJvenZepj3h9WdwPGwTY2K4Ic','2026-02-12 02:52:41.926366','2026-02-13 02:52:41.000000',NULL,'4545845dde7542d383ba6c77ddf88b6d'),
-(13,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk1MTMxMywiaWF0IjoxNzcwODY0OTEzLCJqdGkiOiIxMzk0NWFjYmRhMGI0NDJkYjA2YjBhNDQxZDUzNzEzYSIsInVzZXJfaWQiOiIxIn0.hMWdJ4Xdiv34MvIi_hLCxhvwN_q5HrlMIzPnTHjl204','2026-02-12 02:55:13.529990','2026-02-13 02:55:13.000000',1,'13945acbda0b442db06b0a441d53713a'),
+(13,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk1MTMxMywiaWF0IjoxNzcwODY0OTEzLCJqdGkiOiIxMzk0NWFjYmRhMGI0NDJkYjA2YjBhNDQxZDUzNzEzYSIsInVzZXJfaWQiOiIxIn0.hMWdJ4Xdiv34MvIi_hLCxhvwN_q5HrlMIzPnTHjl204','2026-02-12 02:55:13.529990','2026-02-13 02:55:13.000000',NULL,'13945acbda0b442db06b0a441d53713a'),
 (14,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk1MTM2NSwiaWF0IjoxNzcwODY0OTY1LCJqdGkiOiI2YWY2NjQyYzMwMGI0MGIyODY3ZjllMDMyYTQ0ZGQ2OCIsInVzZXJfaWQiOiIxNyJ9.TIrXdhFgwMjeRaRBoR_Jld2pLY8tNgILi0fFRVfTMFk','2026-02-12 02:56:05.307854','2026-02-13 02:56:05.000000',NULL,'6af6642c300b40b2867f9e032a44dd68'),
 (15,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk1MTM3NywiaWF0IjoxNzcwODY0OTc3LCJqdGkiOiJkODYyYjI3NDViNGQ0MmIyODg5MDhiYjUyZWVhNjlkMyIsInVzZXJfaWQiOiIxNyJ9.4Nrxm9tvnE9bdPINDJRv5pwpM_HUq5XPeWmI3AcVN6o','2026-02-12 02:56:17.537267','2026-02-13 02:56:17.000000',NULL,'d862b2745b4d42b288908bb52eea69d3'),
 (16,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDk1MjAwMCwiaWF0IjoxNzcwODY1NjAwLCJqdGkiOiI1MTc3N2U0Y2QwMTI0MzE3YTA5ODg0NzM4N2Y0OWMyMyIsInVzZXJfaWQiOiI5MiJ9.VYRqjTT7hV7x4zWzAA2TYYrlSnCpr4aHIpxMft65QIM','2026-02-12 03:06:40.635682','2026-02-13 03:06:40.000000',NULL,'51777e4cd0124317a098847387f49c23'),
-(17,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTAwOTE1MiwiaWF0IjoxNzcwOTIyNzUyLCJqdGkiOiIzZWNhNmRlNDdjYzI0OGU1ODgxMWYwMmFhNDJiMGZmZiIsInVzZXJfaWQiOiIxMTkifQ.0_E92ozjILWTQuA-QLmjKC2S3CeXb8U3kWhKVCQll-E','2026-02-12 18:59:12.132705','2026-02-13 18:59:12.000000',119,'3eca6de47cc248e58811f02aa42b0fff'),
-(18,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTM1NjUyNCwiaWF0IjoxNzcxMjcwMTI0LCJqdGkiOiI0N2U0ZTBkZjk3YzU0YTJlODA3YzdiMWQ4M2MyNTg5ZCIsInVzZXJfaWQiOiI2In0.g-5MilYPW1egkcfNk6SAoP37QPiNSTVsxDr8bwNkOc4','2026-02-16 19:28:44.746680','2026-02-17 19:28:44.000000',6,'47e4e0df97c54a2e807c7b1d83c2589d');
+(17,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTAwOTE1MiwiaWF0IjoxNzcwOTIyNzUyLCJqdGkiOiIzZWNhNmRlNDdjYzI0OGU1ODgxMWYwMmFhNDJiMGZmZiIsInVzZXJfaWQiOiIxMTkifQ.0_E92ozjILWTQuA-QLmjKC2S3CeXb8U3kWhKVCQll-E','2026-02-12 18:59:12.132705','2026-02-13 18:59:12.000000',NULL,'3eca6de47cc248e58811f02aa42b0fff'),
+(18,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTM1NjUyNCwiaWF0IjoxNzcxMjcwMTI0LCJqdGkiOiI0N2U0ZTBkZjk3YzU0YTJlODA3YzdiMWQ4M2MyNTg5ZCIsInVzZXJfaWQiOiI2In0.g-5MilYPW1egkcfNk6SAoP37QPiNSTVsxDr8bwNkOc4','2026-02-16 19:28:44.746680','2026-02-17 19:28:44.000000',NULL,'47e4e0df97c54a2e807c7b1d83c2589d'),
+(19,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTM2MTE2MywiaWF0IjoxNzcxMjc0NzYzLCJqdGkiOiIwMjk4MTViZTg5NmY0MzA2OGJhMjBjMzljZjFlYzBlNSIsInVzZXJfaWQiOiI2In0.mAlNLDODuHviZd-1qYJU-Fg6EU-HoyEIfQkdCJx9uu8','2026-02-16 20:46:03.705961','2026-02-17 20:46:03.000000',NULL,'029815be896f43068ba20c39cf1ec0e5'),
+(20,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTM2MTE3NiwiaWF0IjoxNzcxMjc0Nzc2LCJqdGkiOiI2YzFkYjNmYjIzMjU0ZWU2OThmYjI0MjhiMjY2MjlhMiIsInVzZXJfaWQiOiI2In0.UkzOyDA_BIVP418w_YVIR2bwB31PvldiBk78vyQs5Bg','2026-02-16 20:46:16.497740','2026-02-17 20:46:16.000000',NULL,'6c1db3fb23254ee698fb2428b26629a2'),
+(21,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTQ1NzAzNiwiaWF0IjoxNzcxMzcwNjM2LCJqdGkiOiI4OGI3ZTE2MWI4M2M0NGNjYjAyNGIyODE1M2U0YzVhZSIsInVzZXJfaWQiOiIxNDEifQ.1ohG0wpLWkWwV4ww0LMgsI89Y0G_Fg2SdAkIeZyhxVk','2026-02-17 23:23:56.597785','2026-02-18 23:23:56.000000',NULL,'88b7e161b83c44ccb024b28153e4c5ae'),
+(22,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTQ2MTc4OSwiaWF0IjoxNzcxMzc1Mzg5LCJqdGkiOiI0NTE5M2FiMDhkNDc0YTMyYTM0YjZmMTJkNjQwMGI4MyIsInVzZXJfaWQiOiIxNDUifQ.3jJ9Qtw4jh41xoe0-Urjia-JfGLie4xfDZryIyCapKs','2026-02-18 00:43:09.579297','2026-02-19 00:43:09.000000',NULL,'45193ab08d474a32a34b6f12d6400b83'),
+(23,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTU1NjAzMiwiaWF0IjoxNzcxNDY5NjMyLCJqdGkiOiIwZGYzNGQ5ZWI1ZmY0YzFhOTNiNWM5OTAyYzYwN2JkOCIsInVzZXJfaWQiOiIxIn0.wea0lo3PJS6hRvVp_2tJitsqGJGl2MKxf14JpLmBp9c','2026-02-19 02:53:52.515907','2026-02-20 02:53:52.000000',NULL,'0df34d9eb5ff4c1a93b5c9902c607bd8'),
+(24,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYyODE5NSwiaWF0IjoxNzcxNTQxNzk1LCJqdGkiOiJmNGYyZmFmYmUwMTc0ZjhmYTM5NmUyMDdiN2M2NjA1ZCIsInVzZXJfaWQiOiIxNDUifQ.etUAKWQFZ_4q0b8yaPJqruVRW_9T1BHoLLDojXRYXFY','2026-02-19 22:56:35.016004','2026-02-20 22:56:35.000000',NULL,'f4f2fafbe0174f8fa396e207b7c6605d'),
+(25,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYyODU0NiwiaWF0IjoxNzcxNTQyMTQ2LCJqdGkiOiJlNjUxZjNhZTZmZTI0OTg0OTdkNTczYjIxZWY0ZTRlMSIsInVzZXJfaWQiOiIxNDYifQ.25sWvBwUSfTtCedVTqZITNRzMayUsf3POquGh0xWbE4','2026-02-19 23:02:26.144395','2026-02-20 23:02:26.000000',NULL,'e651f3ae6fe2498497d573b21ef4e4e1'),
+(26,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYyODU3MiwiaWF0IjoxNzcxNTQyMTcyLCJqdGkiOiI3YWY3ODM2MGU1N2U0NTg2YTczOTEzMDA5NWE5M2IwYSIsInVzZXJfaWQiOiIxNDYifQ.vq6v-iE8LpTsvpJdJ88mQEk0iZlfzEvpMCdGrAxnftk','2026-02-19 23:02:52.436724','2026-02-20 23:02:52.000000',NULL,'7af78360e57e4586a739130095a93b0a'),
+(27,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYzMDM5OSwiaWF0IjoxNzcxNTQzOTk5LCJqdGkiOiJiMWNjZmY4YmY3ZTY0ZTU0YjUyMjhkNWZhYTcxMWIwMCIsInVzZXJfaWQiOiIxNDYifQ.YSE-3Jg64kmjIa37W5j3KEP0UZIKc_e9Vx3Uf2tKu4k','2026-02-19 23:33:19.418603','2026-02-20 23:33:19.000000',NULL,'b1ccff8bf7e64e54b5228d5faa711b00'),
+(28,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYzMDU3NywiaWF0IjoxNzcxNTQ0MTc3LCJqdGkiOiJkYzA4NzNkMGQ2ZWQ0NGNiODYxZTNkZjRhNjg2YzkwYiIsInVzZXJfaWQiOiIxNDYifQ.sjpaNN9e02s9ffgnTMNQMGK_i6QrxeQDh6jwyVGxoFU','2026-02-19 23:36:17.831948','2026-02-20 23:36:17.000000',NULL,'dc0873d0d6ed44cb861e3df4a686c90b'),
+(29,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYzMDc0OSwiaWF0IjoxNzcxNTQ0MzQ5LCJqdGkiOiIxODdiNjNmM2IzOTU0MGJjYjdmOTI0Njg0YTk4ODRjZCIsInVzZXJfaWQiOiIxNDYifQ.9VkksxyAVQnq9OweDtbx_HjuC7wniIKK7iPwkJlTM2w','2026-02-19 23:39:09.020764','2026-02-20 23:39:09.000000',NULL,'187b63f3b39540bcb7f924684a9884cd'),
+(30,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTYzMjk1MywiaWF0IjoxNzcxNTQ2NTUzLCJqdGkiOiJlZjE2NDY0MWJkZDA0MzY3OTM5M2M1NGM1YzZhNmI3NyIsInVzZXJfaWQiOiIxNDYifQ.SLHUvsmM66DuszbIs8vsa6H2IYxiOrzH1qzrjF9ECH4','2026-02-20 00:15:53.011645','2026-02-21 00:15:53.000000',NULL,'ef164641bdd043679393c54c5c6a6b77'),
+(31,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MTcxNzMyNiwiaWF0IjoxNzcxNjMwOTI2LCJqdGkiOiI1NDEwMjg5ZGVhNmU0YzU1YjZlMDg4YWFjZDQwOTE4OCIsInVzZXJfaWQiOiIxNDYifQ.VRBcaBv1LtbE7XcQL8Bvr5TgMJUS1wgvR9Mq9XAgUz8','2026-02-20 23:42:06.450915','2026-02-21 23:42:06.000000',NULL,'5410289dea6e4c55b6e088aacd409188');
 /*!40000 ALTER TABLE `token_blacklist_outstandingtoken` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3542,11 +2203,10 @@ CREATE TABLE `tutor_temp` (
   `comprobante_domicilio` varchar(255) DEFAULT NULL,
   `comprobante_ingresos` varchar(255) DEFAULT NULL,
   `contrato_arrendamiento_predial` varchar(255) DEFAULT NULL,
-  `foto_fachada_domicilio` varchar(255) DEFAULT NULL,
   `ine_tutor` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_tutoradm_nombre_completo` (`apellido_paterno`,`apellido_materno`,`nombre`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3577,7 +2237,7 @@ CREATE TABLE `tutores` (
   PRIMARY KEY (`id`),
   KEY `idx_tutor_correo` (`correo`),
   KEY `idx_tutor_telefono` (`telefono`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3587,11 +2247,6 @@ CREATE TABLE `tutores` (
 LOCK TABLES `tutores` WRITE;
 /*!40000 ALTER TABLE `tutores` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `tutores` VALUES
-(1,'Maria FERNANDA','Garcia','Lopez','+52 449 888 8888','updated@ejemplo.com'),
-(2,'PEPE EL PIYO','Sanchez','Pedroza','449 405 26 64','maracas@gmail.com'),
-(3,'ROBERTA','OLED','JARAMILLO','449 294 34 48','roberta@test.com'),
-(4,'JASSIEL','NUÑEZ','PEDROZA','34 894 73 84','ohyeah@outlook.es');
 /*!40000 ALTER TABLE `tutores` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3609,7 +2264,7 @@ CREATE TABLE `users_user` (
   `last_login` datetime(6) DEFAULT NULL,
   `email` varchar(254) NOT NULL,
   `nombre` varchar(200) NOT NULL,
-  `role` varchar(20) NOT NULL,
+  `role` varchar(50) NOT NULL,
   `activo` tinyint(1) NOT NULL,
   `is_superuser` tinyint(1) NOT NULL,
   `username` varchar(150) DEFAULT NULL,
@@ -3619,7 +2274,7 @@ CREATE TABLE `users_user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=141 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=148 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3630,31 +2285,7 @@ LOCK TABLES `users_user` WRITE;
 /*!40000 ALTER TABLE `users_user` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `users_user` VALUES
-(1,'pbkdf2_sha256$1200000$BdRdKPGB23ZwVKyaIokOhT$hqpR4oXNRfRoHnfitTcLbusdCZpgA8rKWD07GtbXpGo=',NULL,'adancpphack@gmail.com','HECTOR ADAN','estudiante',0,0,'adan',NULL,NULL,0),
-(6,'pbkdf2_sha256$1200000$PYfy8QfRclfAEDompWnClV$LsWUIxjl1GT6mA+kwu9DAhVNelAA4tkgQS8h/cyh3PY=','2026-01-30 19:28:10.951371','hectorino2789@gmail.com','Adancito','administrador',1,1,'adanov21','154284','2026-02-16 19:30:44.761867',1),
-(96,'',NULL,'test@student.com','','estudiante',1,0,'test_student',NULL,NULL,0),
-(119,'pbkdf2_sha256$1200000$u6sHzPe1KYFWaHdu90vWNf$wGroISdKocrxDqhMhvAp8E/slexCvXoNGdRGmCoGNco=',NULL,'padilla@gmail.com','MAURICIO ANDRÉS PADILLA','estudiante',1,0,'LMHA047828HDGRRCC8',NULL,NULL,0),
-(120,'pbkdf2_sha256$1200000$xbDpiL5GAxqCL0yqazOEiI$1yiVemT9K32xV/RNV6gfbIrkUM7BPwuJo6cVHMH7JqA=',NULL,'ramiro@gmail.com','RAMIRO PATADA','estudiante',1,0,'DJDK048592KRDUUFA9',NULL,NULL,0),
-(121,'pbkdf2_sha256$1200000$tnLlVLisBcQIKqGeXLLxSg$LOD2nJ3VqSKnvMB5FUTZ2TG4t8uvuDzClm7huwxBVTQ=',NULL,'maestro0@sms.edu','Maestro 0','maestro',1,0,'maestro0',NULL,NULL,0),
-(122,'pbkdf2_sha256$1200000$u0kAF7SbL241rDLiUDP10C$+W0r61BcONaPpbfGzOyiYiaSqEVDfvD3mWton+rzJxU=',NULL,'maestro1@sms.edu','Maestro 1','maestro',1,0,'maestro1',NULL,NULL,0),
-(123,'pbkdf2_sha256$1200000$ZIyH5yCE4F7DuKOrEvbObz$+xkgZMMWKXhjQqXau3L63I13JCwU9s1d5y8Q8F+kFec=',NULL,'maestro2@sms.edu','Maestro 2','maestro',1,0,'maestro2',NULL,NULL,0),
-(124,'pbkdf2_sha256$1200000$HbSR9vHgQ0ajlt5WGXtc0v$p29eOTUV4xupNutr6OxCd653Vko5VlNLYoGyKuugb10=',NULL,'maestro3@sms.edu','Maestro 3','maestro',1,0,'maestro3',NULL,NULL,0),
-(125,'pbkdf2_sha256$1200000$YKADvXiUPLvSakJhXVlWmY$D2mE3bA7L+Jscm3v2YesvixQSyy/VYwpoe6MO5x7GUA=',NULL,'maestro4@sms.edu','Maestro 4','maestro',1,0,'maestro4',NULL,NULL,0),
-(126,'pbkdf2_sha256$1200000$UZdBwiWjQoCr40bK5yutVc$Nw2rpwuR/BNbsxU74nSQlwXxF9gFdYIluXVSXv7dIes=',NULL,'maestro5@sms.edu','Maestro 5','maestro',1,0,'maestro5',NULL,NULL,0),
-(127,'pbkdf2_sha256$1200000$y2WFz78lPfg1ALo3qMlt6x$CT/sbqo/EgKzmYR2En6CYcqq1OfnMeKD3PpDVhck/m8=',NULL,'maestro6@sms.edu','Maestro 6','maestro',1,0,'maestro6',NULL,NULL,0),
-(128,'pbkdf2_sha256$1200000$RJuFkXKsRVlTjhPHztBsLa$Y2joaJseArK8CQSLFwXMKXq9iC2wGVckyldskb/jI6Y=',NULL,'maestro7@sms.edu','Maestro 7','maestro',1,0,'maestro7',NULL,NULL,0),
-(129,'pbkdf2_sha256$1200000$8lcdoWGJBpphq5xfFl97eK$QXwT7U79hesXIbsFp9N2/IaxnyDSlWEKIgeE8rD6T2Y=',NULL,'maestro8@sms.edu','Maestro 8','maestro',1,0,'maestro8',NULL,NULL,0),
-(130,'pbkdf2_sha256$1200000$2mouTESBeYIvhxLFuUbMOP$mSfB7P5IFE2nl0p8zrCqRaIoaZlAcQUkkLDlDgP/YQ4=',NULL,'maestro9@sms.edu','Maestro 9','maestro',1,0,'maestro9',NULL,NULL,0),
-(131,'pbkdf2_sha256$1200000$hTt9J4w3oyjqmkjLckjubh$gX+UYMBAZotog0QzsuFj3HCeAAW9OiTXMPZkOZ35gpk=',NULL,'alumno0@sms.edu','Alumno 0','estudiante',1,0,'CURP00000ALUMNO',NULL,NULL,0),
-(132,'pbkdf2_sha256$1200000$Zfo55cPe6kmmGZamHU7GNM$v99CzTNzJO6u03ybQ3vR3Cc0w2H2k9RJubYKdmHjTWM=',NULL,'alumno1@sms.edu','Alumno 1','estudiante',1,0,'CURP00001ALUMNO',NULL,NULL,0),
-(133,'pbkdf2_sha256$1200000$9siwVsjow3J57zNw8de135$H+9g2P0BufzIlUq3S8j5ojMy6CbQqk+yJGBP2VI6sjw=',NULL,'alumno2@sms.edu','Alumno 2','estudiante',1,0,'CURP00002ALUMNO',NULL,NULL,0),
-(134,'pbkdf2_sha256$1200000$Odcqq4uvaM3Vrce2cugKeo$ZJfSPXCRZbic/sf7kcL164NmLZEdMZPqvtKRUf9GyVk=',NULL,'alumno3@sms.edu','Alumno 3','estudiante',1,0,'CURP00003ALUMNO',NULL,NULL,0),
-(135,'pbkdf2_sha256$1200000$5SFDN1EqtVeieV3ssNdyhO$ZY++d3N1vdNw+m3QoNFx6q5fer0ZqNlMs0C//SyYzLI=',NULL,'alumno4@sms.edu','Alumno 4','estudiante',1,0,'CURP00004ALUMNO',NULL,NULL,0),
-(136,'pbkdf2_sha256$1200000$XoP2DqJ1hIZ8E4ZQ65MP1v$h9avPxqdAkaRP/WOKcsrzjBh6Z4KxxMSGJyB1suoifI=',NULL,'alumno5@sms.edu','Alumno 5','estudiante',1,0,'CURP00005ALUMNO',NULL,NULL,0),
-(137,'pbkdf2_sha256$1200000$tauIppCBAcDRkQ70BPljAK$o5nPblWIs879Ry7kzIN2NCzVf8KMBR6ZejIZBTF4erQ=',NULL,'alumno6@sms.edu','Alumno 6','estudiante',1,0,'CURP00006ALUMNO',NULL,NULL,0),
-(138,'pbkdf2_sha256$1200000$RzP03q3R3ETRdHVFewEGFI$A9wzMV+DUXFQOih0W6A1FBChpwieXkT72JPOs3ImktI=',NULL,'alumno7@sms.edu','Alumno 7','estudiante',1,0,'CURP00007ALUMNO',NULL,NULL,0),
-(139,'pbkdf2_sha256$1200000$PGHEcxMF4QAftRNAcrzaeZ$XUxw4Xm/39EyRqw5rw/HCmi3Wb4XfngQ92zRktmWkgw=',NULL,'alumno8@sms.edu','Alumno 8','estudiante',1,0,'CURP00008ALUMNO',NULL,NULL,0),
-(140,'pbkdf2_sha256$1200000$9C8hxELjhWrHoKitkBU1dD$2tVM7jSF3UHJiRYW6wPf7QDWx9ery0BR9gNKc8QDcbM=',NULL,'alumno9@sms.edu','Alumno 9','estudiante',1,0,'CURP00009ALUMNO',NULL,NULL,0);
+(147,'pbkdf2_sha256$1200000$LevDcdWXOCSTxnFvqw2x3L$KfZll/e9i7OcMV/qv8Sm0cjhDwp1YrznnjC0kSB6m4w=','2026-02-21 00:14:19.019709','hectorino2789@gmail.com','','administrador',1,1,'adancito',NULL,NULL,1);
 /*!40000 ALTER TABLE `users_user` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -3769,7 +2400,7 @@ CREATE TABLE `verification_codes` (
   `data_json` longtext DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_verification_email_code` (`email`,`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3792,4 +2423,4 @@ commit;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-02-16 13:42:01
+-- Dump completed on 2026-02-20 18:41:13

@@ -278,7 +278,12 @@ class Adeudo(models.Model):
         # 4. Verificar Recargos Automáticos
         hoy = timezone.localdate()
         vencimiento = self.fecha_vencimiento
-        if isinstance(vencimiento, datetime):
+        if isinstance(vencimiento, str):
+            try:
+                vencimiento = date.fromisoformat(vencimiento)
+            except ValueError:
+                vencimiento = None
+        elif isinstance(vencimiento, datetime):
             vencimiento = vencimiento.date()
             
         if vencimiento and hoy > vencimiento and self.estatus in ['pendiente', 'parcial']:

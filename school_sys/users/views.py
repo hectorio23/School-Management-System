@@ -6,7 +6,9 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import render, get_object_or_404
 from django.db import transaction, models
+from django.db.models import Sum, Count
 from django.utils import timezone
+from datetime import datetime, date
 
 from .permissions import (
     IsAdministrador, CanAccessStudentInfo, CanManageBecas, 
@@ -460,50 +462,79 @@ def _generar_adeudos_masivos(data, concepto):
     grupo_id = data.get('aplicar_a_grupo')
     estrato_id = data.get('aplicar_a_estrato')
     matricula = data.get('aplicar_a_matricula', '')
+    
+    # Valores opcionales para el adeudo
+    monto_base_custom = data.get('monto_base')
+    fecha_vencimiento_raw = data.get('fecha_vencimiento')
+    fecha_vencimiento_custom = None
+    
+    if fecha_vencimiento_raw:
+        if isinstance(fecha_vencimiento_raw, str):
+            try:
+                fecha_vencimiento_custom = date.fromisoformat(fecha_vencimiento_raw)
+            except ValueError:
+                pass
+        else:
+            fecha_vencimiento_custom = fecha_vencimiento_raw
 
     if not (nivel or grado_id or grupo_id or estrato_id or matricula):
         return 0
 
-    estudiantes = Estudiante.objects.all()
+    # 1. Obtener inscripciones que coincidan con los criterios
+    inscripciones = Inscripcion.objects.select_related('estudiante').filter(
+        grupo__ciclo_escolar__activo=True,
+        estatus='activo'
+    )
 
     if matricula:
-        estudiantes = estudiantes.filter(matricula=str(matricula).strip())
-    else:
-        # Filtrar por inscripciones activas
-        inscripciones_path = 'inscripciones'
-        filtros_inscripcion = {'inscripciones__grupo__ciclo_escolar__activo': True}
-        
-        if nivel:
-            filtros_inscripcion['inscripciones__grupo__grado__nivel_educativo__nombre__icontains'] = nivel
-        if grado_id:
-            filtros_inscripcion['inscripciones__grupo__grado_id'] = grado_id
-        if grupo_id:
-            filtros_inscripcion['inscripciones__grupo_id'] = grupo_id
-            
-        estudiantes = estudiantes.filter(**filtros_inscripcion)
+        inscripciones = inscripciones.filter(estudiante__matricula=str(matricula).strip())
+    
+    if nivel:
+        # Algunos grados pueden tener el nivel en el nombre o en nivel_educativo
+        inscripciones = inscripciones.filter(
+            models.Q(grupo__grado__nivel_educativo__nombre__icontains=nivel) |
+            models.Q(grupo__grado__nivel__icontains=nivel)
+        )
+    
+    if grado_id:
+        inscripciones = inscripciones.filter(grupo__grado_id=grado_id)
+    
+    if grupo_id:
+        inscripciones = inscripciones.filter(grupo_id=grupo_id)
+
+    # 2. Procesar estudiantes únicos
+    estudiantes_ids = inscripciones.values_list('estudiante_id', flat=True).distinct()
+    estudiantes_a_procesar = Estudiante.objects.filter(matricula__in=estudiantes_ids)
 
     count = 0
     with transaction.atomic():
-        for estudiante in estudiantes:
-            # El filtro anterior ya asegura que tengan inscripción activa en el ciclo actual.
-            # Aun así, verificamos estado.
-            estado = estudiante.get_estado_actual()
-            if not estado or not estado.es_estado_activo:
-                continue
-
+        for estudiante in estudiantes_a_procesar:
+            # Filtro de estrato si se especificó
             if estrato_id:
                 estrato_actual = estudiante.get_estrato_actual()
                 if not estrato_actual or estrato_actual.id != int(estrato_id):
                     continue
 
-            # Evitar duplicados para el mismo concepto
-            if not Adeudo.objects.filter(estudiante=estudiante, concepto=concepto, estatus__in=['pendiente', 'pagado']).exists():
+            # Evitar duplicados EXACTOS para el mismo concepto y mismo día de vencimiento (si se provee)
+            # O simplemente evitar duplicados si el estatus es pendiente
+            filtro_duplicado = {
+                'estudiante': estudiante,
+                'concepto': concepto,
+                'estatus': 'pendiente'
+            }
+            if fecha_vencimiento_custom:
+                filtro_duplicado['fecha_vencimiento'] = fecha_vencimiento_custom
+
+            if not Adeudo.objects.filter(**filtro_duplicado).exists():
                 adeudo = Adeudo(
                     estudiante=estudiante,
                     concepto=concepto,
-                    monto_base=concepto.monto_base,
+                    monto_base=monto_base_custom if monto_base_custom else concepto.monto_base,
                     estatus='pendiente'
                 )
+                if fecha_vencimiento_custom:
+                    adeudo.fecha_vencimiento = fecha_vencimiento_custom
+                
                 adeudo.save()
                 count += 1
     
@@ -515,7 +546,7 @@ def _generar_adeudos_masivos(data, concepto):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanAccessStudentInfo])
 def admin_grados_list(request):
     """
     GET /api/admin/grados/ - Lista grados
@@ -535,7 +566,7 @@ def admin_grados_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanAccessStudentInfo])
 def admin_grados_detail(request, pk):
     """
     GET /api/admin/grados/<id>/ - Detalle grado
@@ -565,7 +596,7 @@ def admin_grados_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanAccessStudentInfo])
 def admin_grupos_list(request):
     """
     GET /api/admin/grupos/ - Lista grupos
@@ -585,7 +616,7 @@ def admin_grupos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAdministrador])
+@permission_classes([CanAccessStudentInfo])
 def admin_grupos_detail(request, pk):
     """
     GET /api/admin/grupos/<id>/ - Detalle grupo
@@ -615,7 +646,7 @@ def admin_grupos_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET', 'POST'])
-@permission_classes([CanManageBecas])
+@permission_classes([CanAccessStudentInfo])
 def admin_estratos_list(request):
     """
     GET /api/admin/estratos/ - Lista estratos
@@ -635,7 +666,7 @@ def admin_estratos_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([CanManageBecas])
+@permission_classes([CanAccessStudentInfo])
 def admin_estratos_detail(request, pk):
     """
     GET /api/admin/estratos/<id>/ - Detalle estrato
@@ -881,11 +912,23 @@ def admin_adeudos_list(request):
         return paginator.get_paginated_response(serializer.data)
     
     elif request.method == 'POST':
-        serializer = AdeudoCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            adeudo = serializer.save()
-            return Response(AdeudoSerializer(adeudo).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        modo = request.data.get('modo_asignacion', 'individual')
+        
+        if modo == 'masivo':
+            concepto_id = request.data.get('concepto_id')
+            if not concepto_id:
+                return Response({"error": "Debe proporcionar concepto_id"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            concepto = get_object_or_404(ConceptoPago, pk=concepto_id)
+            count = _generar_adeudos_masivos(request.data, concepto)
+            return Response({"message": f"Se generaron {count} adeudos masivamente"}, status=status.HTTP_201_CREATED)
+            
+        else:
+            serializer = AdeudoCreateSerializer(data=request.data)
+            if serializer.is_valid():
+                adeudo = serializer.save()
+                return Response(AdeudoSerializer(adeudo).data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -1057,7 +1100,7 @@ def admin_evaluaciones_detail(request, pk):
 # =============================================================================
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([CanManageFinanzas])
 def admin_reporte_ingresos_estrato(request):
     """
     GET /api/admin/reportes/financieros/ingresos-estrato/
@@ -1106,7 +1149,7 @@ def admin_reporte_ingresos_estrato(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([CanManageFinanzas])
 def admin_reporte_recaudacion(request):
     """
     GET /api/admin/reportes/financieros/recaudacion/
@@ -1172,7 +1215,7 @@ def admin_reporte_recaudacion(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([CanManageFinanzas])
 def admin_estudiantes_adeudos_vencidos(request):
     """
     GET /api/admin/reportes/financieros/adeudos-vencidos/
@@ -1206,11 +1249,73 @@ def admin_estudiantes_adeudos_vencidos(request):
 # REPORTES ACADÉMICOS Y EXPORTACIONES
 # =============================================================================
 
-from .utils_export import generar_excel_estudiantes, generar_pdf_estudiantes, generar_excel_aspirantes
+from django.http import HttpResponse
+from .utils_export import generar_excel_estudiantes, generar_pdf_estudiantes, generar_excel_aspirantes, generar_pdf_reporte_financiero
 from admissions.models import Aspirante
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([CanManageFinanzas])
+def admin_reporte_financiero_completo(request):
+    """
+    GET /api/admin/reportes/financieros/completo/
+    Agrega toda la información financiera para el dashboard y PDFs.
+    """
+    fmt = request.query_params.get('format', 'json')
+    
+    # 1. Recaudación Total vs Deuda Total
+    total_recaudado = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+    
+    adeudos_pendientes = Adeudo.objects.filter(estatus__in=['pendiente', 'vencido', 'parcial'])
+    total_deuda = sum(a.monto_total - a.monto_pagado for a in adeudos_pendientes)
+    
+    # 2. Recaudación por Tipo de Concepto
+    recaudacion_por_tipo = []
+    tipos = ['colegiatura', 'reinscripcion', 'inscripcion', 'otro']
+    for t in tipos:
+        monto = Pago.objects.filter(adeudo__concepto__tipo_concepto=t).aggregate(total=Sum('monto'))['total'] or 0
+        recaudacion_por_tipo.append({'tipo': t, 'monto': float(monto)})
+        
+    # 3. Deuda por Nivel Educativo
+    # Optimizamos agrupando en memoria o con query compleja
+    deuda_por_nivel = []
+    niveles = ['Preescolar', 'Primaria', 'Secundaria']
+    for n in niveles:
+        adeudos_n = adeudos_pendientes.filter(
+            estudiante__inscripciones__grupo__grado__nivel_educativo__nombre__icontains=n,
+            estudiante__inscripciones__grupo__ciclo_escolar__activo=True
+        ).distinct()
+        monto_n = sum(a.monto_total - a.monto_pagado for a in adeudos_n)
+        deuda_por_nivel.append({'nivel': n, 'monto': float(monto_n)})
+
+    # 4. Becas
+    total_alumnos = Estudiante.objects.count()
+    estudiantes_con_beca = Estudiante.objects.filter(porcentaje_beca__gt=0).count()
+    becados_pct = round((estudiantes_con_beca / total_alumnos * 100), 2) if total_alumnos > 0 else 0
+
+    data = {
+        "resumen": {
+            "total_recaudado": float(total_recaudado),
+            "total_deuda": float(total_deuda),
+            "becados_count": estudiantes_con_beca,
+            "becados_pct": becados_pct
+        },
+        "por_concepto": recaudacion_por_tipo,
+        "por_nivel": deuda_por_nivel
+    }
+    
+    if fmt == 'pdf':
+        buffer = generar_pdf_reporte_financiero(data)
+        if not buffer:
+            return Response({"error": "Error al generar PDF"}, status=500)
+            
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="reporte_financiero.pdf"'
+        return response
+    
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([CanManageFinanzas])
 def admin_estadisticas_academicas(request):
     """
     GET /api/admin/reportes/academicos/estadisticas/
@@ -1250,7 +1355,7 @@ def admin_estadisticas_academicas(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([CanManageFinanzas])
 def admin_exportar_estudiantes(request):
     """
     GET /api/admin/exportar/estudiantes/?format=excel|pdf
@@ -1287,7 +1392,7 @@ def admin_exportar_estudiantes(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([CanManageFinanzas])
 def admin_exportar_aspirantes(request):
     """
     GET /api/admin/exportar/aspirantes/
@@ -1464,3 +1569,8 @@ class PasswordResetConfirmView(APIView):
             return Response({'error': 'Token inválido'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': f'Error al actualizar contraseña: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def ping_view(request):
+    return Response({"message": "pong", "user": str(request.user), "role": getattr(request.user, 'role', 'N/A')})

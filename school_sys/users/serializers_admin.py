@@ -199,6 +199,9 @@ class EstudianteUpdateSerializer(serializers.ModelSerializer):
 class AdeudoCreateSerializer(serializers.Serializer):
     estudiante_matricula = serializers.IntegerField()
     concepto_id = serializers.IntegerField()
+    monto_base = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    descuento_aplicado = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    fecha_vencimiento = serializers.DateField(required=False)
     
     def create(self, validated_data):
         matricula = validated_data['estudiante_matricula']
@@ -207,11 +210,20 @@ class AdeudoCreateSerializer(serializers.Serializer):
         estudiante = Estudiante.objects.get(matricula=matricula)
         concepto = ConceptoPago.objects.get(id=concepto_id)
         
-        monto_base = concepto.monto_base
-        descuento_monto = estudiante.get_monto_descuento(monto_base)
+        # Usar valores proporcionados o calcular automáticamente
+        monto_base = validated_data.get('monto_base', concepto.monto_base)
+        
+        if 'descuento_aplicado' in validated_data:
+            descuento_monto = validated_data['descuento_aplicado']
+        else:
+            descuento_monto = estudiante.get_monto_descuento(monto_base)
+            
         monto_total = monto_base - descuento_monto
         
-        fecha_vencimiento = (timezone.now() + timedelta(days=30)).date()
+        fecha_vencimiento = validated_data.get(
+            'fecha_vencimiento', 
+            (timezone.now() + timedelta(days=30)).date()
+        )
 
         adeudo = Adeudo.objects.create(
             estudiante=estudiante,
@@ -270,7 +282,7 @@ class ConceptoPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConceptoPago
         fields = [
-            'id', 'nombre', 'descripcion', 'monto_base', 'activo', 'nivel_educativo',
+            'id', 'nombre', 'descripcion', 'monto_base', 'activo', 'nivel_educativo', 'tipo_concepto',
             'aplicar_a_nivel', 'aplicar_a_grado', 'aplicar_a_grupo', 
             'aplicar_a_estrato', 'aplicar_a_matricula'
         ]

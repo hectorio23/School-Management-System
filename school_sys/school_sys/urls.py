@@ -13,7 +13,8 @@ from users.views import (
     EmailTokenObtainPairView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
-    PasswordResetConfirmView
+    PasswordResetConfirmView,
+    admin_reporte_financiero_completo
 )
 
 # from django.conf.urls.static import static
@@ -21,7 +22,7 @@ from django.urls import path, include
 from django.contrib import admin
 from . import views
 
-from users.serializers import VerifyMFATokenView
+from users.serializers import VerifyMFATokenView, EmailTokenObtainPairSerializer
 
 
 @api_view(['POST'])
@@ -69,4 +70,5 @@ urlpatterns = [
     path("api/auth/password-reset/request/", PasswordResetRequestView.as_view(), name="password_reset_request"),
     path("api/auth/password-reset/verify/", PasswordResetVerifyView.as_view(), name="password_reset_verify"),
     path("api/auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+    path("api/admin/reporte-directo/", admin_reporte_financiero_completo, name="admin_reporte_directo"),
 ]
