@@ -318,3 +318,90 @@ def generar_pdf_reporte_financiero(data):
     doc.build(elements)
     buffer.seek(0)
     return buffer
+
+
+def generar_excel_reporte_financiero(data):
+    """Genera un archivo Excel con el reporte financiero."""
+    if not openpyxl:
+        return None
+
+    output = io.BytesIO()
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Reporte Financiero"
+
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    center_aligned = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                         top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # 1. Resumen Ejecutivo
+    sheet.append(["Resumen Ejecutivo"])
+    sheet.cell(row=1, column=1).font = Font(bold=True, size=14)
+    
+    resumen = data.get('resumen', {})
+    resumen_rows = [
+        ["Concepto", "Valor"],
+        ["Total Recaudado (Pagos)", resumen.get('total_recaudado', 0)],
+        ["Total Deuda Pendiente", resumen.get('total_deuda', 0)],
+        ["Alumnos con Beca (%)", resumen.get('becados_pct', 0)],
+        ["Alumnos con Beca (Cantidad)", resumen.get('becados_count', 0)]
+    ]
+    
+    start_row = 3
+    for i, row in enumerate(resumen_rows):
+        for j, val in enumerate(row):
+            cell = sheet.cell(row=start_row + i, column=j + 1)
+            cell.value = val
+            cell.border = thin_border
+            if i == 0:
+                cell.font = header_font
+                cell.fill = header_fill
+
+    # 2. Recaudación por Concepto
+    start_row += 7
+    sheet.cell(row=start_row, column=1).value = "Recaudación por Tipo de Concepto"
+    sheet.cell(row=start_row, column=1).font = Font(bold=True)
+    
+    header_row = ["Tipo de Concepto", "Monto Recaudado"]
+    for j, val in enumerate(header_row):
+        cell = sheet.cell(row=start_row + 1, column=j + 1)
+        cell.value = val
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = thin_border
+        
+    for i, item in enumerate(data.get('por_concepto', []), 2):
+        sheet.cell(row=start_row + i, column=1).value = item['tipo'].capitalize()
+        sheet.cell(row=start_row + i, column=1).border = thin_border
+        sheet.cell(row=start_row + i, column=2).value = item['monto']
+        sheet.cell(row=start_row + i, column=2).border = thin_border
+
+    # 3. Deuda por Nivel
+    start_row += len(data.get('por_concepto', [])) + 3
+    sheet.cell(row=start_row, column=1).value = "Deuda Pendiente por Nivel Educativo"
+    sheet.cell(row=start_row, column=1).font = Font(bold=True)
+    
+    header_row = ["Nivel Educativo", "Monto de Adeudo"]
+    for j, val in enumerate(header_row):
+        cell = sheet.cell(row=start_row + 1, column=j + 1)
+        cell.value = val
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = thin_border
+        
+    for i, item in enumerate(data.get('por_nivel', []), 2):
+        sheet.cell(row=start_row + i, column=1).value = item['nivel']
+        sheet.cell(row=start_row + i, column=1).border = thin_border
+        sheet.cell(row=start_row + i, column=2).value = item['monto']
+        sheet.cell(row=start_row + i, column=2).border = thin_border
+
+    # Ajustar ancho
+    sheet.column_dimensions['A'].width = 35
+    sheet.column_dimensions['B'].width = 20
+
+    workbook.save(output)
+    output.seek(0)
+    return output

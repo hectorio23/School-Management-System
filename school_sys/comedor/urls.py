@@ -12,6 +12,7 @@ urlpatterns = [
     
     # Menús
     path('admin/menus/', views.admin_menus_list, name='admin_menus_list'),
+    path('admin/menus/<int:pk>/', views.admin_menu_detalle, name='admin_menu_detalle'),
     path('admin/menu-semanal/', views.admin_menu_semanal, name='admin_menu_semanal'),
 
     # Estudiantes
