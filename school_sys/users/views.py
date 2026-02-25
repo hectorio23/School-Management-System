@@ -1250,7 +1250,13 @@ def admin_estudiantes_adeudos_vencidos(request):
 # =============================================================================
 
 from django.http import HttpResponse
-from .utils_export import generar_excel_estudiantes, generar_pdf_estudiantes, generar_excel_aspirantes, generar_pdf_reporte_financiero
+from .utils_export import (
+    generar_excel_estudiantes,
+    generar_pdf_estudiantes,
+    generar_excel_aspirantes, 
+    generar_pdf_reporte_financiero,
+    generar_excel_reporte_financiero
+)
 from admissions.models import Aspirante
 
 @api_view(['GET'])
@@ -1310,6 +1316,14 @@ def admin_reporte_financiero_completo(request):
             
         response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="reporte_financiero.pdf"'
+        return response
+    elif fmt == 'excel' or fmt == 'xlsx':
+        buffer = generar_excel_reporte_financiero(data)
+        if not buffer:
+            return Response({"error": "Error al generar Excel"}, status=500)
+            
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="reporte_financiero.xlsx"'
         return response
     
     return Response(data)

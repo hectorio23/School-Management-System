@@ -186,6 +186,29 @@ def admin_menus_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([CanManageComedor])
+def admin_menu_detalle(request, pk):
+    """
+    Gestión de un menú específico (Detalle, Actualizar, Eliminar)
+    """
+    menu = get_object_or_404(Menu, pk=pk)
+    
+    if request.method == 'GET':
+        serializer = MenuSerializer(menu)
+        return Response(serializer.data)
+        
+    elif request.method == 'PUT':
+        serializer = MenuSerializer(menu, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    elif request.method == 'DELETE':
+        menu.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 @api_view(['GET', 'POST'])
 @permission_classes([CanManageComedor])
 def admin_menu_semanal(request):
