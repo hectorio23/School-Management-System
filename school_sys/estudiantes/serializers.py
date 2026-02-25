@@ -237,6 +237,9 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
     adeudos = serializers.SerializerMethodField()
     beca_activa = serializers.SerializerMethodField()
     balance_total = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    telefono = serializers.CharField()
+    sexo = serializers.CharField()
     
     class Meta:
         model = Estudiante
@@ -252,9 +255,15 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
             "tutores",
             "beca_activa",
             "adeudos",
-            "balance_total"
+            "balance_total",
+            "email",
+            "telefono",
+            "sexo"
         ]
         read_only_fields = fields
+    
+    def get_email(self, obj):
+        return obj.usuario.email if obj.usuario else None
     
     def get_beca_activa(self, obj):
         """Obtiene la beca activa actual del estudiante"""
