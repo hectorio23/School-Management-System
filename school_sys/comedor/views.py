@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from users.permissions import CanManageComedor
 from estudiantes.models import Estudiante
 from .models import AsistenciaCafeteria, MenuSemanal, Menu
-from pagos.models import Adeudo
+from pagos.models import Adeudo, Pago
 from .serializers import (
     AsistenciaCafeteriaSerializer, 
     MenuSemanalSerializer,
@@ -45,6 +45,8 @@ def admin_registrar_asistencia(request):
     estudiante_id = request.data.get('estudiante_id') or request.data.get('matricula')
     fecha = request.data.get('fecha', timezone.now().date())
     tipo_comida = request.data.get('tipo_comida', 'Comida')
+    pagado_fisico = request.data.get('pagado_fisico', False)
+    
     
     if not estudiante_id:
         return Response({"error": "Se requiere estudiante_id o matricula"}, status=status.HTTP_400_BAD_REQUEST)
@@ -67,6 +69,17 @@ def admin_registrar_asistencia(request):
             # 2. Generar Adeudo Automático (Manejado en el save() de AsistenciaCafeteria)
             # Ya no creamos AdeudoComedor explícitamente aquí
             
+            # 3. Pago Físico Directo
+            if pagado_fisico and asistencia.adeudo:
+                Pago.objects.create(
+                    adeudo=asistencia.adeudo,
+                    monto=asistencia.adeudo.monto_total,
+                    fecha_pago=timezone.now(),
+                    metodo_pago='efectivo',
+                    notas='Pago físico directo en cafetería'
+                )
+                # El guardado del Pago actualizará automáticamente el saldo y estatus del Adeudo
+
             return Response({
                 "message": "Asistencia registrada y adeudo generado.",
                 "asistencia_id": asistencia.id,
@@ -75,6 +88,54 @@ def admin_registrar_asistencia(request):
             
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([CanManageComedor])
+def admin_asistencia_detalle(request, pk):
+    """
+    Gestión de una asistencia específica (Detalle, Actualizar, Eliminar)
+    """
+    asistencia = get_object_or_404(AsistenciaCafeteria, pk=pk)
+    
+    if request.method == 'GET':
+        serializer = AsistenciaCafeteriaSerializer(asistencia)
+        return Response(serializer.data)
+        
+    elif request.method == 'PUT':
+        # Permite cambiar tipo de comida o fecha, pero puede requerir re-calcular
+        fecha = request.data.get('fecha', asistencia.fecha_asistencia)
+        tipo_comida = request.data.get('tipo_comida', asistencia.tipo_comida)
+        pagado_fisico = request.data.get('pagado_fisico', False)
+        
+        # Verificar duplicados si se están cambiando fecha o tipo
+        if (fecha != asistencia.fecha_asistencia or tipo_comida != asistencia.tipo_comida) and \
+           AsistenciaCafeteria.objects.filter(estudiante=asistencia.estudiante, fecha_asistencia=fecha, tipo_comida=tipo_comida).exclude(pk=pk).exists():
+            return Response({"error": "El estudiante ya tiene otra asistencia registrada para este día y tipo."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        asistencia.fecha_asistencia = fecha
+        asistencia.tipo_comida = tipo_comida
+        asistencia.save()
+        
+        # Procesar pago físico si se marcó la casilla y el adeudo no está pagado
+        if pagado_fisico and asistencia.adeudo and asistencia.adeudo.estatus != 'pagado':
+            Pago.objects.create(
+                adeudo=asistencia.adeudo,
+                monto=asistencia.adeudo.monto_total,
+                fecha_pago=timezone.now(),
+                metodo_pago='efectivo',
+                notas='Pago físico directo en cafetería (Edición)'
+            )
+        
+        serializer = AsistenciaCafeteriaSerializer(asistencia)
+        return Response(serializer.data)
+        
+    elif request.method == 'DELETE':
+        # Si tiene adeudo generado automáticamente, y no está pagado, se puede eliminar.
+        # En una regla de negocio más estricta, tal vez haya que revisar si el adeudo tiene pagos parciales.
+        if asistencia.adeudo and asistencia.adeudo.monto_pagado == 0:
+            asistencia.adeudo.delete()
+        asistencia.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
 @permission_classes([CanManageComedor])

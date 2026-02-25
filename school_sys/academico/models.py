@@ -398,3 +398,49 @@ class EventoCalendario(models.Model):
 
     def __str__(self):
         return f"{self.titulo} ({self.fecha_inicio.date()})"
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Calificacion)
+def trigger_calificacion_final_check(sender, instance, created, **kwargs):
+    """
+    Check if the student has grades for all required evaluation periods for the subject.
+    If so, calculate average and create/update CalificacionFinal with AO/RP status.
+    """
+    estudiante = instance.estudiante
+    asignacion = instance.asignacion_maestro
+    materia = asignacion.materia
+    programa = materia.programa_educativo
+    ciclo = asignacion.ciclo_escolar
+
+    total_periodos = programa.numero_periodos_evaluacion
+    calificaciones = Calificacion.objects.filter(
+        estudiante=estudiante,
+        asignacion_maestro=asignacion,
+        periodo_evaluacion__ciclo_escolar=ciclo
+    ).select_related('periodo_evaluacion')
+    
+    # We might allow generating the final grade even if it has more grades than expected, but we need at least `total_periodos`.
+    if calificaciones.count() >= total_periodos:
+        suma = sum(c.calificacion for c in calificaciones)
+        promedio = suma / total_periodos # simple average
+        
+        # Decide status based on passing grade (6.0 is typical)
+        estatus = 'AO' if promedio >= Decimal('6.00') else 'RP'
+        
+        # Create JSON of all periods
+        calificaciones_json = {}
+        for c in calificaciones:
+            calificaciones_json[f"P{c.periodo_evaluacion.numero_periodo}"] = str(c.calificacion)
+            
+        CalificacionFinal.objects.update_or_create(
+            estudiante=estudiante,
+            materia=materia,
+            ciclo_escolar=ciclo,
+            defaults={
+                'calificaciones_periodos': calificaciones_json,
+                'calificacion_final': promedio,
+                'estatus': estatus
+            }
+        )

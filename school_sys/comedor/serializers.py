@@ -14,17 +14,21 @@ class MenuSemanalSerializer(serializers.ModelSerializer):
 
 class AsistenciaCafeteriaSerializer(serializers.ModelSerializer):
     estudiante_nombre = serializers.SerializerMethodField()
+    estudiante_matricula = serializers.SerializerMethodField()
     
     class Meta:
         model = AsistenciaCafeteria
         fields = [
-            'id', 'estudiante', 'estudiante_nombre', 'menu', 
+            'id', 'estudiante', 'estudiante_nombre', 'estudiante_matricula', 'menu', 
             'fecha_asistencia', 'tipo_comida', 'precio_aplicado', 'fecha_registro'
         ]
         read_only_fields = ['fecha_registro', 'precio_aplicado']
 
     def get_estudiante_nombre(self, obj):
         return f"{obj.estudiante.nombre} {obj.estudiante.apellido_paterno} {obj.estudiante.apellido_materno}"
+        
+    def get_estudiante_matricula(self, obj):
+        return obj.estudiante.matricula
 
 class EstudianteAlergiaSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
