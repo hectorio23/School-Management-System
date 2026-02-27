@@ -168,7 +168,9 @@ urlpatterns = [
 
     # --- EVALUACIONES ---
     path('students/evaluaciones/', views.admin_evaluaciones_list, name='admin_evaluaciones_list'),
+    path('students/evaluaciones/recientes/', views.admin_evaluaciones_recientes, name='admin_evaluaciones_recientes'),
     path('students/evaluaciones/<int:pk>/', views.admin_evaluaciones_detail, name='admin_evaluaciones_detail'),
+    path('students/evaluaciones/<int:pk>/update/', views.admin_evaluaciones_update, name='admin_evaluaciones_update'),
 
     # --- CONCEPTOS DE PAGO ---
     path('conceptos/', views.admin_conceptos_list, name='admin_conceptos_list'),

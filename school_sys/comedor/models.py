@@ -143,14 +143,10 @@ class AsistenciaCafeteria(models.Model):
 
 class MenuSemanal(models.Model):
     """menus semanales en PDF"""
-    semana_inicio = models.DateField(
-        help_text='Fecha de inicio de la semana'
-    )
-    semana_fin = models.DateField(
-        help_text='Fecha de fin de la semana'
-    )
     archivo_pdf = models.FileField(
         upload_to='menus/',
+        null=True,
+        blank=True,
         help_text='Archivo PDF del menu'
     )
     descripcion = models.CharField(
@@ -159,6 +155,13 @@ class MenuSemanal(models.Model):
         blank=True,
         help_text='Descripcion breve del menu'
     )
+    # --- Nuevos campos de Día a Día ---
+    lunes_menu = models.TextField(blank=True, null=True, help_text="Menú del Lunes")
+    martes_menu = models.TextField(blank=True, null=True, help_text="Menú del Martes")
+    miercoles_menu = models.TextField(blank=True, null=True, help_text="Menú del Miércoles")
+    jueves_menu = models.TextField(blank=True, null=True, help_text="Menú del Jueves")
+    viernes_menu = models.TextField(blank=True, null=True, help_text="Menú del Viernes")
+    # ----------------------------------
     activo = models.BooleanField(default=True)
     fecha_subida = models.DateTimeField(auto_now_add=True)
     
@@ -166,9 +169,9 @@ class MenuSemanal(models.Model):
         verbose_name = "Menu Semanal"
         verbose_name_plural = "Menus Semanales"
         db_table = 'menus_semanales'
-        ordering = ['-semana_inicio']
+        ordering = ['-fecha_subida']
     
     def __str__(self):
-        return f"Menu {self.semana_inicio} - {self.semana_fin}"
+        return f"Menu {self.descripcion or self.id}"
 
 

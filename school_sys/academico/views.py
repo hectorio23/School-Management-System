@@ -21,10 +21,10 @@ from .models import (
 )
 from estudiantes.models import Estudiante, CicloEscolar, Inscripcion
 from .serializers import (
-    MaestroSerializer, GrupoSerializer, MateriaSerializer,
     AsignacionMaestroSerializer, CalificacionSerializer,
     PeriodoEvaluacionSerializer, EstudianteSimpleSerializer,
-    AsignacionWithStudentsSerializer, SolicitudCambioCalificacionSerializer
+    AsignacionWithStudentsSerializer, SolicitudCambioCalificacionSerializer,
+    EventoCalendarioSerializer
 )
 from .views_admin import *
 from collections import OrderedDict
@@ -1111,20 +1111,46 @@ def calendario_eventos(request):
         # Para otros roles, mostrar todos (o filtrar según necesidades)
         eventos = EventoCalendario.objects.all()
 
-    data = []
-    for e in eventos:
-        data.append({
-            "id": e.id,
-            "title": e.titulo,
-            "description": e.descripcion,
-            "start": e.fecha_inicio.isoformat(),
-            "end": e.fecha_fin.isoformat(),
-            "type": e.tipo_evento,
-            "color": e.color,
-            "allDay": e.fecha_inicio.time() == e.fecha_fin.time() == timezone.datetime.min.time()
-        })
+    serializer = EventoCalendarioSerializer(eventos, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdministradorEscolar])
+def admin_calendario_list_create(request):
+    """Listar y crear eventos del calendario."""
+    if request.method == 'GET':
+        eventos = EventoCalendario.objects.all()
+        # Opcional: filtrar por nivel del admin si es_global=False
+        serializer = EventoCalendarioSerializer(eventos, many=True)
+        return Response(serializer.data)
     
-    return Response(data)
+    elif request.method == 'POST':
+        serializer = EventoCalendarioSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAdministradorEscolar])
+def admin_calendario_detail(request, pk):
+    """Obtener, actualizar o eliminar un evento del calendario."""
+    evento = get_object_or_404(EventoCalendario, pk=pk)
+    
+    if request.method == 'GET':
+        serializer = EventoCalendarioSerializer(evento)
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        serializer = EventoCalendarioSerializer(evento, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        evento.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
 @permission_classes([IsAdministradorEscolar])

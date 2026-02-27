@@ -3,7 +3,8 @@ from estudiantes.models import NivelEducativo, Grado, CicloEscolar, Grupo, Estud
 from .models import (
     ProgramaEducativo, Materia, PeriodoEvaluacion, Maestro, 
     AdministradorEscolar, AsignacionMaestro, Calificacion, 
-    CalificacionFinal, AutorizacionCambioCalificacion, SolicitudCambioCalificacion
+    CalificacionFinal, AutorizacionCambioCalificacion, SolicitudCambioCalificacion,
+    EventoCalendario
 )
 from users.models import User
 
@@ -260,3 +261,12 @@ class SolicitudCambioCalificacionSerializer(serializers.ModelSerializer):
             'resuelto_por', 'resuelto_por_nombre', 'fecha_resolucion', 'comentario_admin'
         ]
         read_only_fields = ['fecha_solicitud', 'resuelto_por', 'fecha_resolucion']
+
+class EventoCalendarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventoCalendario
+        fields = '__all__'
+        extra_kwargs = {
+            'fecha_fin': {'allow_null': True, 'required': False},
+            'es_recurrente': {'required': False}
+        }

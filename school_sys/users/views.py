@@ -5,8 +5,9 @@ from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
 from django.db import transaction, models
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import datetime, date
 
@@ -1076,10 +1077,65 @@ def admin_pagos_detail(request, pk):
 @permission_classes([CanManageBecas])
 def admin_evaluaciones_list(request):
     """
-    GET /api/admin/students/evaluaciones/ - Lista evaluaciones socioeconómicas
+    GET /api/admin/students/evaluaciones/ - Lista todas las evaluaciones socioeconómicas
     """
     paginator = StandardResultsSetPagination()
     evaluaciones = EvaluacionSocioeconomica.objects.select_related('estudiante', 'estrato').all().order_by('-fecha_evaluacion')
+    
+    # Filtro opcional por búsqueda
+    search = request.query_params.get('search')
+    if search:
+        evaluaciones = evaluaciones.filter(
+            Q(estudiante__matricula__icontains=search) |
+            Q(estudiante__nombre__icontains=search) |
+            Q(estudiante__apellido_paterno__icontains=search)
+        )
+
+    result_page = paginator.paginate_queryset(evaluaciones, request)
+    serializer = EvaluacionSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([CanManageBecas])
+def admin_evaluaciones_recientes(request):
+    """
+    GET /api/admin/students/evaluaciones/recientes/
+    Retorna únicamente la evaluación más reciente de cada estudiante.
+    """
+    from django.db.models import Max
+    
+    # Subconsulta para obtener la fecha del estudio más reciente por estudiante
+    # Usamos Group By estudiante y Max fecha
+    recientes_ids = EvaluacionSocioeconomica.objects.values('estudiante').annotate(
+        max_fecha=Max('fecha_evaluacion')
+    ).values_list('estudiante', flat=False)
+    
+    # Como Django no permite MAX y obtener el ID directamente de forma fácil en todas las DBs,
+    # usamos un truco de filtrado: obtener el último ID para cada estudiante
+    # Nota: En sistemas con muchos datos, esto se optimizaría con Raw SQL o Subqueries avanzadas
+    # pero para el volumen actual esta aproximación es funcional.
+    
+    ultimo_estudio_ids = []
+    estudiantes_ids = EvaluacionSocioeconomica.objects.values_list('estudiante', flat=True).distinct()
+    
+    for est_id in estudiantes_ids:
+        ultimo = EvaluacionSocioeconomica.objects.filter(estudiante_id=est_id).order_by('-fecha_evaluacion').first()
+        if ultimo:
+            ultimo_estudio_ids.append(ultimo.id)
+
+    evaluaciones = EvaluacionSocioeconomica.objects.filter(id__in=ultimo_estudio_ids).select_related('estudiante', 'estrato').order_by('-fecha_evaluacion')
+    
+    # Filtro opcional por búsqueda
+    search = request.query_params.get('search')
+    if search:
+        evaluaciones = evaluaciones.filter(
+            Q(estudiante__matricula__icontains=search) |
+            Q(estudiante__nombre__icontains=search) |
+            Q(estudiante__apellido_paterno__icontains=search)
+        )
+
+    paginator = StandardResultsSetPagination()
     result_page = paginator.paginate_queryset(evaluaciones, request)
     serializer = EvaluacionSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
@@ -1092,6 +1148,42 @@ def admin_evaluaciones_detail(request, pk):
     GET /api/admin/students/evaluaciones/<id>/ - Detalle evaluación
     """
     evaluacion = get_object_or_404(EvaluacionSocioeconomica, pk=pk)
+    serializer = EvaluacionSerializer(evaluacion)
+    return Response(serializer.data)
+
+
+@api_view(['PATCH'])
+@permission_classes([CanManageBecas])
+def admin_evaluaciones_update(request, pk):
+    """
+    PATCH /api/admin/students/evaluaciones/<id>/update/
+    Permite al administrador asignar estrato y aprobar/rechazar el estudio.
+    """
+    evaluacion = get_object_or_404(EvaluacionSocioeconomica, pk=pk)
+    estrato_id = request.data.get('estrato')
+    aprobado = request.data.get('aprobado')
+    comentarios_comision = request.data.get('comentarios_comision')
+
+    with transaction.atomic():
+        if estrato_id:
+            estrato = get_object_or_404(Estrato, pk=estrato_id)
+            evaluacion.estrato = estrato
+            # Si se aprueba, actualizamos el porcentaje de beca del estudiante basado en el estrato
+            if aprobado is True:
+                estudiante = evaluacion.estudiante
+                estudiante.porcentaje_beca = estrato.porcentaje_descuento
+                estudiante.save(update_fields=['porcentaje_beca'])
+        
+        if aprobado is not None:
+            evaluacion.aprobado = aprobado
+            # fecha_aprobacion es auto_now_add en el modelo, pero podemos actualizarla si es necesario
+            # evaluacion.fecha_aprobacion = timezone.now()
+            
+        if comentarios_comision is not None:
+            evaluacion.comentarios_comision = comentarios_comision
+            
+        evaluacion.save()
+
     serializer = EvaluacionSerializer(evaluacion)
     return Response(serializer.data)
 
@@ -1266,7 +1358,8 @@ def admin_reporte_financiero_completo(request):
     GET /api/admin/reportes/financieros/completo/
     Agrega toda la información financiera para el dashboard y PDFs.
     """
-    fmt = request.query_params.get('format', 'json')
+    # Usar 'tipo' en lugar de 'format' (DRF reserva ?format= para content negotiation)
+    fmt = request.query_params.get('tipo', 'json')
     
     # 1. Recaudación Total vs Deuda Total
     total_recaudado = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
@@ -1439,16 +1532,16 @@ class PasswordResetRequestView(APIView):
         if not email:
             return Response({'error': 'Email requerido'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # 1. Buscar en USUARIOS (Estudiantes active)
+        # 1. Buscar en USUARIOS (Cualquiera excepto administrador TI)
         try:
-            user = User.objects.get(email=email, role='estudiante')
+            user = User.objects.exclude(role='administrador').get(email=email)
             code = f"{random.randint(100000, 999999)}"
             user.mfa_code = code
             user.mfa_expires_at = timezone.now() + timedelta(minutes=15)
             user.save(update_fields=['mfa_code', 'mfa_expires_at'])
             
-            print(f"\\n[MOCK EMAIL] Password Reset Code para ESTUDIANTE {email}: {code}\\n")
-            response_data = {'message': f'Si el correo existe, se ha enviado un código de verificación.'}
+            print(f"\\n[MOCK EMAIL] Password Reset Code para {user.role.upper()} {email}: {code}\\n")
+            response_data = {'message': 'Si el correo existe, se ha enviado un código de verificación.'}
             if settings.DEBUG:
                 response_data['code_debug'] = code
             return Response(response_data)
@@ -1496,15 +1589,15 @@ class PasswordResetVerifyView(APIView):
         if not email or not code:
             return Response({'error': 'Email y código requeridos'}, status=status.HTTP_400_BAD_REQUEST)
             
-        # 1. Verificar Estudiante
+        # 1. Verificar Usuario (Cualquiera excepto administrador TI)
         try:
-            user = User.objects.get(email=email, role='estudiante')
+            user = User.objects.exclude(role='administrador').get(email=email)
             if user.mfa_code == code and user.mfa_expires_at and user.mfa_expires_at > timezone.now():
                 # Código válido
                 token_payload = {
                     'email': email,
                     'type': 'password_reset',
-                    'user_type': 'student',
+                    'user_type': 'user',
                     'exp': datetime.utcnow() + timedelta(minutes=15)
                 }
                 reset_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm='HS256')
@@ -1562,20 +1655,20 @@ class PasswordResetConfirmView(APIView):
             email = payload.get('email')
             user_type = payload.get('user_type')
             
-            if user_type == 'student':
+            if user_type == 'user':
                 user = User.objects.get(email=email)
                 user.set_password(new_password)
                 # Limpiar MFA code
                 user.mfa_code = None
                 user.mfa_expires_at = None
                 user.save()
-                return Response({'message': 'Contraseña actualizada exitosamente (Estudiante)'})
+                return Response({'message': 'Contraseña actualizada exitosamente'})
                 
             elif user_type == 'aspirante':
                 adm_user = AdmissionUser.objects.get(email=email)
                 adm_user.set_password(new_password)
                 adm_user.save()
-                return Response({'message': 'Contraseña actualizada exitosamente (Aspirante)'})
+                return Response({'message': 'Contraseña actualizada exitosamente'})
                 
         except jwt.ExpiredSignatureError:
             return Response({'error': 'El token ha expirado'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1583,6 +1676,36 @@ class PasswordResetConfirmView(APIView):
             return Response({'error': 'Token inválido'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': f'Error al actualizar contraseña: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordView(APIView):
+    """
+    Permite a un usuario autenticado cambiar su contraseña actual.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+        
+        if not current_password or not new_password or not confirm_password:
+            return Response({'error': 'Todos los campos son obligatorios.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if new_password != confirm_password:
+            return Response({'error': 'Las nuevas contraseñas no coinciden.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user = request.user
+        
+        # Validar contraseña actual
+        if not user.check_password(current_password):
+            return Response({'error': 'La contraseña actual no es correcta.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Actualizar contraseña
+        user.set_password(new_password)
+        user.save()
+        
+        return Response({'message': 'Contraseña cambiada exitosamente.'}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
