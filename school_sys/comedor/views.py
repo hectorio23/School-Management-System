@@ -278,37 +278,24 @@ def admin_menu_semanal(request):
     POST: Crear/Actualizar menú semanal
     """
     if request.method == 'GET':
-        hoy = timezone.now().date()
-        fecha_target = request.query_params.get('fecha')
-        
-        if fecha_target:
-            # Si dan fecha, buscar la semana que contiene esa fecha
-            try:
-                # Lógica simple: Buscar si existe un MenuSemanal que inicie cerca
-                # Idealmente MenuSemanal tiene fecha_inicio y cubre 7 dias
-                menu_semanal = MenuSemanal.objects.filter(semana_inicio__lte=fecha_target).order_by('-semana_inicio').first()
-            except:
-                menu_semanal = None
-        else:
-            # Buscar el más reciente o el de esta semana
-            inicio_semana = hoy - timezone.timedelta(days=hoy.weekday())
-            menu_semanal = MenuSemanal.objects.filter(semana_inicio=inicio_semana).first()
-            
-            if not menu_semanal:
-                # Fallback al último creado
-                menu_semanal = MenuSemanal.objects.order_by('-semana_inicio').first()
-
-        if not menu_semanal:
-            return Response({"detail": "No hay menú semanal configurado"}, status=status.HTTP_404_NOT_FOUND)
-            
-        serializer = MenuSemanalSerializer(menu_semanal)
+        menus = MenuSemanal.objects.all().order_by('-fecha_subida')
+        serializer = MenuSemanalSerializer(menus, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = MenuSemanalSerializer(data=request.data)
+        menu_id = request.data.get('id')
+        if menu_id:
+            try:
+                instance = MenuSemanal.objects.get(id=menu_id)
+                serializer = MenuSemanalSerializer(instance, data=request.data)
+            except MenuSemanal.DoesNotExist:
+                return Response({"detail": "Menú no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            serializer = MenuSemanalSerializer(data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED if not menu_id else status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
@@ -329,22 +316,59 @@ def estudiante_asistencias(request):
     serializer = AsistenciaCafeteriaSerializer(asistencias, many=True)
     return Response(serializer.data)
 
+from academico.models import EventoCalendario
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def estudiante_menu_actual(request):
-    """Retorna el menú semanal activo."""
+    """
+    Retorna el menú semanal activo. 
+    Considera si hoy es fin de semana o festivo.
+    """
     hoy = timezone.now().date()
-    menu_semanal = MenuSemanal.objects.filter(
-        semana_inicio__lte=hoy, 
-        semana_fin__gte=hoy, 
-        activo=True
-    ).first()
+    
+    # 1. Verificar si es fin de semana o día festivo
+    es_fin_semana = hoy.weekday() >= 5  # 5=Sábado, 6=Domingo
+    es_festivo = EventoCalendario.objects.filter(
+        tipo_evento='FESTIVO',
+        fecha_inicio__date__lte=hoy,
+        fecha_fin__date__gte=hoy
+    ).exists()
+
+    if es_fin_semana or es_festivo:
+        motivo = "Fin de semana" if es_fin_semana else "Día Festivo"
+        return Response({
+            "status": "success",
+            "is_closed": True,
+            "motivo": motivo,
+            "menu": None
+        })
+
+    # 2. Buscar menú semanal activo (independiente de la fecha)
+    menu_semanal = MenuSemanal.objects.filter(activo=True).order_by('-fecha_subida').first()
     
     if not menu_semanal:
-        menu_semanal = MenuSemanal.objects.filter(activo=True).order_by('-semana_inicio').first()
+        # Fallback al último subido
+        menu_semanal = MenuSemanal.objects.order_by('-fecha_subida').first()
 
     if not menu_semanal:
-        return Response({"detail": "No hay menú disponible", "data": []}, status=200)
+        return Response({
+            "status": "error",
+            "detail": "No hay menú disponible para esta semana",
+            "menu": None
+        })
         
     serializer = MenuSemanalSerializer(menu_semanal)
-    return Response(serializer.data)
+    
+    # El frontend espera que los campos se llamen 'lunes', 'martes', etc.
+    # Pero en el modelo son 'lunes_menu', etc.
+    # Mapearemos para compatibilidad si es necesario o simplemente devolveremos todo.
+    data = serializer.data
+    # Crear alias para compatibilidad con el frontend antiguo si es necesario
+    for dia in ['lunes', 'martes', 'miercoles', 'jueves', 'viernes']:
+        data[dia] = data.get(f"{dia}_menu")
+
+    return Response({
+        "status": "success",
+        "menu": data
+    })

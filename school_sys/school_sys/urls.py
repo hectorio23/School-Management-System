@@ -14,6 +14,7 @@ from users.views import (
     PasswordResetRequestView,
     PasswordResetVerifyView,
     PasswordResetConfirmView,
+    ChangePasswordView,
     admin_reporte_financiero_completo
 )
 
@@ -70,5 +71,6 @@ urlpatterns = [
     path("api/auth/password-reset/request/", PasswordResetRequestView.as_view(), name="password_reset_request"),
     path("api/auth/password-reset/verify/", PasswordResetVerifyView.as_view(), name="password_reset_verify"),
     path("api/auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+    path("api/auth/change-password/", ChangePasswordView.as_view(), name="change_password"),
     path("api/admin/reporte-directo/", admin_reporte_financiero_completo, name="admin_reporte_directo"),
 ]

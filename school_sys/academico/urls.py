@@ -22,6 +22,8 @@ urlpatterns = [
     path('api/admin-escolar/calificaciones/solicitudes/<int:pk>/resolver/', views.admin_solicitud_resolver, name='admin-solicitud-resolver'),
     path('api/admin-escolar/periodos/', views.admin_periodos_list_create, name='admin-periodos-list'),
     path('api/admin-escolar/periodos/<int:pk>/', views.admin_periodo_detail, name='admin-periodo-detail'),
+    path('api/admin-escolar/calendario/', views.admin_calendario_list_create, name='admin-calendario-list'),
+    path('api/admin-escolar/calendario/<int:pk>/', views.admin_calendario_detail, name='admin-calendario-detail'),
     path('api/admin-escolar/reporte-grupo/', views.admin_reporte_grupo_data, name='admin-reporte-grupo'),
 
     # Maestro

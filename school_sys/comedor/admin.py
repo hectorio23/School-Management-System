@@ -10,8 +10,8 @@ class MenuAdmin(admin.ModelAdmin):
 
 @admin.register(MenuSemanal)
 class MenuSemanalAdmin(admin.ModelAdmin):
-    list_display = ('semana_inicio', 'semana_fin', 'descripcion', 'activo')
-    search_fields = ('descripcion', 'semana_inicio')
+    list_display = ('id', 'descripcion', 'activo', 'fecha_subida')
+    search_fields = ('descripcion',)
     list_filter = ('activo',)
 
 @admin.register(AsistenciaCafeteria)

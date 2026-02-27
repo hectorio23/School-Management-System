@@ -207,15 +207,20 @@ class AdeudoResumenSerializer(serializers.ModelSerializer):
     Solo información esencial, sin detalles de pagos.
     """
     concepto_nombre = serializers.CharField(source="concepto.nombre", read_only=True)
-    # saldo_pendiente = serializers.SerializerMethodField()
     
     class Meta:
         model = Adeudo
         fields = [
+            "id",
             "concepto_nombre",
+            "monto_base",
+            "descuento_aplicado",
+            "recargo_aplicado",
             "monto_total", 
+            "monto_pagado",
             "estatus",
-            "fecha_vencimiento"
+            "fecha_vencimiento",
+            "recargo_exento",
         ]
         read_only_fields = fields
     

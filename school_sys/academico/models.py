@@ -385,12 +385,13 @@ class EventoCalendario(models.Model):
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(null=True, blank=True)
     fecha_inicio = models.DateTimeField()
-    fecha_fin = models.DateTimeField()
+    fecha_fin = models.DateTimeField(null=True, blank=True)
     tipo_evento = models.CharField(max_length=20, choices=TIPO_EVENTO_CHOICES, default='EVENTO')
     color = models.CharField(max_length=7, default='#3b82f6', help_text="Color en formato hexadecimal")
     
     nivel_educativo = models.ForeignKey(NivelEducativo, on_delete=models.SET_NULL, null=True, blank=True, related_name='eventos')
     es_global = models.BooleanField(default=True)
+    es_recurrente = models.BooleanField(default=False, help_text="¿Se repite anualmente (mismo mes y día)?")
 
     class Meta:
         db_table = 'eventos_calendario'

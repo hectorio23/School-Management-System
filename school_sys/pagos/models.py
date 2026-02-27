@@ -4,6 +4,7 @@ from django.db.models import Sum
 from datetime import timedelta, date, datetime
 from decimal import Decimal
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from estudiantes.models import Estudiante
 
 #########################################################
@@ -395,6 +396,7 @@ class Pago(models.Model):
             if otros_pendientes:
                 raise ValidationError("No se puede pagar la reinscripción si existen otros adeudos vencidos o pendientes.")
 
+        is_new = self.pk is None
         super().save(*args, **kwargs)
         
         # Sincronizar adeudo
@@ -404,4 +406,69 @@ class Pago(models.Model):
         
         self.adeudo.monto_pagado = total_pagado
         self.adeudo.actualizar_estatus()
+        
+        # RF-NOT-05: Enviar confirmación de pago por email
+        if is_new:
+            self._enviar_confirmacion_pago()
 
+    def _enviar_confirmacion_pago(self):
+        """Envía email de confirmación de pago al estudiante y sus tutores (RF-NOT-05)."""
+        try:
+            from estudiantes.models import EstudianteTutor
+            
+            estudiante = self.adeudo.estudiante
+            adeudo = self.adeudo
+            saldo_restante = max(Decimal('0.00'), adeudo.monto_total - adeudo.monto_pagado)
+            
+            nombre_completo = f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}"
+            
+            metodo_display = self.get_metodo_pago_display() if hasattr(self, 'get_metodo_pago_display') else self.metodo_pago
+            
+            mensaje = (
+                f"Estimado(a) {nombre_completo},\n\n"
+                f"Se ha registrado exitosamente un pago en su cuenta. "
+                f"A continuación el detalle:\n\n"
+                f"  Concepto:         {adeudo.concepto.nombre}\n"
+                f"  Monto pagado:     ${self.monto:,.2f} MXN\n"
+                f"  Método de pago:   {metodo_display}\n"
+                f"  Referencia:       {self.numero_referencia or 'N/A'}\n"
+                f"  Fecha:            {timezone.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+                f"  Monto total del adeudo:  ${adeudo.monto_total:,.2f}\n"
+                f"  Total pagado:            ${adeudo.monto_pagado:,.2f}\n"
+                f"  Saldo restante:          ${saldo_restante:,.2f}\n"
+                f"  Estatus del adeudo:      {adeudo.get_estatus_display()}\n\n"
+                f"Matrícula del alumno: {estudiante.matricula}\n\n"
+                f"Si tiene alguna duda, por favor contacte al departamento de finanzas.\n\n"
+                f"Atentamente,\n"
+                f"Administración Escolar"
+            )
+            
+            # Recopilar destinatarios
+            destinatarios = []
+            
+            # Email del estudiante (usuario del sistema)
+            if hasattr(estudiante, 'usuario') and estudiante.usuario and estudiante.usuario.email:
+                destinatarios.append(estudiante.usuario.email)
+            
+            # Emails de tutores activos
+            try:
+                tutores_rels = EstudianteTutor.objects.filter(
+                    estudiante=estudiante, activo=True
+                ).select_related('tutor')
+                for rel in tutores_rels:
+                    if rel.tutor.correo and rel.tutor.correo not in destinatarios:
+                        destinatarios.append(rel.tutor.correo)
+            except Exception:
+                pass
+            
+            if destinatarios:
+                send_mail(
+                    subject=f"Confirmación de Pago - {adeudo.concepto.nombre} - Matrícula {estudiante.matricula}",
+                    message=mensaje,
+                    from_email=None,  # Usa DEFAULT_FROM_EMAIL de settings
+                    recipient_list=destinatarios,
+                    fail_silently=True,
+                )
+        except Exception:
+            # Nunca bloquear el registro de un pago por un error de email
+            pass
