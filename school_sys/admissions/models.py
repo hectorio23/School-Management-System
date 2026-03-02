@@ -61,6 +61,12 @@ class AdmissionUser(AbstractBaseUser):
     
     objects = AdmissionUserManager()
 
+    def set_password(self, raw_password):
+        """Hashea la contraseña usando el hasher configurado del sistema."""
+        from django.contrib.auth.hashers import make_password
+        self.password = make_password(raw_password)
+        self._password = raw_password
+
     def save(self, *args, **kwargs):
         """Asigna un folio automático a partir de 2000 si no existe."""
         if not self.folio:
@@ -204,7 +210,6 @@ class Aspirante(models.Model):
     foto_credencial = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     foto_fachada_domicilio = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     boleta_ciclo_anterior = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
-    boleta_ciclo_actual = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
     
     # Campos que ya no se usan directamente tras la refactorización pero se mantienen para compatibilidad temporal si es necesario
     comprobante_domicilio = models.FileField(upload_to=aspirante_upload_path, max_length=255, null=True, blank=True)
@@ -238,7 +243,7 @@ class Aspirante(models.Model):
         """Encripta archivos del aspirante antes de persistirlos en disco."""
         files_to_encrypt = [
             'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
-            'boleta_ciclo_anterior', 'boleta_ciclo_actual',
+            'boleta_ciclo_anterior',
             'comprobante_domicilio', 'acta_nacimiento_estudiante', 
             'acta_nacimiento_tutor', 'curp_tutor_pdf'
         ]

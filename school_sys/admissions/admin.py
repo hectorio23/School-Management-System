@@ -21,9 +21,16 @@ from estudiantes.models import (
 
 class AdmissionUserForm(forms.ModelForm):
     """Formulario para la gestión de usuarios de admisión."""
+    new_password = forms.CharField(
+        label="Cambiar Contraseña",
+        required=False,
+        widget=forms.PasswordInput,
+        help_text="Deje en blanco si no desea cambiarla."
+    )
+
     class Meta:
         model = AdmissionUser
-        fields = ('email', 'password')
+        fields = ('email', 'is_active', 'is_verified')
 
 class AspiranteForm(forms.ModelForm):
     """Formulario integral del aspirante."""
@@ -94,7 +101,6 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
                 ('display_acta', 'acta_nacimiento'),
                 ('display_curp', 'curp_pdf'),
                 ('display_boleta_ant', 'boleta_ciclo_anterior'),
-                ('display_boleta_act', 'boleta_ciclo_actual'),
                 ('acta_nacimiento_check', 'curp_check'),
                 ('aceptacion_reglamento', 'autorizacion_imagen')
             )
@@ -119,7 +125,7 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
     
     readonly_fields = (
         'display_foto', 'display_acta', 'display_curp', 
-        'display_boleta_ant', 'display_boleta_act'
+        'display_boleta_ant'
     )
 
     def get_folio(self, obj):
@@ -152,8 +158,6 @@ class AdmisionAspiranteAdmin(admin.ModelAdmin):
     def display_boleta_ant(self, obj): return self._get_secure_link(obj, 'boleta_ciclo_anterior', "Boleta Anterior")
     display_boleta_ant.short_description = "Boleta Ciclo Anterior"
 
-    def display_boleta_act(self, obj): return self._get_secure_link(obj, 'boleta_ciclo_actual', "Boleta Actual")
-    display_boleta_act.short_description = "Boleta Ciclo Actual"
 
     actions = ["export_as_excel", "migrate_to_students", "mark_as_accepted"]
 
@@ -388,12 +392,19 @@ class AdmissionUserAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Credenciales', {
-            'fields': ('folio', 'email', 'password_mask')
+            'fields': ('folio', 'email', 'password_mask', 'new_password')
         }),
         ('Estado de la Cuenta', {
             'fields': ('is_active', 'is_verified', 'date_joined')
         }),
     )
+
+    def save_model(self, request, obj, form, change):
+        """Hashea la contraseña de forma segura utilizando el método del modelo."""
+        new_password = form.cleaned_data.get('new_password')
+        if new_password:
+            obj.set_password(new_password)
+        super().save_model(request, obj, form, change)
 
     def password_mask(self, obj): return "********"
     password_mask.short_description = "Contraseña (Segura)"

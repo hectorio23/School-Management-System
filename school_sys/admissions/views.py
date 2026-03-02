@@ -54,7 +54,10 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
+from django.views.decorators.clickjacking import xframe_options_exempt
 from users.permissions import IsAdministrador, CanManageAdmisiones
 from .permissions import IsAspirante
 from .authentication import AdmissionJWTAuthentication
@@ -64,7 +67,7 @@ from users.models import User
 from estudiantes.models import (
     Estudiante, Tutor, EstudianteTutor, EstadoEstudiante,
     HistorialEstadosEstudiante, CicloEscolar, Grupo, Grado, NivelEducativo,
-    Inscripcion
+    Inscripcion, EvaluacionSocioeconomica, Estrato
 )
 from django.test import RequestFactory
 from .utils_security import decrypt_data, generate_folio_hash
@@ -95,6 +98,28 @@ def login_view(request):
     if serializer.is_valid():
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def admission_token_refresh(request):
+    """Refresca el token JWT de un aspirante usando AdmissionUser (no users.User)."""
+    refresh_token = request.data.get('refresh')
+    if not refresh_token:
+        return Response({'error': 'refresh token requerido'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        token = RefreshToken(refresh_token)
+        user_id = token.get('user_id')
+        # Verificar que el aspirante aún existe y está activo
+        user = AdmissionUser.objects.get(folio=user_id)
+        if not user.is_active:
+            return Response({'error': 'Usuario inactivo'}, status=status.HTTP_401_UNAUTHORIZED)
+        # Emitir nuevo access token
+        new_access = str(token.access_token)
+        return Response({'access': new_access}, status=status.HTTP_200_OK)
+    except AdmissionUser.DoesNotExist:
+        return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_401_UNAUTHORIZED)
+    except (TokenError, InvalidToken):
+        return Response({'error': 'Token inválido o expirado'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -157,7 +182,8 @@ def register_confirm(request):
                 nombre=serializer.validated_data['nombre'],
                 apellido_paterno=serializer.validated_data['apellido_paterno'],
                 apellido_materno=serializer.validated_data['apellido_materno'],
-                curp=serializer.validated_data['curp']
+                curp=serializer.validated_data['curp'],
+                nivel_ingreso=serializer.validated_data['nivel_ingreso']
             )
             verification.is_verified = True
             verification.save()
@@ -349,8 +375,7 @@ def aspirante_phase3(request, folio):
                 # 1. Documentos del aspirante (Aspirante model)
                 student_docs = [
                     'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
-                    'boleta_ciclo_anterior', 'boleta_ciclo_actual',
-                    'foto_fachada_domicilio'
+                    'boleta_ciclo_anterior', 'foto_fachada_domicilio'
                 ]
                 for field in student_docs:
                     if field in request.FILES:
@@ -418,6 +443,7 @@ def admin_mark_paid(request, folio):
     return Response({"message": "La fase de pago está deshabilitada temporalmente."}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
+@xframe_options_exempt
 @permission_classes([CanManageAdmisiones])
 def admin_view_document(request, folio, field_name):
     """Visor seguro para administradores. Desencripta documentos del estudiante o tutor."""
@@ -426,7 +452,7 @@ def admin_view_document(request, folio, field_name):
     # Referencias de campos por entidad (Request keys)
     student_fields = [
         'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
-        'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+        'boleta_ciclo_anterior'
     ]
     tutor_fields_map = {
         'acta_nacimiento_tutor': 'acta_nacimiento',
@@ -471,6 +497,7 @@ def admin_view_document(request, folio, field_name):
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@xframe_options_exempt
 @permission_classes([CanManageAdmisiones])
 def admin_view_aspirante_document(request, folio, field_name):
     """
@@ -478,13 +505,13 @@ def admin_view_aspirante_document(request, folio, field_name):
     Parámetros:
         - folio: ID del aspirante
         - field_name: Nombre del campo (curp_pdf, acta_nacimiento, foto_credencial, 
-                      boleta_ciclo_anterior, boleta_ciclo_actual)
+                      boleta_ciclo_anterior)
     """
     aspirante = get_object_or_404(Aspirante, user__folio=folio)
     
     allowed_fields = [
         'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
-        'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+        'boleta_ciclo_anterior'
     ]
     
     if field_name not in allowed_fields:
@@ -509,6 +536,7 @@ def admin_view_aspirante_document(request, folio, field_name):
         return Response({"error": f"Error al desencriptar: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@xframe_options_exempt
 @permission_classes([CanManageAdmisiones])
 def admin_view_tutor_document(request, tutor_id, field_name):
     """
@@ -638,12 +666,13 @@ def migrate_aspirante_to_student(request, folio):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # 4. Buscar grupo disponible según nivel de ingreso
-    nivel_ingreso = aspirante.nivel_ingreso  # Ej: "1ro de Primaria"
+    nivel_ingreso = aspirante.nivel_ingreso or 'PRIMARIA'
+    nivel_keyword = nivel_ingreso.split()[-1] if nivel_ingreso and ' ' in nivel_ingreso else nivel_ingreso
     
     # Parsear nivel e identificar grado
     grupo_asignado = None
     grupos_disponibles = Grupo.objects.filter(
-        grado__nivel_educativo__nombre__icontains=nivel_ingreso.split()[-1] if nivel_ingreso else 'Primaria'
+        grado__nivel_educativo__nombre__icontains=nivel_keyword
     ).order_by('nombre')
     
     for grupo in grupos_disponibles:
@@ -690,9 +719,9 @@ def migrate_aspirante_to_student(request, folio):
             # 7. Crear Estudiante
             estudiante = Estudiante.objects.create(
                 usuario=user,
-                nombre=aspirante.nombre.upper(),
-                apellido_paterno=aspirante.apellido_paterno.upper(),
-                apellido_materno=aspirante.apellido_materno.upper(),
+                nombre=(aspirante.nombre or '').upper(),
+                apellido_paterno=(aspirante.apellido_paterno or '').upper(),
+                apellido_materno=(aspirante.apellido_materno or '').upper(),
                 direccion=aspirante.direccion or 'PENDIENTE',
                 curp=aspirante.curp,
                 fecha_nacimiento=aspirante.fecha_nacimiento,
@@ -747,6 +776,25 @@ def migrate_aspirante_to_student(request, folio):
                 )
                 tutores_creados.append(tutor.id)
             
+            # --- Migración Socioeconómica (NUEVO) ---
+            EvaluacionSocioeconomica.objects.create(
+                estudiante=estudiante,
+                ingreso_mensual=aspirante.ingreso_mensual_familiar or 0,
+                tipo_vivienda=aspirante.tipo_vivienda or 'No especificado',
+                miembros_hogar=aspirante.miembros_hogar or 0,
+                documentos_json=json.dumps({
+                    "aspirante": {
+                        "vivienda": aspirante.tipo_vivienda,
+                        "ingresos": str(aspirante.ingreso_mensual_familiar),
+                        "miembros": aspirante.miembros_hogar,
+                        "vehiculos": aspirante.vehiculos,
+                        "internet": aspirante.internet_encasa
+                    }
+                }),
+                aprobado=True,
+                comentarios_comision="Migrado automáticamente desde el portal de admisiones."
+            )
+            
             # 10. Actualizar aspirante
             aspirante.status = 'MIGRADO'
             aspirante.save()
@@ -762,19 +810,24 @@ def migrate_aspirante_to_student(request, folio):
                 # Crear directorio destino
                 os.makedirs(dest_dir, exist_ok=True)
                 
-                # Mover archivos existentes (si los hay)
+                # 11. Gestión de Archivos (Traslado y Renombrado)
+                src_dir = os.path.join(settings.MEDIA_ROOT, 'admissions', 'documents', 'aspirantes', folio_hash)
+                dest_dir = os.path.join(settings.MEDIA_ROOT, 'estudiantes', 'documents', matricula_hash)
+                
+                # Mover archivos si la carpeta origen existe
                 if os.path.exists(src_dir):
-                    for item in os.listdir(src_dir):
-                        s = os.path.join(src_dir, item)
-                        d = os.path.join(dest_dir, item)
-                        if os.path.isfile(s):
-                            shutil.copy2(s, d)
-                        elif os.path.isdir(s):
-                            shutil.copytree(s, d, dirs_exist_ok=True)
-                    
-                    # Se deja el original opcionalmente por seguridad, 
-                    # pero el requerimiento de 'trasladar' sugiere mover o cambiar la referencia.
-                    # El usuario dijo: 'esa carpeta cabien de nombre por el hash de la matricula'
+                    # Solo creamos el directorio PADRE, no dest_dir directamente, 
+                    # para que shutil.move pueda renombrar src_dir a dest_dir limpiamente.
+                    os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
+                    try:
+                        # Intentar mover (renombrar) la carpeta completa
+                        if os.path.exists(dest_dir):
+                            shutil.rmtree(dest_dir) # Limpiar si ya existía por error previo
+                        shutil.move(src_dir, dest_dir)
+                    except Exception as move_err:
+                        # Fallback: Copiar y luego borrar si el movimiento falla (ej: diferentes particiones)
+                        shutil.copytree(src_dir, dest_dir, dirs_exist_ok=True)
+                        shutil.rmtree(src_dir)
                 
                 # Generar Contrato Inyectando Datos
                 contrato_buffer = generar_contrato_servicios(aspirante)
@@ -788,7 +841,7 @@ def migrate_aspirante_to_student(request, folio):
                 # para que sigan siendo accesibles desde el nuevo lugar
                 fields_to_fix = [
                     'curp_pdf', 'acta_nacimiento', 'foto_credencial', 
-                    'boleta_ciclo_anterior', 'boleta_ciclo_actual'
+                    'boleta_ciclo_anterior', 'foto_fachada_domicilio'
                 ]
                 
                 for field_name in fields_to_fix:
@@ -797,14 +850,10 @@ def migrate_aspirante_to_student(request, folio):
                         old_rel_path = f"admissions/documents/aspirantes/{folio_hash}"
                         new_rel_path = f"estudiantes/documents/{matricula_hash}"
                         if old_rel_path in field.name:
-                            new_name = field.name.replace(old_rel_path, new_rel_path)
-                            # Actualizar el nombre del archivo en el campo
-                            setattr(aspirante, field_name, new_name)
-                            # Evitar que Aspirante.save() intente re-encriptar o procesar
-                            # marcando el nuevo FieldFile como ya encriptado.
-                            f_field = getattr(aspirante, field_name)
-                            if f_field:
-                                f_field._is_already_encrypted = True
+                            # Actualizamos el nombre del objeto FieldFile directamente
+                            field.name = field.name.replace(old_rel_path, new_rel_path)
+                            # Marcar como ya encriptado para evitar re-procesamiento en save()
+                            field._is_already_encrypted = True
                 
                 # También actualizar tutores si se desea mover sus archivos (opcional según el prompt)
                 aspirante.save()
@@ -918,8 +967,7 @@ def admin_aspirante_documents_list(request, folio):
         ('curp_pdf', 'CURP Aspirante'),
         ('acta_nacimiento', 'Acta de Nacimiento Aspirante'),
         ('foto_credencial', 'Foto Credencial'),
-        ('boleta_ciclo_anterior', 'Boleta Ciclo Anterior'),
-        ('boleta_ciclo_actual', 'Boleta Ciclo Actual')
+        ('boleta_ciclo_anterior', 'Boleta Ciclo Anterior')
     ]
     
     for field, label in student_fields:
