@@ -101,6 +101,11 @@ class AspiranteConfirmationSerializer(serializers.Serializer):
     apellido_paterno = serializers.CharField(max_length=100)
     apellido_materno = serializers.CharField(max_length=100)
     curp = serializers.CharField(max_length=18)
+    nivel_ingreso = serializers.ChoiceField(choices=[
+        ("PREESCOLAR", "Preescolar"),
+        ("PRIMARIA", "Primaria"),
+        ("SECUNDARIA", "Secundaria"),
+    ])
 
     def validate_curp(self, value):
         return validate_curp_logic(value)
@@ -201,7 +206,6 @@ class AspiranteDetailSerializer(serializers.ModelSerializer):
             ('acta_nacimiento', 'Acta de Nacimiento Aspirante'),
             ('foto_credencial', 'Foto Credencial'),
             ('boleta_ciclo_anterior', 'Boleta Ciclo Anterior'),
-            ('boleta_ciclo_actual', 'Boleta Ciclo Actual'),
             ('foto_fachada_domicilio', 'Foto Fachada Domicilio')
         ]
         
@@ -253,6 +257,9 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
             'escuela_procedencia', 'promedio_anterior', 'nivel_ingreso', 
             'foto_fachada_domicilio', 'tutores'
         ]
+        extra_kwargs = {
+            'nivel_ingreso': {'required': True},
+        }
 
     def to_internal_value(self, data):
         # Support stringified JSON for 'tutores' when using multipart/form-data
@@ -334,15 +341,14 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
         model = Aspirante
         fields = [
             'curp_pdf', 'acta_nacimiento', 'foto_credencial',
-            'foto_fachada_domicilio', 'boleta_ciclo_anterior', 'boleta_ciclo_actual',
+            'foto_fachada_domicilio', 'boleta_ciclo_anterior',
             'aceptacion_reglamento', 'autorizacion_imagen',
         ]
         extra_kwargs = {
             'curp_pdf': {'required': True},
             'acta_nacimiento': {'required': True},
             'foto_credencial': {'required': True},
-            'boleta_ciclo_anterior': {'required': True},
-            'boleta_ciclo_actual': {'required': False},
+            'boleta_ciclo_anterior': {'required': False},
         }
 
 
@@ -355,14 +361,8 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
             if not data.get('autorizacion_imagen', self.instance.autorizacion_imagen):
                 raise serializers.ValidationError("Debe autorizar el uso de imagen")
             
-            # Validación condicional de boleta actual
-            nivel = self.instance.nivel_ingreso
-            # Para secundaria y preparatoria ES requerida
-            if nivel not in ['PREESCOLAR', 'PRIMARIA']:
-                current_file = self.instance.boleta_ciclo_actual
-                new_file = data.get('boleta_ciclo_actual')
-                if not current_file and not new_file:
-                     raise serializers.ValidationError({"boleta_ciclo_actual": "Este documento es requerido para el nivel seleccionado."})
+            # La validación de boleta actual se ha relajado a opcional por requerimiento
+            pass
 
         return data
 
@@ -377,9 +377,6 @@ class AspirantePhase3Serializer(serializers.ModelSerializer):
         return validate_document_file(value)
     
     def validate_boleta_ciclo_anterior(self, value):
-        return validate_document_file(value)
-    
-    def validate_boleta_ciclo_actual(self, value):
         return validate_document_file(value)
 
     # --- Validadores de documentos del tutor ---

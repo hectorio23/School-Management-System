@@ -6,6 +6,7 @@ urlpatterns = [
     path('register/initiate/', views.register_initiate, name='register_initiate'),
     path('register/confirm/', views.register_confirm, name='register_confirm'),
     path('login/', views.login_view, name='login_view'),
+    path('token/refresh/', views.admission_token_refresh, name='admission_token_refresh'),
     # Phases
     path('aspirante/<int:folio>/phase1/', views.aspirante_phase1, name='aspirante_phase1'),
     path('aspirante/<int:folio>/phase2/', views.aspirante_phase2, name='aspirante_phase2'),
