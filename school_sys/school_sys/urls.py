@@ -21,7 +21,6 @@ from users.views import (
 # from django.conf.urls.static import static
 from django.urls import path, include
 from django.contrib import admin
-from . import views
 
 from users.serializers import VerifyMFATokenView, EmailTokenObtainPairSerializer
 
@@ -52,7 +51,6 @@ def logout_view(request):
 
 
 urlpatterns = [
-    path("", views.index),
     path('admin/', admin.site.urls),
 
     path("students/", include("estudiantes.urls")),
