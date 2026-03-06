@@ -31,16 +31,26 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     ROLE_CHOICES = (
         ("estudiante", "Estudiante"),
-        ("administrador", "Administrador"),
-        ("contador", "Contador"),
-        ("cafeteria", "Cafetería"),
-        ("bibliotecario", "Bibliotecario"),
+        ("administrador", "Administrador TI"),
+        ("becas_admin", "Administrador de Becas"),
+        ("finanzas_admin", "Administrador de Finanzas"),
+        ("comedor_admin", "Administrador de Comedor"),
+        ("admisiones_admin", "Administrador de Admisiones"),
+        ("maestro", "Maestro"),
+        ("admin_escolar", "Administrador Escolar (General)"),
+        ("admin_escolar_preescolar", "Administrador Escolar (Preescolar)"),
+        ("admin_escolar_primaria", "Administrador Escolar (Primaria)"),
+        ("admin_escolar_secundaria", "Administrador Escolar (Secundaria)"),
+        ("bibliotecario", "Administrador de Biblioteca"),
     )
+
+    # Roles que tienen privilegios administrativos
+    ADMIN_ROLES = ['administrador', 'becas_admin', 'finanzas_admin', 'comedor_admin', 'admisiones_admin']
 
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
     nombre = models.CharField(max_length=200)
-    role = models.CharField(max_length=20, default="estudiante", choices=ROLE_CHOICES, editable=False)
+    role = models.CharField(max_length=50, default="estudiante", choices=ROLE_CHOICES)
 
     activo = models.BooleanField(default=True)
 
@@ -60,10 +70,72 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.mfa_expires_at = None
         self.save(update_fields=["mfa_code", "mfa_expires_at"])
 
+    def is_admin_role(self):
+        """Verifica si el usuario tiene algún rol administrativo."""
+        return self.role in self.ADMIN_ROLES
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "role"]
 
     objects = UserManager()
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        
+        # Sincronizar perfil de administrador escolar si el rol es uno de los especializados
+        if self.role and self.role.startswith('admin_escolar'):
+            from academico.models import AdministradorEscolar
+            from estudiantes.models import NivelEducativo
+            
+            profile, created = AdministradorEscolar.objects.get_or_create(usuario=self)
+            
+            # Mapeo de rol a nivel educativo
+            role_to_nivel = {
+                'admin_escolar_preescolar': 'Preescolar',
+                'admin_escolar_primaria': 'Primaria',
+                'admin_escolar_secundaria': 'Secundaria',
+            }
+            
+            nivel_nombre = role_to_nivel.get(self.role)
+            if nivel_nombre:
+                nivel = NivelEducativo.objects.filter(nombre=nivel_nombre).first()
+                if nivel:
+                    profile.nivel_educativo = nivel
+                    
+            # Sincronizar datos básicos si no están presentes
+            if not profile.nombre:
+                partes = (self.nombre or "").split(' ', 2)
+                profile.nombre = partes[0] or "Admin"
+                if len(partes) > 1:
+                    profile.apellido_paterno = partes[1]
+                if len(partes) > 2:
+                    profile.apellido_materno = partes[2]
+            
+            if not profile.email:
+                profile.email = self.email
+                
+            profile.save()
+
     def __str__(self):
         return f"{self.email} ({self.role})"
+
+
+class LoginAttempt(models.Model):
+    """
+    Registro de intentos de inicio de sesión para protección contra fuerza bruta.
+    """
+    email = models.EmailField()
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    was_successful = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "login_attempts"
+        indexes = [
+            models.Index(fields=["email", "timestamp"], name="idx_login_email_time"),
+            models.Index(fields=["ip_address", "timestamp"], name="idx_login_ip_time"),
+        ]
+
+    def __str__(self):
+        status = "EXITOSO" if self.was_successful else "FALLIDO"
+        return f"{self.email} - {self.timestamp} - {status}"

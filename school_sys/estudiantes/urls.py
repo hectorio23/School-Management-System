@@ -4,22 +4,32 @@
 from django.urls import path, include
 from . import views
 from rest_framework import routers
+from academico import views as views_academico
 
 # Use a router so POST to /students/ hits the StudentViewSet
 router = routers.DefaultRouter()
 
+
 urlpatterns = [
-    # Endpoint para información personal del estudiante autenticado
+    # Information
     path("info/", views.estudiante_info_view, name="estudiante_info"),
-    path("dashboard/", views.dashboard, name="estudiante_info"),
+    path("dashboard/", views.dashboard, name="estudiante_dashboard"),
 
-    # Endpoint para actualizar tutores del estudiante
-    path("tutores/", views.tutores_update_view, name="tutores_update"),
-
-    # Endpoint para crear un nuevo estudio socieconomico
-    path("estudio-socioeconomico/", views.create_estudio_socioeconomico_view, name="estudio_socioeconomico"),
+    # Management
+    path("tutores/", views.tutores_view, name="estudiante_tutores"),
+    path("estudio-socioeconomico/", views.create_estudio_socioeconomico_view, name="estudiante_socioeconomico_create"),
     
+    # Documents
+    path("descargar-carta-reinscripcion/", views.download_carta_reinscripcion, name="estudiante_reinscripcion"),
+    path("descargar-carta-baja/", views.download_carta_baja, name="estudiante_baja"),
+    
+    # Financial
+    path("pagos/historial/", views.student_payments_history, name="estudiante_pagos_historial"),
+    path("pagos/historial/pdf/", views.student_payments_pdf, name="estudiante_pagos_historial_pdf"),
+    path("pagos/simular/", views.student_payment_simulator, name="estudiante_pagos_simular"),
+    
+    # Academic (Consolidated)
+    path("calificaciones/", views_academico.estudiante_historial_view, name="estudiante_calificaciones"),
+
     path("api-auth/", include("rest_framework.urls")),
-    # Router al final para capturar las demás rutas
-    path("", include(router.urls)),
 ]

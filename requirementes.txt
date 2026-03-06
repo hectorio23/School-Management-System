@@ -1,7 +1,0 @@
-django
-djangorestframework
-djangorestframework-simplejwt
-faker
-pymysql
-mysqlclient
-python-dotenv

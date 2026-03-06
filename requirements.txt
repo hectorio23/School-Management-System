@@ -1,0 +1,16 @@
+django
+djangorestframework
+djangorestframework-simplejwt
+pymysql
+mysqlclient
+python-dotenv
+cryptography
+django-jazzmin 
+django-admin-honeypot
+reportlab
+Pillow
+openpyxl
+pypdf
+Faker
+django-cors-headers
+python-dateutil

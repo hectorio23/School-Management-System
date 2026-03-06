@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 #################################################################33
 ############################### NOTA @###########################
 #################################################################33
@@ -7,14 +10,12 @@
 # - email: adancpphack@gmail.com
 # - password: testpass123 
 
-#!/bin/bash
-set -e
-
 # Una vez que el servicio mariadb esta ejecutandose en segundo plano, lo primero es inizializarlo
 #  y crear el usuario correspondiente y la ruta de trabajo
 if [ ! -d "/var/lib/mysql/mysql" ]; then
     echo "Initializing MariaDB..."
     mariadb-install-db --user=mysql --datadir=/var/lib/mysql
+    chown -R mysql:mysql /var/lib/mysql
 fi
 
 # ejecutando servicio

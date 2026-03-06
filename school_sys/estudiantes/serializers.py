@@ -7,31 +7,96 @@ from .models import (
     Estudiante, Grado, Grupo, 
     Tutor, EstudianteTutor,
     EstadoEstudiante, HistorialEstadosEstudiante,
-    Estrato, EvaluacionSocioeconomica
+    Estrato, EvaluacionSocioeconomica,
+    NivelEducativo, CicloEscolar, Inscripcion
 )
-from pagos.models import Adeudo
+from pagos.models import Adeudo, Pago, ConceptoPago
+
+# =============================================================================
+# SERIALIZERS PAGOS (Lectura para Estudiantes)
+# =============================================================================
+
+class ConceptoSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConceptoPago
+        fields = ['id', 'nombre', 'descripcion', 'monto_base', 'tipo_concepto']
+
+class EstudiantePagoSerializer(serializers.ModelSerializer):
+    """Serializer para mostrar los pagos en el historial del estudiante"""
+    fecha_pago = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    
+    class Meta:
+        model = Pago
+        fields = ['id', 'monto', 'fecha_pago', 'metodo_pago', 'numero_referencia', 'ruta_recibo', 'notas']
+
+class EstudianteAdeudoDetalleSerializer(serializers.ModelSerializer):
+    """Serializer detallado de Adeudo para historial"""
+    concepto = ConceptoSimpleSerializer(read_only=True)
+    pagos = EstudiantePagoSerializer(many=True, source='pago_set', read_only=True)
+    
+    class Meta:
+        model = Adeudo
+        fields = [
+            'id', 'concepto', 'monto_base', 'descuento_aplicado', 
+            'recargo_aplicado', 'monto_total', 'monto_pagado',
+            'estatus', 'fecha_generacion', 'fecha_vencimiento',
+            'pagos'
+        ]
 
 
 # =============================================================================
 # SERIALIZERS ANIDADOS (Solo lectura)
 # =============================================================================
 
+class NivelEducativoSerializer(serializers.ModelSerializer):
+    """Información del nivel educativo"""
+    class Meta:
+        model = NivelEducativo
+        fields = ["nombre", "orden", "grados_totales"]
+
+
+class CicloEscolarSerializer(serializers.ModelSerializer):
+    """Información del ciclo escolar"""
+    class Meta:
+        model = CicloEscolar
+        fields = ["nombre", "fecha_inicio", "fecha_fin", "activo"]
+
+
 class GradoSerializer(serializers.ModelSerializer):
     """Información del grado académico"""
+    nivel_educativo = NivelEducativoSerializer(read_only=True)
+    
     class Meta:
         model = Grado
-        fields = ["nombre", "nivel"]
+        fields = ["nombre", "numero_grado", "orden_global", "nivel_educativo", "nivel"]
         read_only_fields = fields
 
 
 class GrupoSerializer(serializers.ModelSerializer):
     """Información del grupo con grado anidado"""
     grado = GradoSerializer(read_only=True)
+    ciclo_escolar = CicloEscolarSerializer(read_only=True)
     
     class Meta:
         model = Grupo
-        fields = ["nombre", "generacion", "grado"]
+        fields = ["nombre", "grado", "ciclo_escolar", "capacidad_maxima"]
         read_only_fields = fields
+
+
+class InscripcionSerializer(serializers.ModelSerializer):
+    """Serializer para el historial de inscripciones"""
+    grupo = GrupoSerializer(read_only=True)
+    ciclo_escolar = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Inscripcion
+        fields = ["id", "grupo", "ciclo_escolar", "estatus", "fecha_inscripcion", "promedio_final"]
+
+    def get_ciclo_escolar(self, obj):
+        if obj.grupo and obj.grupo.ciclo_escolar:
+            return CicloEscolarSerializer(obj.grupo.ciclo_escolar).data
+        return None
+
 
 
 class TutorEstudianteSerializer(serializers.Serializer):
@@ -83,6 +148,21 @@ class TutorUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El correo no puede estar vacío.")
         return value.strip()
 
+class TutorCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer para crear un nuevo tutor y vincularlo al estudiante.
+    Incluye el campo parentesco que se guardará en EstudianteTutor.
+    """
+    parentesco = serializers.CharField(write_only=True, required=True)
+    
+    class Meta:
+        model = Tutor
+        fields = ["nombre", "apellido_paterno", "apellido_materno", "telefono", "correo", "parentesco"]
+
+    def validate_parentesco(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El parentesco es obligatorio.")
+        return value.strip()
 
 class EstadoActualSerializer(serializers.ModelSerializer):
     """Estado actual del estudiante (solo el más reciente)"""
@@ -127,15 +207,20 @@ class AdeudoResumenSerializer(serializers.ModelSerializer):
     Solo información esencial, sin detalles de pagos.
     """
     concepto_nombre = serializers.CharField(source="concepto.nombre", read_only=True)
-    # saldo_pendiente = serializers.SerializerMethodField()
     
     class Meta:
         model = Adeudo
         fields = [
+            "id",
             "concepto_nombre",
+            "monto_base",
+            "descuento_aplicado",
+            "recargo_aplicado",
             "monto_total", 
+            "monto_pagado",
             "estatus",
-            "fecha_vencimiento"
+            "fecha_vencimiento",
+            "recargo_exento",
         ]
         read_only_fields = fields
     
@@ -150,12 +235,16 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
     Serializer completo de información del estudiante.
     Incluye todas las relaciones anidadas de solo lectura.
     """
-    grupo = GrupoSerializer(read_only=True)
+    grupo = serializers.SerializerMethodField()
     estado_actual = serializers.SerializerMethodField()
     evaluacion_socioeconomica = serializers.SerializerMethodField()
     tutores = serializers.SerializerMethodField()
     adeudos = serializers.SerializerMethodField()
+    beca_activa = serializers.SerializerMethodField()
     balance_total = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    telefono = serializers.CharField()
+    sexo = serializers.CharField()
     
     class Meta:
         model = Estudiante
@@ -169,10 +258,35 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
             "estado_actual",
             "evaluacion_socioeconomica",
             "tutores",
+            "beca_activa",
             "adeudos",
-            "balance_total"
+            "balance_total",
+            "email",
+            "telefono",
+            "sexo"
         ]
         read_only_fields = fields
+    
+    def get_email(self, obj):
+        return obj.usuario.email if obj.usuario else None
+    
+    def get_beca_activa(self, obj):
+        """Obtiene la beca activa actual del estudiante"""
+        beca = obj.get_beca_activa()
+        if beca:
+            return {
+                "nombre": beca.nombre,
+                "porcentaje": beca.porcentaje
+            }
+        return None
+
+    
+    def get_grupo(self, obj):
+        """Obtiene la información del grupo del ciclo actual activo"""
+        inscripcion = obj.inscripciones.filter(grupo__ciclo_escolar__activo=True).first()
+        if inscripcion and inscripcion.grupo:
+            return GrupoSerializer(inscripcion.grupo).data
+        return None
     
     def get_estado_actual(self, obj):
         """Obtiene el estado actual del estudiante (el más reciente)"""

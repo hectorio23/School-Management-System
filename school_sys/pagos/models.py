@@ -1,7 +1,63 @@
 from django.db import models
-from estudiantes.models import Estudiante
-from datetime import timedelta
 from django.utils import timezone
+from django.db.models import Sum
+from datetime import timedelta, date, datetime
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from estudiantes.models import Estudiante
+
+#########################################################
+# CONFIGURACION DE PAGOS
+#########################################################
+
+class ConfiguracionPago(models.Model):
+    """configuracion global de pagos"""
+    dia_inicio_ordinario = models.IntegerField(
+        default=1,
+        help_text='Dia del mes donde inicia periodo ordinario'
+    )
+    dia_fin_ordinario = models.IntegerField(
+        default=10,
+        help_text='Dia del mes donde termina periodo ordinario'
+    )
+    porcentaje_recargo = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,
+        help_text='Porcentaje de recargo por mora (ej: 10.00)'
+    )
+    monto_fijo_recargo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=125.00,
+        help_text='Monto fijo adicional por recargo'
+    )
+    activo = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Configuracion de Pago"
+        verbose_name_plural = "Configuraciones de Pago"
+        db_table = 'configuracion_pago'
+    
+    def __str__(self):
+        return f"Config: dia {self.dia_inicio_ordinario}-{self.dia_fin_ordinario}, recargo {self.porcentaje_recargo}%"
+
+
+class DiaNoHabil(models.Model):
+    """dias festivos"""
+    fecha = models.DateField(unique=True)
+    descripcion = models.CharField(max_length=255)
+    
+    class Meta:
+        verbose_name = "Dia No Habil"
+        verbose_name_plural = "Dias No Habiles"
+        db_table = 'dias_no_habiles'
+        ordering = ['fecha']
+    
+    def __str__(self):
+        return f"{self.fecha} - {self.descripcion}"
+
 
 #########################################################
 # PAGOS Y ADEUDOS
@@ -22,6 +78,20 @@ class ConceptoPago(models.Model):
         max_length=100,
         help_text='Primaria, Secundaria, Preparatoria, Todos'
     )
+    
+    TIPO_CONCEPTO_CHOICES = [
+        ('colegiatura', 'Colegiatura Mensual'),
+        ('reinscripcion', 'Reinscripción Anual'),
+        ('inscripcion', 'Inscripción Nuevo Ingreso'),
+        ('otro', 'Otro'),
+    ]
+    tipo_concepto = models.CharField(
+        max_length=50,
+        choices=TIPO_CONCEPTO_CHOICES,
+        default='otro',
+        help_text='Tipo de concepto para automatización'
+    )
+    
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -40,15 +110,25 @@ class ConceptoPago(models.Model):
 class Adeudo(models.Model):
     """
     Adeudos generados por concepto.
-    Los recargos se calculan automáticamente.
-    UN ADEUDO POR CONCEPTO POR ESTUDIANTE.
     """
+    TIPO_ADEUDO_CHOICES = [
+        ('CONCEPTO DE PAGO', 'Concepto de Pago'),
+        ('COMEDOR', 'Asistencia Comedor'),
+    ]
+
     ESTATUS_CHOICES = [
         ('pendiente', 'Pendiente'),
         ('vencido', 'Vencido'),
         ('pagado', 'Pagado'),
         ('cancelado', 'Cancelado'),
     ]
+
+    tipo_adeudo = models.CharField(
+        max_length=50,
+        choices=TIPO_ADEUDO_CHOICES,
+        default='CONCEPTO DE PAGO',
+        help_text='Tipo de adeudo para seguimiento'
+    )
 
     estudiante = models.ForeignKey(
         Estudiante,
@@ -87,15 +167,23 @@ class Adeudo(models.Model):
         decimal_places=2,
         help_text='monto_final + recargo_aplicado'
     )
+    
+    monto_pagado = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Monto acumulado pagado'
+    )
 
     # Fechas
     fecha_generacion = models.DateField(
         help_text='Fecha en que se generó el adeudo',
-        auto_now=True
+        auto_now_add=True
     )
     fecha_vencimiento = models.DateField(
         help_text='Fecha límite de pago',
-        default=timezone.now() + timedelta(days=31)
+        null=True,
+        blank=True
     )
 
     # Estado
@@ -104,10 +192,49 @@ class Adeudo(models.Model):
         choices=ESTATUS_CHOICES,
         default='pendiente'
     )
-
-    # Timestamps
-    # fecha_creacion = models.DateTimeField(auto_now_add=True)
-    # fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    # mes correspondiente
+    mes_correspondiente = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Primer dia del mes al que corresponde (ej: 2024-01-01)'
+    )
+    
+    # exencion de recargos
+    recargo_exento = models.BooleanField(
+        default=False,
+        help_text='True si el recargo fue exentado'
+    )
+    justificacion_exencion = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Justificacion de la exencion del recargo'
+    )
+    
+    # automatico o manual
+    generado_automaticamente = models.BooleanField(
+        default=True,
+        help_text='True si fue generado por el sistema'
+    )
+    justificacion_manual = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Justificacion si fue creado manualmente'
+    )
+    
+    # Campos para control de recargos vencidos
+    recargo_fijo_aplicado = models.BooleanField(
+        default=False,
+        help_text='True si ya se aplicó el recargo fijo de $125 (una sola vez)'
+    )
+    dias_mora = models.IntegerField(
+        default=0,
+        help_text='Días transcurridos desde vencimiento'
+    )
+    adeudo_congelado = models.BooleanField(
+        default=False,
+        help_text='True si el adeudo está congelado por baja del estudiante'
+    )
 
     class Meta:
         verbose_name = "Adeudo"
@@ -117,37 +244,100 @@ class Adeudo(models.Model):
             models.Index(fields=['estudiante'], name='idx_adeudo_estudiante'),
             models.Index(fields=['concepto'], name='idx_adeudo_concepto'),
             models.Index(fields=['fecha_vencimiento'], name='idx_adeudo_vencimiento'),
-            models.Index(fields=['estatus'], name='idx_adeudo_estatus'),
-            models.Index(
-                fields=['estudiante', 'concepto', 'fecha_generacion'],
-                name='idx_adeudo_seguimiento'
-            ),
+            models.Index(fields=['estatus'], name='idx_adeudo_eststatus'),
         ]
 
     def __str__(self):
         return f"{self.estudiante} - {self.concepto} (${self.monto_total})"
 
+    def save(self, *args, **kwargs):
+        # 1. Calcular Fecha de Vencimiento
+        # 1. Calcular Fecha de Vencimiento si no existe
+        if not self.fecha_vencimiento:
+            generacion = self.fecha_generacion or timezone.localdate()
+            if generacion.month == 12:
+                mes_vencimiento = 1
+                anio_vencimiento = generacion.year + 1
+            else:
+                mes_vencimiento = generacion.month + 1
+                anio_vencimiento = generacion.year
+            
+            self.fecha_vencimiento = date(anio_vencimiento, mes_vencimiento, 10)
+
+        # 2. Asegurar Monto Base
+        if (self.monto_base is None or self.monto_base == 0) and self.concepto:
+             self.monto_base = self.concepto.monto_base
+        
+        self.monto_base = Decimal(str(self.monto_base or '0.00'))
+
+        # 3. Calcular Descuentos Secuenciales
+        if self.pk is None and self.estudiante:
+            self.descuento_aplicado = self.estudiante.get_monto_descuento(self.monto_base)
+             
+        monto_con_descuento = max(Decimal('0.00'), self.monto_base - self.descuento_aplicado)
+
+        # 4. Verificar Recargos Automáticos
+        hoy = timezone.localdate()
+        vencimiento = self.fecha_vencimiento
+        if isinstance(vencimiento, str):
+            try:
+                vencimiento = date.fromisoformat(vencimiento)
+            except ValueError:
+                vencimiento = None
+        elif isinstance(vencimiento, datetime):
+            vencimiento = vencimiento.date()
+            
+        if vencimiento and hoy > vencimiento and self.estatus in ['pendiente', 'parcial']:
+            if not self.recargo_exento:
+                pct_recargo = Decimal('0.10') # 10%
+                fijo_recargo = Decimal('125.00')
+                self.recargo_aplicado = (monto_con_descuento * pct_recargo) + fijo_recargo
+        
+        # 5. Calcular Monto Final
+        self.monto_total = monto_con_descuento + self.recargo_aplicado
+
+        # 6. Actualizar Estatus
+        if self.monto_pagado >= self.monto_total and self.monto_total > 0:
+            self.estatus = 'pagado'
+        elif self.monto_pagado > 0:
+            self.estatus = 'parcial'
+        elif self.esta_vencido():
+             self.estatus = 'vencido'
+        
+        super().save(*args, **kwargs)
+
     def esta_vencido(self):
         """Verifica si el adeudo está vencido"""
-        from django.utils import timezone
+        if not self.fecha_vencimiento:
+            return False
+            
+        vencimiento = self.fecha_vencimiento
+        if isinstance(vencimiento, datetime):
+            vencimiento = vencimiento.date()
+            
         return (
-            self.fecha_vencimiento < timezone.now().date() 
-            and self.estatus in ['Vencido', 'vencido']
+            vencimiento < timezone.now().date() 
+            and self.estatus not in ['pagado', 'cancelado']
         )
 
-    # def actualizar_estatus(self):
-    #     """Actualiza el estatus según el monto pagado"""
-    #     if self.monto_pagado >= self.monto_total:
-    #         self.estatus = 'pagado'
-
-    #     self.save()
+    def actualizar_estatus(self):
+        self.save()
 
 
 class Pago(models.Model):
     """
     Pagos realizados contra adeudos.
-    Un adeudo puede tener múltiples pagos (pagos parciales)
     """
+    METODO_PAGO_CHOICES = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('transferencia', 'Transferencia Bancaria'),
+        ('deposito', 'Depósito Bancario'),
+        ('cheque', 'Cheque'),
+        ('beca', 'Aplicación de Beca/Subsidio'),
+        ('otro', 'Otro'),
+    ]
+
     adeudo = models.ForeignKey(
         Adeudo,
         on_delete=models.CASCADE,
@@ -157,7 +347,9 @@ class Pago(models.Model):
     fecha_pago = models.DateTimeField(auto_now_add=True)
     metodo_pago = models.CharField(
         max_length=100,
-        help_text='Efectivo, Tarjeta, Transferencia, Cheque'
+        choices=METODO_PAGO_CHOICES,
+        default='efectivo',
+        help_text='Método utilizado para el pago'
     )
     numero_referencia = models.CharField(
         max_length=255,
@@ -187,21 +379,96 @@ class Pago(models.Model):
         indexes = [
             models.Index(fields=['adeudo'], name='idx_pago_adeudo'),
             models.Index(fields=['fecha_pago'], name='idx_pago_fecha'),
-            models.Index(fields=['metodo_pago'], name='idx_pago_metodo'),
         ]
 
     def __str__(self):
         return f"Pago ${self.monto} - {self.fecha_pago.date()}"
 
     def save(self, *args, **kwargs):
-        """Al guardar un pago, actualiza el adeudo"""
+        # Validar si es reinscripción y tiene otros adeudos pendientes
+        if self.adeudo.concepto.tipo_concepto == 'reinscripcion':
+            # Solo permitir si es el único adeudo pendiente (excluyendo el actual)
+            otros_pendientes = Adeudo.objects.filter(
+                estudiante=self.adeudo.estudiante,
+                estatus__in=['pendiente', 'vencido', 'parcial']
+            ).exclude(pk=self.adeudo.pk).exists()
+            
+            if otros_pendientes:
+                raise ValidationError("No se puede pagar la reinscripción si existen otros adeudos vencidos o pendientes.")
+
+        is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Actualizar monto_pagado del adeudo
-        from django.db.models import Sum
+        # Sincronizar adeudo
         total_pagado = self.adeudo.pago_set.aggregate(
             total=Sum('monto')
         )['total'] or 0
         
         self.adeudo.monto_pagado = total_pagado
         self.adeudo.actualizar_estatus()
+        
+        # RF-NOT-05: Enviar confirmación de pago por email
+        if is_new:
+            self._enviar_confirmacion_pago()
+
+    def _enviar_confirmacion_pago(self):
+        """Envía email de confirmación de pago al estudiante y sus tutores (RF-NOT-05)."""
+        try:
+            from estudiantes.models import EstudianteTutor
+            
+            estudiante = self.adeudo.estudiante
+            adeudo = self.adeudo
+            saldo_restante = max(Decimal('0.00'), adeudo.monto_total - adeudo.monto_pagado)
+            
+            nombre_completo = f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}"
+            
+            metodo_display = self.get_metodo_pago_display() if hasattr(self, 'get_metodo_pago_display') else self.metodo_pago
+            
+            mensaje = (
+                f"Estimado(a) {nombre_completo},\n\n"
+                f"Se ha registrado exitosamente un pago en su cuenta. "
+                f"A continuación el detalle:\n\n"
+                f"  Concepto:         {adeudo.concepto.nombre}\n"
+                f"  Monto pagado:     ${self.monto:,.2f} MXN\n"
+                f"  Método de pago:   {metodo_display}\n"
+                f"  Referencia:       {self.numero_referencia or 'N/A'}\n"
+                f"  Fecha:            {timezone.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+                f"  Monto total del adeudo:  ${adeudo.monto_total:,.2f}\n"
+                f"  Total pagado:            ${adeudo.monto_pagado:,.2f}\n"
+                f"  Saldo restante:          ${saldo_restante:,.2f}\n"
+                f"  Estatus del adeudo:      {adeudo.get_estatus_display()}\n\n"
+                f"Matrícula del alumno: {estudiante.matricula}\n\n"
+                f"Si tiene alguna duda, por favor contacte al departamento de finanzas.\n\n"
+                f"Atentamente,\n"
+                f"Administración Escolar"
+            )
+            
+            # Recopilar destinatarios
+            destinatarios = []
+            
+            # Email del estudiante (usuario del sistema)
+            if hasattr(estudiante, 'usuario') and estudiante.usuario and estudiante.usuario.email:
+                destinatarios.append(estudiante.usuario.email)
+            
+            # Emails de tutores activos
+            try:
+                tutores_rels = EstudianteTutor.objects.filter(
+                    estudiante=estudiante, activo=True
+                ).select_related('tutor')
+                for rel in tutores_rels:
+                    if rel.tutor.correo and rel.tutor.correo not in destinatarios:
+                        destinatarios.append(rel.tutor.correo)
+            except Exception:
+                pass
+            
+            if destinatarios:
+                send_mail(
+                    subject=f"Confirmación de Pago - {adeudo.concepto.nombre} - Matrícula {estudiante.matricula}",
+                    message=mensaje,
+                    from_email=None,  # Usa DEFAULT_FROM_EMAIL de settings
+                    recipient_list=destinatarios,
+                    fail_silently=True,
+                )
+        except Exception:
+            # Nunca bloquear el registro de un pago por un error de email
+            pass
