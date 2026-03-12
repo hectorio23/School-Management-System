@@ -4,6 +4,8 @@ from django.db.models import Sum, F
 from django.utils import timezone
 from decimal import Decimal
 from users.models import User
+from .utils_security import encrypt_string, decrypt_string
+import hashlib
 
 #########################################################
 # NIVELES Y CICLOS
@@ -183,12 +185,18 @@ class Estudiante(models.Model):
 
     # Campos migrados desde Aspirante
     curp = models.CharField(
-        max_length=18, 
+        max_length=255, 
         unique=True, 
         null=True, 
         blank=True,
-        validators=[MinLengthValidator(18)],
-        help_text="CURP del estudiante"
+        help_text="CURP del estudiante (Encriptado)"
+    )
+    curp_hash = models.CharField(
+        max_length=64, 
+        null=True, 
+        blank=True, 
+        unique=True,
+        help_text="Hash del CURP para búsquedas"
     )
     fecha_nacimiento = models.DateField(
         null=True, 
@@ -249,10 +257,25 @@ class Estudiante(models.Model):
         return f"{self.matricula} - {self.nombre_completo}"
     
     def save(self, *args, **kwargs):
-        # Autogenerar matrícula solo para nuevos estudiantes
+        # 1. Autogenerar matrícula solo para nuevos estudiantes
         if not self.matricula:
             last_student = Estudiante.objects.order_by('-matricula').first()
             self.matricula = (last_student.matricula + 1) if last_student else 1000
+
+        # 2. Encriptar campos sensibles
+        if self.curp:
+            clean_curp = self.curp.upper().strip()
+            if len(clean_curp) > 40:
+                if not self.curp_hash:
+                    plain = decrypt_string(clean_curp)
+                    self.curp_hash = hashlib.sha256(plain.encode()).hexdigest()
+            else:
+                self.curp_hash = hashlib.sha256(clean_curp.encode()).hexdigest()
+                self.curp = encrypt_string(clean_curp)
+            
+        if self.direccion and len(self.direccion) < 40:
+            self.direccion = encrypt_string(self.direccion)
+
         super().save(*args, **kwargs)
     
 
