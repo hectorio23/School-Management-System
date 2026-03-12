@@ -9,6 +9,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import VerificationCode, AdmissionUser, Aspirante, AdmissionTutor, AdmissionTutorAspirante
+from .utils_security import decrypt_string
 
 # --- VALIDACIÓN DE DOCUMENTOS ---
 
@@ -157,6 +158,12 @@ class AdmissionTutorSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        return data
+
 class AdmissionTutorPhase1Serializer(serializers.ModelSerializer):
     """Versión simplificada para Fase 1 (evita validación de archivos en JSON)."""
     parentesco = serializers.CharField(required=False, default="Tutor")
@@ -168,6 +175,12 @@ class AdmissionTutorPhase1Serializer(serializers.ModelSerializer):
             'numero_telefono', 'curp', 'parentesco'
         ]
         read_only_fields = ['id']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        return data
 
 class AdmissionTutorDetailSerializer(serializers.ModelSerializer):
     """Información completa del tutor para vista administrativa."""
@@ -260,6 +273,14 @@ class AspirantePhase1Serializer(serializers.ModelSerializer):
         extra_kwargs = {
             'nivel_ingreso': {'required': True},
         }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        if 'direccion' in data and data['direccion']:
+            data['direccion'] = decrypt_string(data['direccion'])
+        return data
 
     def to_internal_value(self, data):
         # Support stringified JSON for 'tutores' when using multipart/form-data
@@ -420,4 +441,10 @@ class AspiranteAdminListSerializer(serializers.ModelSerializer):
             'telefono', 'fecha_pago', 'monto', 'metodo_pago',
             'pagado_status'
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        return data
 

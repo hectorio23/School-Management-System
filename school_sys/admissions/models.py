@@ -4,7 +4,10 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
 from django.core.files.base import ContentFile
-from .utils_security import generate_folio_hash, encrypt_data
+from .utils_security import (
+    generate_folio_hash, encrypt_data, 
+    encrypt_string, decrypt_string
+)
 
 # --- MANAGER PARA AdmissionUser ---
 class AdmissionUserManager(BaseUserManager):
@@ -111,7 +114,8 @@ class AdmissionTutor(models.Model):
     apellido_materno = models.CharField(max_length=100, null=True)
     email = models.EmailField(null=True)
     numero_telefono = models.CharField(max_length=20) 
-    curp = models.CharField(max_length=18, null=True, blank=True)
+    curp = models.CharField(max_length=255, null=True, blank=True) # Encriptado
+    curp_hash = models.CharField(max_length=64, null=True, blank=True, unique=True)
     
     # Documentos con almacenamiento seguro (Hashed & Encrypted)
     acta_nacimiento = models.FileField(upload_to=tutor_upload_path, max_length=255, null=True, blank=True)
@@ -146,6 +150,19 @@ class AdmissionTutor(models.Model):
                             getattr(self, field_name)._is_already_encrypted = True
             except Exception:
                 pass
+
+        # 8. Encriptar campos sensibles
+        if self.curp:
+            clean_curp = self.curp.upper().strip()
+            # Si el CURP ya parece encriptado (longitud larga), lo desencriptamos para el hash si falta
+            if len(clean_curp) > 40:
+                if not self.curp_hash:
+                    plain = decrypt_string(clean_curp)
+                    self.curp_hash = generate_folio_hash(plain)
+            else:
+                self.curp_hash = generate_folio_hash(clean_curp)
+                self.curp = encrypt_string(clean_curp)
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -187,10 +204,11 @@ class Aspirante(models.Model):
     nombre = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100, null=True)
     apellido_materno = models.CharField(max_length=100, null=True)
-    curp = models.CharField(max_length=18, unique=True, null=False, blank=False)
+    curp = models.CharField(max_length=255, unique=True, null=False, blank=False) # Encriptado
+    curp_hash = models.CharField(max_length=64, null=True, blank=True, unique=True)
     fecha_nacimiento = models.DateField(null=True)
     sexo = models.CharField(max_length=1, choices=SEXOS, null=True)
-    direccion = models.TextField(null=True)
+    direccion = models.TextField(null=True) # Encriptado
     telefono = models.CharField(max_length=20, null=True)
     escuela_procedencia = models.CharField(max_length=255, null=True)
     promedio_anterior = models.DecimalField(max_digits=4, decimal_places=2, null=True)
@@ -261,6 +279,21 @@ class Aspirante(models.Model):
                             getattr(self, field_name)._is_already_encrypted = True
             except Exception:
                 pass
+
+        # 7. Encriptar campos sensibles
+        if self.curp:
+            clean_curp = self.curp.upper().strip()
+            if len(clean_curp) > 40:
+                if not self.curp_hash:
+                    plain = decrypt_string(clean_curp)
+                    self.curp_hash = generate_folio_hash(plain)
+            else:
+                self.curp_hash = generate_folio_hash(clean_curp)
+                self.curp = encrypt_string(clean_curp)
+        
+        if self.direccion and len(self.direccion) < 40:
+            self.direccion = encrypt_string(self.direccion)
+
         super().save(*args, **kwargs)
 
     @property

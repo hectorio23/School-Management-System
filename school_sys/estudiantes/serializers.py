@@ -11,6 +11,7 @@ from .models import (
     NivelEducativo, CicloEscolar, Inscripcion
 )
 from pagos.models import Adeudo, Pago, ConceptoPago
+from .utils_security import decrypt_string
 
 # =============================================================================
 # SERIALIZERS PAGOS (Lectura para Estudiantes)
@@ -266,6 +267,14 @@ class EstudianteInfoSerializer(serializers.ModelSerializer):
             "sexo"
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        if 'direccion' in data and data['direccion']:
+            data['direccion'] = decrypt_string(data['direccion'])
+        return data
     
     def get_email(self, obj):
         return obj.usuario.email if obj.usuario else None

@@ -11,9 +11,9 @@ load_dotenv(BASE_DIR / '.env', override=True)
 AUTH_USER_MODEL = "users.User"
 SECRET_KEY = os.getenv('KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 REST_FRAMEWORK = {

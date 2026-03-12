@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.db import transaction, models
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
-from datetime import datetime, date
+from datetime import datetime, date, time, timedelta
 
 from .permissions import (
     IsAdministrador, CanAccessStudentInfo, CanManageBecas, 
@@ -127,6 +127,16 @@ def admin_student_list(request):
             to_attr='active_enrollment'
         )
     ).order_by('matricula')
+
+    # Filtros
+    search = request.query_params.get('search')
+    if search:
+        students = students.filter(
+            Q(matricula__icontains=search) |
+            Q(nombre__icontains=search) |
+            Q(apellido_paterno__icontains=search) |
+            Q(apellido_materno__icontains=search)
+        )
     
     result_page = paginator.paginate_queryset(students, request)
     
@@ -907,7 +917,30 @@ def admin_adeudos_list(request):
     """
     if request.method == 'GET':
         paginator = StandardResultsSetPagination()
-        adeudos = Adeudo.objects.select_related('estudiante', 'concepto').all().order_by('-fecha_generacion')
+        paginator.page_size = 30  # Requerimiento: 30 por página
+        
+        adeudos = Adeudo.objects.select_related('estudiante', 'concepto').all()
+        
+        # Filtros
+        search = request.query_params.get('search')
+        estatus = request.query_params.get('estatus')
+        fecha_vencimiento = request.query_params.get('fecha_vencimiento')
+        
+        if search:
+            adeudos = adeudos.filter(
+                Q(estudiante__matricula__icontains=search) |
+                Q(estudiante__nombre__icontains=search) |
+                Q(estudiante__apellido_paterno__icontains=search)
+            )
+        
+        if estatus:
+            adeudos = adeudos.filter(estatus=estatus)
+            
+        if fecha_vencimiento:
+            adeudos = adeudos.filter(fecha_vencimiento=fecha_vencimiento)
+            
+        adeudos = adeudos.order_by('-fecha_generacion')
+        
         result_page = paginator.paginate_queryset(adeudos, request)
         serializer = AdeudoSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -1357,36 +1390,125 @@ def admin_reporte_financiero_completo(request):
     """
     GET /api/admin/reportes/financieros/completo/
     Agrega toda la información financiera para el dashboard y PDFs.
+    Filtro 'periodo': hoy, 1m, 2m, 3m, 6m, 1y, total
     """
-    # Usar 'tipo' en lugar de 'format' (DRF reserva ?format= para content negotiation)
     fmt = request.query_params.get('tipo', 'json')
+    periodo = request.query_params.get('periodo', 'total')
     
+    # 0. Filtrar por periodo
+    hoy = timezone.now().date()
+    start_date = None
+    
+    if periodo == 'hoy':
+        start_date = hoy
+    elif periodo == '1m':
+        start_date = hoy - timedelta(days=30)
+    elif periodo == '2m':
+        start_date = hoy - timedelta(days=60)
+    elif periodo == '3m':
+        start_date = hoy - timedelta(days=90)
+    elif periodo == '6m':
+        start_date = hoy - timedelta(days=180)
+    elif periodo == '1y':
+        start_date = hoy - timedelta(days=365)
+    
+    base_pagos = Pago.objects.all()
+    base_adeudos = Adeudo.objects.all()
+    
+    if start_date:
+        # Convert date to aware datetime for DateTimeField (Pago.fecha_pago)
+        start_datetime = timezone.make_aware(datetime.combine(start_date, time.min))
+        base_pagos = base_pagos.filter(fecha_pago__gte=start_datetime)
+        base_adeudos = base_adeudos.filter(fecha_generacion__gte=start_date)
+
     # 1. Recaudación Total vs Deuda Total
-    total_recaudado = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+    total_recaudado = base_pagos.aggregate(total=Sum('monto'))['total'] or 0
     
-    adeudos_pendientes = Adeudo.objects.filter(estatus__in=['pendiente', 'vencido', 'parcial'])
+    adeudos_pendientes = base_adeudos.filter(estatus__in=['pendiente', 'vencido', 'parcial'])
     total_deuda = sum(a.monto_total - a.monto_pagado for a in adeudos_pendientes)
     
     # 2. Recaudación por Tipo de Concepto
     recaudacion_por_tipo = []
-    tipos = ['colegiatura', 'reinscripcion', 'inscripcion', 'otro']
-    for t in tipos:
-        monto = Pago.objects.filter(adeudo__concepto__tipo_concepto=t).aggregate(total=Sum('monto'))['total'] or 0
-        recaudacion_por_tipo.append({'tipo': t, 'monto': float(monto)})
+    # Definimos mapeos de términos clave para una búsqueda flexible
+    categorias = [
+        ('colegiatura', 'colegiatura'),
+        ('reinscripcion', 'reinscripcion'),
+        ('inscripcion', 'inscripcion'),
+        ('otro', None) 
+    ]
+    
+    tipos_procesados = []
+    for tipo_key, search_term in categorias:
+        if tipo_key == 'otro':
+            # 'Otro' son todos los que no coinciden con los anteriores
+            monto = base_pagos.exclude(
+                Q(adeudo__concepto__tipo_concepto__in=tipos_procesados) |
+                Q(adeudo__concepto__nombre__icontains='colegiatura') |
+                Q(adeudo__concepto__nombre__icontains='inscripcion') |
+                Q(adeudo__concepto__nombre__icontains='reinscripcion')
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        else:
+            # Coincidencia por tipo técnico O por nombre (flexibilidad para nombres personalizados)
+            monto = base_pagos.filter(
+                Q(adeudo__concepto__tipo_concepto=tipo_key) |
+                Q(adeudo__concepto__nombre__icontains=search_term)
+            ).aggregate(total=Sum('monto'))['total'] or 0
+            tipos_procesados.append(tipo_key)
+            
+        recaudacion_por_tipo.append({'tipo': tipo_key, 'monto': float(monto)})
         
     # 3. Deuda por Nivel Educativo
-    # Optimizamos agrupando en memoria o con query compleja
     deuda_por_nivel = []
     niveles = ['Preescolar', 'Primaria', 'Secundaria']
     for n in niveles:
-        adeudos_n = adeudos_pendientes.filter(
-            estudiante__inscripciones__grupo__grado__nivel_educativo__nombre__icontains=n,
-            estudiante__inscripciones__grupo__ciclo_escolar__activo=True
-        ).distinct()
-        monto_n = sum(a.monto_total - a.monto_pagado for a in adeudos_n)
+        # Nota: Aquí usamos el filtro de inscripción activa o nivel en grado
+        monto_n = adeudos_pendientes.filter(
+            Q(estudiante__inscripciones__grupo__grado__nivel_educativo__nombre__icontains=n) |
+            Q(estudiante__inscripciones__grupo__grado__nivel__icontains=n)
+        ).distinct().aggregate(total=Sum(models.F('monto_total') - models.F('monto_pagado')))['total'] or 0
         deuda_por_nivel.append({'nivel': n, 'monto': float(monto_n)})
 
-    # 4. Becas
+    # 4. Becas y Detalle reporte (Solo para exportación)
+    data_detalle = []
+    if fmt in ['pdf', 'excel', 'xlsx']:
+        # Obtener lista detallada de adeudos con info de estudiante
+        all_adeudos = base_adeudos.select_related(
+            'estudiante', 'concepto', 'estudiante__usuario'
+        ).prefetch_related(
+            models.Prefetch(
+                'estudiante__inscripciones',
+                queryset=Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo'),
+                to_attr='active_enrollment'
+            )
+        ).order_by('-fecha_generacion')
+        
+        for a in all_adeudos:
+            est = a.estudiante
+            inscripcion = est.active_enrollment[0] if est.active_enrollment else None
+            nivel = "N/A"
+            if inscripcion and inscripcion.grupo and inscripcion.grupo.grado:
+                grado = inscripcion.grupo.grado
+                nivel = grado.nivel_educativo.nombre if grado.nivel_educativo else grado.nivel
+            
+            pago_reciente = Pago.objects.filter(adeudo=a).order_by('-fecha_pago').first()
+            estrato = est.get_estrato_actual()
+            beca = est.get_beca_activa()
+            
+            data_detalle.append({
+                "matricula": est.matricula,
+                "nombre": est.nombre,
+                "apellido_paterno": est.apellido_paterno,
+                "apellido_materno": est.apellido_materno,
+                "nivel": nivel,
+                "concepto": a.concepto.nombre,
+                "estatus": a.get_estatus_display() if hasattr(a, 'get_estatus_display') else a.estatus,
+                "monto_pagado": float(a.monto_pagado),
+                "fecha_pago": pago_reciente.fecha_pago.strftime('%d/%m/%Y') if pago_reciente else "",
+                "tipo_estrato": estrato.nombre if estrato else "",
+                "descuento_estrato": f"{estrato.porcentaje_descuento}%" if estrato else "",
+                "porcentaje_beca": f"{beca.porcentaje}%" if beca else "",
+            })
+
     total_alumnos = Estudiante.objects.count()
     estudiantes_con_beca = Estudiante.objects.filter(porcentaje_beca__gt=0).count()
     becados_pct = round((estudiantes_con_beca / total_alumnos * 100), 2) if total_alumnos > 0 else 0
@@ -1396,27 +1518,27 @@ def admin_reporte_financiero_completo(request):
             "total_recaudado": float(total_recaudado),
             "total_deuda": float(total_deuda),
             "becados_count": estudiantes_con_beca,
-            "becados_pct": becados_pct
+            "becados_pct": becados_pct,
+            "periodo_label": periodo.upper()
         },
         "por_concepto": recaudacion_por_tipo,
-        "por_nivel": deuda_por_nivel
+        "por_nivel": deuda_por_nivel,
+        "detalle": data_detalle
     }
     
     if fmt == 'pdf':
         buffer = generar_pdf_reporte_financiero(data)
         if not buffer:
             return Response({"error": "Error al generar PDF"}, status=500)
-            
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="reporte_financiero.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="reporte_financiero_{periodo}.pdf"'
         return response
-    elif fmt == 'excel' or fmt == 'xlsx':
+    elif fmt in ['excel', 'xlsx']:
         buffer = generar_excel_reporte_financiero(data)
         if not buffer:
             return Response({"error": "Error al generar Excel"}, status=500)
-            
         response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="reporte_financiero.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="reporte_financiero_{periodo}.xlsx"'
         return response
     
     return Response(data)

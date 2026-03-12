@@ -33,3 +33,22 @@ def decrypt_data(data):
     """Desencripta datos binarios << bytes >> utilizando la llave derivada del sistema."""
     f = Fernet(get_fernet_key())
     return f.decrypt(data)
+
+def encrypt_string(text):
+    """Encripta una cadena de texto y retorna un string Base64."""
+    if not text:
+        return text
+    f = Fernet(get_fernet_key())
+    return f.encrypt(text.encode('utf-8')).decode('utf-8')
+
+def decrypt_string(encrypted_text):
+    """Desencripta un string Base64 y retorna el texto original."""
+    if not encrypted_text:
+        return encrypted_text
+    try:
+        f = Fernet(get_fernet_key())
+        return f.decrypt(encrypted_text.encode('utf-8')).decode('utf-8')
+    except Exception:
+        # Retornamos el original si no se puede desencriptar (ej. datos antiguos no cifrados)
+        return encrypted_text
+
