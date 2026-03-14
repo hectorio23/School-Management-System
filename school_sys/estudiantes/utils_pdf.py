@@ -19,7 +19,7 @@ def generar_carta_reinscripcion(estudiante):
     ciclo_str = inscripcion.ciclo_escolar.nombre if (inscripcion and hasattr(inscripcion, 'ciclo_escolar') and inscripcion.ciclo_escolar) else \
                 (str(inscripcion.grupo.ciclo_escolar) if (inscripcion and inscripcion.grupo) else "N/A")
     
-    nombre_completo = f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}".upper()
+    nombre_completo = estudiante.nombre_completo.upper()
     fecha_str = timezone.now().strftime('%d/%m/%Y')
     
     data = {

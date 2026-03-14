@@ -251,7 +251,7 @@ class Estudiante(models.Model):
     
     @property
     def nombre_completo(self):
-        return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
+        return f"{self.apellido_paterno} {self.apellido_materno} {self.nombre}".strip()
 
     def __str__(self):
         return f"{self.matricula} - {self.nombre_completo}"

@@ -361,13 +361,21 @@ def student_payments_history(request):
     except Estudiante.DoesNotExist:
         return Response({"error": "Perfil de estudiante no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
-    adeudos = Adeudo.objects.filter(estudiante=estudiante).select_related('concepto').prefetch_related('pago_set').order_by('-fecha_vencimiento')
+    adeudos = Adeudo.objects.filter(estudiante=estudiante).select_related('concepto').prefetch_related('pago_set').order_by('-fecha_vencimiento', '-id')
     
-    serializer = EstudianteAdeudoDetalleSerializer(adeudos, many=True)
+    from rest_framework.pagination import PageNumberPagination
+    paginator = PageNumberPagination()
+    paginator.page_size = 10
+    
+    paginated_adeudos = paginator.paginate_queryset(adeudos, request)
+    serializer = EstudianteAdeudoDetalleSerializer(paginated_adeudos, many=True)
     
     resumen = {
         "balance_total": estudiante.get_balance_total(),
-        "adeudos": serializer.data
+        "adeudos": serializer.data,
+        "count": paginator.page.paginator.count,
+        "total_pages": paginator.page.paginator.num_pages,
+        "current_page": paginator.page.number
     }
     return Response(resumen)
 

@@ -420,7 +420,7 @@ class Pago(models.Model):
             adeudo = self.adeudo
             saldo_restante = max(Decimal('0.00'), adeudo.monto_total - adeudo.monto_pagado)
             
-            nombre_completo = f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}"
+            nombre_completo = estudiante.nombre_completo
             
             metodo_display = self.get_metodo_pago_display() if hasattr(self, 'get_metodo_pago_display') else self.metodo_pago
             

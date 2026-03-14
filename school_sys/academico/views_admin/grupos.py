@@ -73,7 +73,7 @@ def admin_grupo_estudiantes(request, pk):
         data.append({
             "id": est.pk,
             "matricula": est.matricula,
-            "nombre_completo": f"{est.nombre} {est.apellido_paterno} {est.apellido_materno}",
+            "nombre_completo": est.nombre_completo,
             "estatus": insc.estatus,
             "adeudo_total": float(insc.adeudo_total or 0)
         })
