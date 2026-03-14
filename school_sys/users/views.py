@@ -125,18 +125,55 @@ def admin_student_list(request):
             'inscripciones',
             queryset=Inscripcion.objects.filter(grupo__ciclo_escolar__activo=True).select_related('grupo__grado__nivel_educativo', 'grupo__ciclo_escolar'),
             to_attr='active_enrollment'
+        ),
+        models.Prefetch(
+            'inscripciones',
+            queryset=Inscripcion.objects.order_by('-fecha_inscripcion'),
+            to_attr='latest_enrollment'
         )
     ).order_by('matricula')
 
     # Filtros
     search = request.query_params.get('search')
     if search:
+        search_terms = search.split()
+        for term in search_terms:
+            students = students.filter(
+                Q(matricula__icontains=term) |
+                Q(nombre__icontains=term) |
+                Q(apellido_paterno__icontains=term) |
+                Q(apellido_materno__icontains=term)
+            )
+    
+    # Filtro por Estrato
+    estrato_id = request.query_params.get('estrato')
+    if estrato_id:
         students = students.filter(
-            Q(matricula__icontains=search) |
-            Q(nombre__icontains=search) |
-            Q(apellido_paterno__icontains=search) |
-            Q(apellido_materno__icontains=search)
-        )
+            evaluacionsocioeconomica__estrato_id=estrato_id,
+            evaluacionsocioeconomica__aprobado=True
+        ).distinct()
+
+    # Filtro por Beca
+    beca_param = request.query_params.get('beca')
+    if beca_param:
+        if beca_param.lower() == 'true':
+            # Solo estudiantes con beca activa
+            students = students.filter(
+                becaestudiante__activa=True,
+                becaestudiante__beca__valida=True
+            ).distinct()
+        elif beca_param.lower() == 'false':
+            # Estudiantes sin beca activa
+            students = students.exclude(
+                becaestudiante__activa=True,
+                becaestudiante__beca__valida=True
+            ).distinct()
+        else:
+            # Por ID de beca específica
+            students = students.filter(
+                becaestudiante__beca_id=beca_param,
+                becaestudiante__activa=True
+            ).distinct()
     
     result_page = paginator.paginate_queryset(students, request)
     
@@ -158,18 +195,29 @@ def admin_student_list(request):
         estrato = s.get_estrato_actual()
         estrato_nombre = estrato.nombre if estrato else "Sin Asignar"
         
-        estado = s.get_estado_actual()
-        estatus_nombre = estado.nombre if estado else "Sin Estado"
+        # Estatus desde la inscripción más reciente
+        last_enroll = s.latest_enrollment[0] if hasattr(s, 'latest_enrollment') and s.latest_enrollment else None
+        estatus_nombre = last_enroll.get_estatus_display() if last_enroll else "Sin Estado"
+
+        # Beca info
+        beca_activa = s.get_beca_activa()
+        beca_info = {
+            "nombre": beca_activa.nombre if beca_activa else "Sin Beca",
+            "porcentaje": float(beca_activa.porcentaje) if beca_activa else 0
+        }
 
         data.append({
             "matricula": s.matricula,
+            "nombre": s.nombre,
+            "nombres": s.nombre, 
             "apellido_paterno": s.apellido_paterno,
             "apellido_materno": s.apellido_materno,
-            "nombres": s.nombre, 
+            "nombre_completo": s.nombre_completo,
             "grado": nombre_grado,
             "grupo": nombre_grupo,
             "estrato": estrato_nombre,
             "estatus": estatus_nombre,
+            "beca": beca_info
         })
 
     return paginator.get_paginated_response(data)
@@ -211,7 +259,7 @@ def admin_student_detail(request, matricula):
 
     info_basica = {
         "matricula": student.matricula,
-        "nombre_completo": f"{student.nombre} {student.apellido_paterno} {student.apellido_materno}",
+        "nombre_completo": student.nombre_completo,
         "nombres": student.nombre,
         "apellido_paterno": student.apellido_paterno,
         "apellido_materno": student.apellido_materno,
@@ -925,16 +973,27 @@ def admin_adeudos_list(request):
         search = request.query_params.get('search')
         estatus = request.query_params.get('estatus')
         fecha_vencimiento = request.query_params.get('fecha_vencimiento')
+        estudiante_id = request.query_params.get('estudiante')
+        pendiente = request.query_params.get('pendiente')
         
         if search:
-            adeudos = adeudos.filter(
-                Q(estudiante__matricula__icontains=search) |
-                Q(estudiante__nombre__icontains=search) |
-                Q(estudiante__apellido_paterno__icontains=search)
-            )
+            search_terms = search.split()
+            for term in search_terms:
+                adeudos = adeudos.filter(
+                    Q(estudiante__matricula__icontains=term) |
+                    Q(estudiante__nombre__icontains=term) |
+                    Q(estudiante__apellido_paterno__icontains=term) |
+                    Q(estudiante__apellido_materno__icontains=term)
+                )
         
+        if estudiante_id:
+            adeudos = adeudos.filter(estudiante__matricula=estudiante_id)
+
         if estatus:
             adeudos = adeudos.filter(estatus=estatus)
+        
+        if pendiente and pendiente.lower() == 'true':
+            adeudos = adeudos.exclude(estatus__in=['pagado', 'cancelado'])
             
         if fecha_vencimiento:
             adeudos = adeudos.filter(fecha_vencimiento=fecha_vencimiento)
@@ -1118,11 +1177,14 @@ def admin_evaluaciones_list(request):
     # Filtro opcional por búsqueda
     search = request.query_params.get('search')
     if search:
-        evaluaciones = evaluaciones.filter(
-            Q(estudiante__matricula__icontains=search) |
-            Q(estudiante__nombre__icontains=search) |
-            Q(estudiante__apellido_paterno__icontains=search)
-        )
+        search_terms = search.split()
+        for term in search_terms:
+            evaluaciones = evaluaciones.filter(
+                Q(estudiante__matricula__icontains=term) |
+                Q(estudiante__nombre__icontains=term) |
+                Q(estudiante__apellido_paterno__icontains=term) |
+                Q(estudiante__apellido_materno__icontains=term)
+            )
 
     result_page = paginator.paginate_queryset(evaluaciones, request)
     serializer = EvaluacionSerializer(result_page, many=True)
@@ -1162,11 +1224,14 @@ def admin_evaluaciones_recientes(request):
     # Filtro opcional por búsqueda
     search = request.query_params.get('search')
     if search:
-        evaluaciones = evaluaciones.filter(
-            Q(estudiante__matricula__icontains=search) |
-            Q(estudiante__nombre__icontains=search) |
-            Q(estudiante__apellido_paterno__icontains=search)
-        )
+        search_terms = search.split()
+        for term in search_terms:
+            evaluaciones = evaluaciones.filter(
+                Q(estudiante__matricula__icontains=term) |
+                Q(estudiante__nombre__icontains=term) |
+                Q(estudiante__apellido_paterno__icontains=term) |
+                Q(estudiante__apellido_materno__icontains=term)
+            )
 
     paginator = StandardResultsSetPagination()
     result_page = paginator.paginate_queryset(evaluaciones, request)

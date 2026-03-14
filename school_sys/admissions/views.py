@@ -866,7 +866,7 @@ def migrate_aspirante_to_student(request, folio):
                 "message": "Aspirante migrado exitosamente a estudiante",
                 "estudiante": {
                     "matricula": estudiante.matricula,
-                    "nombre_completo": f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}",
+                    "nombre_completo": estudiante.nombre_completo,
                     "grupo": str(grupo_asignado),
                     "email": user.email,
                     "username": user.username
