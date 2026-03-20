@@ -6,9 +6,11 @@ from django.utils import timezone
 try:
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
 except ImportError:
     openpyxl = None
     Font = Alignment = PatternFill = Border = Side = None
+    get_column_letter = None
 
 try:
     from reportlab.lib import colors
@@ -242,165 +244,225 @@ def generar_excel_aspirantes(queryset):
 
 def generar_pdf_reporte_financiero(data):
     """
-    Genera un reporte financiero completo en PDF.
-    data: dict con 'resumen', 'por_concepto', 'por_nivel', 'por_estrato', 'becas'.
+    Genera un reporte financiero profesional en PDF.
     """
     if not SimpleDocTemplate:
         return None
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter)) # Landscape for more space
     elements = []
     
     styles = getSampleStyleSheet()
-    title_style = styles['Title']
-    h2_style = ParagraphStyle('h2', parent=styles['Heading2'], spaceAfter=10)
+    title_style = ParagraphStyle(
+        'MainTitle', parent=styles['Title'], fontSize=20, textColor=colors.navy, spaceAfter=20
+    )
+    h2_style = ParagraphStyle(
+        'Subtitle', parent=styles['Heading2'], fontSize=16, textColor=colors.darkblue, spaceBefore=15, spaceAfter=10
+    )
     normal_style = styles['Normal']
-    
+    header_style = ParagraphStyle('HeaderStyle', parent=styles['Normal'], fontSize=10, textColor=colors.whitesmoke, fontName='Helvetica-Bold')
+
     # 1. Título y Encabezado
-    elements.append(Paragraph("Reporte del Estado Financiero Institucional", title_style))
+    periodo_label = data.get('resumen', {}).get('periodo_label', 'TOTAL')
+    elements.append(Paragraph(f"ESTADO FINANCIERO E INGRESOS - PERIODO: {periodo_label}", title_style))
     elements.append(Paragraph(f"Fecha de emisión: {timezone.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
     elements.append(Spacer(1, 0.3 * inch))
     
-    # 2. Resumen Ejecutivo
+    # 2. Resumen Ejecutivo (Tabla horizontal)
     resumen = data.get('resumen', {})
-    elements.append(Paragraph("Resumen Ejecutivo", h2_style))
+    elements.append(Paragraph("Resumen Ejecutivo de Recaudación", h2_style))
     resumen_data = [
-        ["Total Recaudado (Pagos)", f"${resumen.get('total_recaudado', '0.00'):,.2f}"],
-        ["Total Deuda Pendiente", f"${resumen.get('total_deuda', '0.00'):,.2f}"],
-        ["Alumnos con Beca", f"{resumen.get('becados_pct', '0')}% ({resumen.get('becados_count', '0')} alumnos)"]
+        ["Total Recaudado", "Deuda Pendiente", "Becados (%)", "Becados (Cant.)"],
+        [
+            f"${resumen.get('total_recaudado', 0):,.2f}", 
+            f"${resumen.get('total_deuda', 0):,.2f}", 
+            f"{resumen.get('becados_pct', 0)}%", 
+            str(resumen.get('becados_count', 0))
+        ]
     ]
-    res_table = Table(resumen_data, colWidths=[3*inch, 2.5*inch])
+    res_table = Table(resumen_data, colWidths=[2.2*inch, 2.2*inch, 2.2*inch, 2.2*inch])
     res_table.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
-        ('PADDING', (0,0), (-1,-1), 8),
-    ]))
-    elements.append(res_table)
-    elements.append(Spacer(1, 0.4 * inch))
-    
-    # 3. Recaudación por Tipo de Concepto
-    elements.append(Paragraph("Recaudación por Tipo de Concepto", h2_style))
-    conc_data = [["Tipo de Concepto", "Monto Recaudado"]]
-    for item in data.get('por_concepto', []):
-        conc_data.append([item['tipo'].capitalize(), f"${item['monto']:,.2f}"])
-    
-    conc_table = Table(conc_data, colWidths=[3.5*inch, 2*inch])
-    conc_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.navy),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (1,1), (1,-1), 'RIGHT'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('FONTSIZE', (0,1), (-1,1), 12),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
     ]))
-    elements.append(conc_table)
-    elements.append(Spacer(1, 0.4 * inch))
-    
-    # 4. Deuda por Nivel Educativo
-    elements.append(Paragraph("Deuda Pendiente por Nivel Educativo", h2_style))
-    lvl_data = [["Nivel Educativo", "Monto de Adeudo"]]
-    for item in data.get('por_nivel', []):
-        lvl_data.append([item['nivel'], f"${item['monto']:,.2f}"])
-    
-    lvl_table = Table(lvl_data, colWidths=[3.5*inch, 2*inch])
-    lvl_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.darkred),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (1,1), (1,-1), 'RIGHT'),
-    ]))
-    elements.append(lvl_table)
-    elements.append(Spacer(1, 0.4 * inch))
-    
-    # Finalizar
+    elements.append(res_table)
+    elements.append(Spacer(1, 0.5 * inch))
+
+    # 3. Detalle de Estudiantes (Si existe y no es muy largo, o solo los primeros N)
+    detalle = data.get('detalle', [])
+    if detalle:
+        elements.append(Paragraph("Detalle Analítico de Adeudos y Pagos", h2_style))
+        
+        # Reducimos columnas para el PDF (solo las más críticas)
+        headers = ["Matrícula", "Nombre Estudiante", "Concepto", "Estatus", "Pagado", "Vence/Pago"]
+        data_table = [headers]
+        
+        for d in detalle[:100]: # Limitar a 100 en PDF para que no sea infinito
+            data_table.append([
+                str(d['matricula']),
+                f"{d['nombre']} {d['apellido_paterno']}",
+                d['concepto'],
+                d['estatus'],
+                f"${d['monto_pagado']:,.2f}",
+                d['fecha_pago']
+            ])
+        
+        det_table = Table(data_table, colWidths=[1*inch, 2.5*inch, 2*inch, 1.2*inch, 1.2*inch, 1.1*inch])
+        det_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.darkslategrey),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,0), 'CENTER'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('BACKGROUND', (0,1), (-1,-1), colors.whitesmoke),
+        ]))
+        elements.append(det_table)
+        
+        if len(detalle) > 100:
+            elements.append(Spacer(1, 0.1 * inch))
+            elements.append(Paragraph(f"* Se muestran los primeros 100 registros de {len(detalle)}. Para el detalle completo, consulte el archivo Excel.", styles['Italic']))
+
     doc.build(elements)
     buffer.seek(0)
     return buffer
 
 
 def generar_excel_reporte_financiero(data):
-    """Genera un archivo Excel con el reporte financiero."""
+    """
+    Genera un archivo Excel profesional con un diseño elegante y contable.
+    """
     if not openpyxl:
         return None
 
     output = io.BytesIO()
     workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Reporte Financiero"
-
-    # Estilos
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    center_aligned = Alignment(horizontal="center", vertical="center")
-    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), 
-                         top=Side(style='thin'), bottom=Side(style='thin'))
-
-    # 1. Resumen Ejecutivo
-    sheet.append(["Resumen Ejecutivo"])
-    sheet.cell(row=1, column=1).font = Font(bold=True, size=14)
     
+    # Fuentes y Estilos
+    title_font = Font(bold=True, size=18, color="1F4E78")
+    subtitle_font = Font(bold=True, size=12, color="34495E")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    
+    # Paleta de colores profesionales (Azul marino / Gris suave)
+    header_fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
+    summary_fill = PatternFill(start_color="ECF0F1", end_color="ECF0F1", fill_type="solid")
+    
+    border_thin = Border(
+        left=Side(style='thin', color='BDC3C7'), 
+        right=Side(style='thin', color='BDC3C7'), 
+        top=Side(style='thin', color='BDC3C7'), 
+        bottom=Side(style='thin', color='BDC3C7')
+    )
+    
+    # 1. HOJA DE RESUMEN (Dashboard Ejecutivo)
+    sheet_res = workbook.active
+    sheet_res.title = "Resumen Ejecutivo "
+    sheet_res.sheet_view.showGridLines = False
+
+    # Logo / Título
+    sheet_res.merge_cells('B2:F2')
+    sheet_res['B2'].value = "ESTADO DE INGRESOS Y RECAUDACIÓN"
+    sheet_res['B2'].font = title_font
+    sheet_res['B2'].alignment = Alignment(horizontal="center")
+
+    sheet_res['B3'].value = f"Periodo Reportado: {data.get('resumen', {}).get('periodo_label', 'TOTAL')}"
+    sheet_res['B3'].font = subtitle_font
+    sheet_res.merge_cells('B3:F3')
+    sheet_res['B3'].alignment = Alignment(horizontal="center")
+
+    # Tabla de métricas principales
     resumen = data.get('resumen', {})
-    resumen_rows = [
-        ["Concepto", "Valor"],
-        ["Total Recaudado (Pagos)", resumen.get('total_recaudado', 0)],
-        ["Total Deuda Pendiente", resumen.get('total_deuda', 0)],
-        ["Alumnos con Beca (%)", resumen.get('becados_pct', 0)],
-        ["Alumnos con Beca (Cantidad)", resumen.get('becados_count', 0)]
+    metrics = [
+        ["Métrica Institucional", "Valor / Monto"],
+        ["Total Recaudado (Ingresos Efectivos)", resumen.get('total_recaudado', 0)],
+        ["Cartera Vencida (Deuda Pendiente)", resumen.get('total_deuda', 0)],
+        ["Tasa de Estudiantes Becados", f"{resumen.get('becados_pct', 0)}%"],
+        ["Población con Beca (Alumnos)", resumen.get('becados_count', 0)],
     ]
-    
-    start_row = 3
-    for i, row in enumerate(resumen_rows):
-        for j, val in enumerate(row):
-            cell = sheet.cell(row=start_row + i, column=j + 1)
+
+    start_row = 6
+    for r_idx, row in enumerate(metrics):
+        for c_idx, val in enumerate(row, 2): # Empieza en columna B
+            cell = sheet_res.cell(row=start_row + r_idx, column=c_idx)
             cell.value = val
-            cell.border = thin_border
-            if i == 0:
+            cell.border = border_thin
+            if r_idx == 0:
                 cell.font = header_font
                 cell.fill = header_fill
+                cell.alignment = Alignment(horizontal="center")
+            else:
+                cell.fill = summary_fill
+                if c_idx == 3 and r_idx < 3: # Formato moneda para los primeros dos montos
+                    cell.number_format = '"$"#,##0.00'
+                cell.alignment = Alignment(horizontal="left" if c_idx == 2 else "right")
 
-    # 2. Recaudación por Concepto
-    start_row += 7
-    sheet.cell(row=start_row, column=1).value = "Recaudación por Tipo de Concepto"
-    sheet.cell(row=start_row, column=1).font = Font(bold=True)
+    # 2. HOJA DE DETALLE (EL REPORTE CONTABLE ANALÍTICO)
+    sheet_det = workbook.create_sheet(title="Detalle Analítico")
+    sheet_det.sheet_view.showGridLines = True
     
-    header_row = ["Tipo de Concepto", "Monto Recaudado"]
-    for j, val in enumerate(header_row):
-        cell = sheet.cell(row=start_row + 1, column=j + 1)
-        cell.value = val
+    # Encabezados exactos solicitados
+    headers = [
+        "Matrícula", "Nombre", "Apellido Paterno", "Apellido Materno", "Nivel", 
+        "Adeudo (Concepto)", "Estatus del Adeudo", "Cantidad Pagada", "Fecha de Pago",
+        "Tipo de Estrato", "Descuento de Estrato", "Porcentaje de Beca"
+    ]
+    
+    # Aplicar encabezados con estilo profesional
+    for c_idx, h in enumerate(headers, 1):
+        cell = sheet_det.cell(row=1, column=c_idx)
+        cell.value = h
         cell.font = header_font
         cell.fill = header_fill
-        cell.border = thin_border
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = border_thin
+        sheet_det.row_dimensions[1].height = 25
         
-    for i, item in enumerate(data.get('por_concepto', []), 2):
-        sheet.cell(row=start_row + i, column=1).value = item['tipo'].capitalize()
-        sheet.cell(row=start_row + i, column=1).border = thin_border
-        sheet.cell(row=start_row + i, column=2).value = item['monto']
-        sheet.cell(row=start_row + i, column=2).border = thin_border
+    detalle = data.get('detalle', [])
+    for r_idx, d in enumerate(detalle, 2):
+        row_data = [
+            d.get('matricula'), d.get('nombre'), d.get('apellido_paterno'), d.get('apellido_materno'),
+            d.get('nivel'), d.get('concepto'), d.get('estatus'), d.get('monto_pagado'),
+            d.get('fecha_pago'), d.get('tipo_estrato'), d.get('descuento_estrato'), d.get('porcentaje_beca')
+        ]
+        for c_idx, val in enumerate(row_data, 1):
+            cell = sheet_det.cell(row=r_idx, column=c_idx)
+            cell.value = val
+            cell.border = border_thin
+            
+            # Alineación y formatos específicos
+            if c_idx <= 1: # Matricula
+                cell.alignment = Alignment(horizontal="center")
+            if c_idx == 8: # Cantidad Pagada
+                cell.number_format = '"$"#,##0.00'
+                cell.alignment = Alignment(horizontal="right")
+            if c_idx == 9: # Fecha
+                cell.alignment = Alignment(horizontal="center")
+            if c_idx >= 10: # Estratos y Becas
+                cell.alignment = Alignment(horizontal="center")
 
-    # 3. Deuda por Nivel
-    start_row += len(data.get('por_concepto', [])) + 3
-    sheet.cell(row=start_row, column=1).value = "Deuda Pendiente por Nivel Educativo"
-    sheet.cell(row=start_row, column=1).font = Font(bold=True)
-    
-    header_row = ["Nivel Educativo", "Monto de Adeudo"]
-    for j, val in enumerate(header_row):
-        cell = sheet.cell(row=start_row + 1, column=j + 1)
-        cell.value = val
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = thin_border
-        
-    for i, item in enumerate(data.get('por_nivel', []), 2):
-        sheet.cell(row=start_row + i, column=1).value = item['nivel']
-        sheet.cell(row=start_row + i, column=1).border = thin_border
-        sheet.cell(row=start_row + i, column=2).value = item['monto']
-        sheet.cell(row=start_row + i, column=2).border = thin_border
-
-    # Ajustar ancho
-    sheet.column_dimensions['A'].width = 35
-    sheet.column_dimensions['B'].width = 20
+    # Ajuste dinámico de columnas para legibilidad
+    for sheet in workbook.worksheets:
+        for col in sheet.columns:
+            max_length = 0
+            if not col: continue
+            column_letter = get_column_letter(col[0].column)
+            
+            for cell in col:
+                try:
+                    if cell.value:
+                        l = len(str(cell.value))
+                        if l > max_length: max_length = l
+                except: pass
+            
+            # Margen extra para nombres y conceptos
+            adjusted_width = max_length + 4
+            if adjusted_width > 50: adjusted_width = 50 # Cap at 50 for very long text
+            sheet.column_dimensions[column_letter].width = adjusted_width
 
     workbook.save(output)
     output.seek(0)

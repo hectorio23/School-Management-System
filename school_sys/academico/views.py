@@ -589,7 +589,7 @@ def maestro_calificaciones_grupo(request, asignacion_id):
             'nombre': est.nombre,
             'apellido_paterno': est.apellido_paterno,
             'apellido_materno': est.apellido_materno,
-            'nombre_completo': f"{est.nombre} {est.apellido_paterno} {est.apellido_materno}",
+            'nombre_completo': est.nombre_completo,
             'calificacion_existente': calificacion_existente,
             'puede_capturar': puede_capturar,
         })
@@ -911,7 +911,7 @@ def estudiante_calificaciones_pdf(request):
     elements.append(Spacer(1, 8))
 
     subtitulo_style = ParagraphStyle('Subtitulo', parent=styles['Heading2'], fontSize=12, alignment=1)
-    nombre_completo = f"{estudiante.nombre} {estudiante.apellido_paterno} {estudiante.apellido_materno}"
+    nombre_completo = estudiante.nombre_completo
     elements.append(Paragraph(f"{nombre_completo} - Matrícula: {estudiante.matricula}", subtitulo_style))
     elements.append(Spacer(1, 16))
 

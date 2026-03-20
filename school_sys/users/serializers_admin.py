@@ -12,6 +12,7 @@ from estudiantes.models import (
     HistorialEstadosEstudiante
 )
 from pagos.models import Pago, Adeudo, ConceptoPago
+from estudiantes.utils_security import decrypt_string
 
 User = get_user_model()
 
@@ -48,7 +49,7 @@ class TutorSerializer(serializers.ModelSerializer):
             e = r.estudiante
             data.append({
                 "matricula": e.matricula,
-                "nombre_completo": f"{e.nombre} {e.apellido_paterno} {e.apellido_materno}",
+                "nombre_completo": e.nombre_completo,
                 "parentesco": r.parentesco
             })
         return data
@@ -97,9 +98,17 @@ class EstudianteAdminSerializer(serializers.ModelSerializer):
         model = Estudiante
         fields = [
             'matricula', 'nombre', 'apellido_paterno', 'apellido_materno', 
-            'direccion', 'porcentaje_beca', 'user_data', 'grado_id', 'grupo_id',
+            'curp', 'direccion', 'porcentaje_beca', 'user_data', 'grado_id', 'grupo_id',
             'estado_id', 'beca_id'
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        if 'direccion' in data and data['direccion']:
+            data['direccion'] = decrypt_string(data['direccion'])
+        return data
 
     def create(self, validated_data):
         user_data = validated_data.pop('user_data')
@@ -151,7 +160,15 @@ class EstudianteUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estudiante
-        fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'direccion', 'grupo_id', 'porcentaje_beca', 'estado_id', 'beca_id']
+        fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'curp', 'direccion', 'grupo_id', 'porcentaje_beca', 'estado_id', 'beca_id']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'curp' in data and data['curp']:
+            data['curp'] = decrypt_string(data['curp'])
+        if 'direccion' in data and data['direccion']:
+            data['direccion'] = decrypt_string(data['direccion'])
+        return data
 
     def update(self, instance, validated_data):
         grupo_id = validated_data.pop('grupo_id', None)
@@ -237,18 +254,19 @@ class AdeudoCreateSerializer(serializers.Serializer):
         return adeudo
 
 class AdeudoSerializer(serializers.ModelSerializer):
-    estudiante_nombre = serializers.CharField(source='estudiante.nombre', read_only=True)
-    estudiante_apellido = serializers.CharField(source='estudiante.apellido_paterno', read_only=True)
+    estudiante_nombre = serializers.SerializerMethodField()
     concepto_nombre = serializers.CharField(source='concepto.nombre', read_only=True)
 
     class Meta:
         model = Adeudo
         fields = '__all__'
 
+    def get_estudiante_nombre(self, obj):
+        return obj.estudiante.nombre_completo
+
 class PagoSerializer(serializers.ModelSerializer):
     estudiante_matricula = serializers.IntegerField(source='adeudo.estudiante.matricula', read_only=True)
-    estudiante_nombre = serializers.CharField(source='adeudo.estudiante.nombre', read_only=True)
-    estudiante_apellido = serializers.CharField(source='adeudo.estudiante.apellido_paterno', read_only=True)
+    estudiante_nombre = serializers.CharField(source='adeudo.estudiante.nombre_completo', read_only=True)
     concepto = serializers.CharField(source='adeudo.concepto.nombre', read_only=True)
 
     class Meta:
@@ -257,8 +275,7 @@ class PagoSerializer(serializers.ModelSerializer):
         read_only_fields = ['fecha_pago']
 
 class EvaluacionSerializer(serializers.ModelSerializer):
-    estudiante_nombre = serializers.CharField(source='estudiante.nombre', read_only=True)
-    estudiante_apellido = serializers.CharField(source='estudiante.apellido_paterno', read_only=True)
+    estudiante_nombre = serializers.CharField(source='estudiante.nombre_completo', read_only=True)
     estrato_nombre = serializers.CharField(source='estrato.nombre', read_only=True)
 
     class Meta:
@@ -341,8 +358,7 @@ class BecaSerializer(serializers.ModelSerializer):
 class BecaEstudianteSerializer(serializers.ModelSerializer):
     """Serializer para asignación de becas a estudiantes"""
     estudiante_matricula = serializers.IntegerField(source='estudiante.matricula', read_only=True)
-    estudiante_nombre = serializers.CharField(source='estudiante.nombre', read_only=True)
-    estudiante_apellido = serializers.CharField(source='estudiante.apellido_paterno', read_only=True)
+    estudiante_nombre_completo = serializers.SerializerMethodField()
     beca_nombre = serializers.CharField(source='beca.nombre', read_only=True)
     beca_porcentaje = serializers.DecimalField(source='beca.porcentaje', max_digits=5, decimal_places=2, read_only=True)
     
@@ -351,9 +367,12 @@ class BecaEstudianteSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'beca', 'estudiante', 'activa', 
             'fecha_asignacion', 'fecha_retiro', 'motivo_retiro', 'asignado_por',
-            'estudiante_matricula', 'estudiante_nombre', 'estudiante_apellido',
+            'estudiante_matricula', 'estudiante_nombre_completo',
             'beca_nombre', 'beca_porcentaje'
         ]
         read_only_fields = ['fecha_asignacion']
+
+    def get_estudiante_nombre_completo(self, obj):
+        return f"{obj.estudiante.nombre} {obj.estudiante.apellido_paterno} {obj.estudiante.apellido_materno}".strip()
 
 
