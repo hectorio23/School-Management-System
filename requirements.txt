@@ -1,16 +1,33 @@
-django
-djangorestframework
-djangorestframework-simplejwt
-pymysql
-mysqlclient
-python-dotenv
-cryptography
-django-jazzmin 
-django-admin-honeypot
-reportlab
-Pillow
-openpyxl
-pypdf
-Faker
-django-cors-headers
-python-dateutil
+# --- Core Django ---
+Django>=5.1,<5.2
+djangorestframework>=3.15.0
+djangorestframework-simplejwt>=5.3.0
+django-cors-headers>=4.7.0
+django-filter>=24.0
+django-jazzmin>=3.0.0
+
+# --- Base de datos ---
+mysqlclient>=2.2.0
+PyMySQL>=1.1.0
+
+# --- Variables de entorno ---
+python-dotenv>=1.0.0
+
+# --- JWT / Criptografía ---
+PyJWT>=2.9.0
+cryptography>=43.0.0
+
+# --- Fechas y tiempo ---
+python-dateutil>=2.9.0
+
+# --- Generación de archivos (Excel, PDF) ---
+openpyxl>=3.1.0
+pypdf>=5.0.0
+reportlab>=4.2.0
+Pillow>=10.4.0
+
+# --- HTTP ---
+requests>=2.32.0
+
+# --- Servidor WSGI (producción) ---
+gunicorn>=22.0.0
